@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import ReaderView from "./components/ReaderView.vue";
+import ReaderView from "./components/ReaderView/ReaderView.vue";
+import "./assets/global.css";
 </script>
 
 <template>
@@ -9,65 +10,3 @@ import ReaderView from "./components/ReaderView.vue";
     </div>
   </el-config-provider>
 </template>
-
-<style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html,
-body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-
-body {
-  font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Hiragino Sans GB",
-    "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.app-container {
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* 暗色模式下的滚动条样式 */
-.dark-theme ::-webkit-scrollbar-track {
-  background: #333;
-}
-
-.dark-theme ::-webkit-scrollbar-thumb {
-  background: #666;
-}
-
-.dark-theme ::-webkit-scrollbar-thumb:hover {
-  background: #888;
-}
-
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #aaa;
-}
-</style>

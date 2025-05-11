@@ -10,8 +10,12 @@ import {
   Sunny,
   Plus,
   Minus,
+  Close,
+  Minus as Minimize,
+  FullScreen,
 } from "@element-plus/icons-vue";
 import { renderMarkdown, extractToc } from "../../utils/markdown.ts";
+import { Window } from "@tauri-apps/api/window";
 import "../../assets/markdown.css";
 import "./ReaderView.css";
 
@@ -22,6 +26,8 @@ const currentFile = ref<string>("");
 const fontSize = ref<number>(16);
 const theme = ref<string>("light");
 const showToc = ref<boolean>(true);
+const appWindow = Window.getCurrent();
+const isMaximized = ref<boolean>(false);
 
 const tableOfContents = computed(() => {
   if (!htmlContent.value) return [];
@@ -73,10 +79,7 @@ const toggleTheme = () => {
   // 切换主题
   theme.value = theme.value === "light" ? "dark" : "light";
 
-  // 我们不需要重新渲染Markdown内容，因为我们使用CSS变量和选择器处理样式
-  // 但是为了确保主题应用正确，可以添加一个小延迟来应用样式
   setTimeout(() => {
-    // 重新应用代码块样式（可选）
     document.querySelectorAll(".markdown-content pre").forEach((pre) => {
       if (theme.value === "dark") {
         pre.classList.add("dark-theme");
@@ -91,7 +94,29 @@ const toggleToc = () => {
   showToc.value = !showToc.value;
 };
 
-onMounted(() => {
+async function checkMaximized() {
+  isMaximized.value = await appWindow.isMaximized();
+}
+
+// Window control functions
+const closeWindow = async () => {
+  await appWindow.close();
+};
+
+const minimizeWindow = async () => {
+  await appWindow.minimize();
+};
+
+const toggleMaximize = async () => {
+  if (isMaximized.value) {
+    await appWindow.unmaximize();
+  } else {
+    await appWindow.maximize();
+  }
+  isMaximized.value = !isMaximized.value;
+};
+
+onMounted(async () => {
   // Welcome message
   const welcomeMarkdown =
     '# 欢迎使用 RBook\n\n这是一个基于 Tauri 和 Vue 开发的 Markdown 阅读器。\n\n## 功能特点\n\n- 支持 Markdown 格式文件阅读\n- 目录导航功能\n- 支持代码高亮\n- 支持明暗主题切换\n- 字体大小调整\n\n## 使用方法\n\n点击左上角的"打开文件"按钮，选择一个 Markdown 文件开始阅读。\n\n```javascript\n// 代码示例\nfunction hello() {\n  console.log("Hello, Markdown!");\n}\n```\n\n## 任务列表示例\n\n- [x] 基础阅读功能\n- [x] 代码高亮\n- [x] 目录导航\n- [ ] 书签功能\n- [ ] 搜索功能';
@@ -108,6 +133,8 @@ onMounted(() => {
     theme.value = "dark";
   }
 
+  isMaximized.value = await appWindow.isMaximized();
+
   // 初始化加载完成后应用代码块样式
   setTimeout(() => {
     const codeBlocks = document.querySelectorAll(".markdown-content pre");
@@ -115,6 +142,11 @@ onMounted(() => {
       codeBlocks.forEach((pre) => pre.classList.add("dark-theme"));
     }
   }, 100);
+
+  // 监听窗口的最大化/最小化事件
+  appWindow.onResized(() => {
+    checkMaximized();
+  });
 });
 </script>
 
@@ -122,68 +154,100 @@ onMounted(() => {
   <div class="reader-container" :class="{ 'dark-theme': theme === 'dark' }">
     <el-container>
       <el-header class="el-header">
-        <el-row :gutter="20" align="middle" justify="space-between">
-          <el-col :span="4">
-            <el-button
-              type="primary"
-              @click="openFile"
-              :loading="isLoading"
-              :icon="Document"
+        <div class="header-section">
+          <el-button
+            class="file-open-btn"
+            type="primary"
+            @click="openFile"
+            :loading="isLoading"
+            :icon="Document"
+            size="small"
+          >
+            打开文件
+          </el-button>
+
+          <div class="btn-group">
+            <el-tooltip content="目录">
+              <el-button
+                :type="showToc ? 'primary' : 'default'"
+                @click="toggleToc"
+                circle
+                size="small"
+                :icon="IconMenu"
+              />
+            </el-tooltip>
+
+            <el-tooltip
+              :content="theme === 'light' ? '切换到暗色模式' : '切换到亮色模式'"
             >
-              打开文件
-            </el-button>
-          </el-col>
+              <el-button
+                type="default"
+                @click="toggleTheme"
+                circle
+                size="small"
+                :icon="theme === 'light' ? Moon : Sunny"
+              />
+            </el-tooltip>
+          </div>
 
-          <el-col :span="12" class="controls-col">
-            <el-space>
-              <el-tooltip content="目录">
-                <el-button
-                  :type="showToc ? 'success' : 'info'"
-                  @click="toggleToc"
-                  circle
-                  :icon="IconMenu"
-                />
-              </el-tooltip>
+          <div class="btn-group">
+            <el-tooltip content="减小字体">
+              <el-button
+                type="default"
+                @click="decreaseFontSize"
+                circle
+                size="small"
+                :icon="Minus"
+              />
+            </el-tooltip>
 
-              <el-tooltip content="减小字体">
-                <el-button
-                  type="info"
-                  @click="decreaseFontSize"
-                  circle
-                  :icon="Minus"
-                />
-              </el-tooltip>
+            <el-tooltip content="增大字体">
+              <el-button
+                type="default"
+                @click="increaseFontSize"
+                circle
+                size="small"
+                :icon="Plus"
+              />
+            </el-tooltip>
+          </div>
 
-              <el-tooltip content="增大字体">
-                <el-button
-                  type="info"
-                  @click="increaseFontSize"
-                  circle
-                  :icon="Plus"
-                />
-              </el-tooltip>
+          <div v-if="currentFile" class="filename-container">
+            <el-tag type="info" size="small">{{ currentFile }}</el-tag>
+          </div>
+        </div>
 
-              <el-tooltip
-                :content="
-                  theme === 'light' ? '切换到暗色模式' : '切换到亮色模式'
-                "
-              >
-                <el-button
-                  type="warning"
-                  @click="toggleTheme"
-                  circle
-                  :icon="theme === 'light' ? Moon : Sunny"
-                />
-              </el-tooltip>
-            </el-space>
-          </el-col>
+        <div class="window-controls">
+          <el-tooltip content="最小化窗口">
+            <el-button
+              type="default"
+              @click="minimizeWindow"
+              circle
+              size="small"
+              :icon="Minimize"
+            />
+          </el-tooltip>
 
-          <el-col :span="8" v-if="currentFile">
-            <div class="filename-container">
-              <el-tag type="info" size="large">{{ currentFile }}</el-tag>
-            </div>
-          </el-col>
-        </el-row>
+          <el-tooltip content="切换最大化">
+            <el-button
+              type="default"
+              @click="toggleMaximize"
+              circle
+              size="small"
+              :icon="FullScreen"
+            />
+          </el-tooltip>
+
+          <el-tooltip content="关闭窗口">
+            <el-button
+              type="danger"
+              @click="closeWindow"
+              circle
+              size="small"
+              :icon="Close"
+            />
+          </el-tooltip>
+        </div>
       </el-header>
 
       <el-container class="main-container">

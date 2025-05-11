@@ -21,20 +21,28 @@
 }
 
 .el-header {
-  padding: 10px 20px;
+  padding: 6px 16px;
   color: var(--el-text-color-primary);
   background-color: var(--el-bg-color-overlay);
   border-bottom: 1px solid var(--el-border-color-light);
   height: auto !important;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  -webkit-app-region: drag; /* 允许拖动 */
 }
 
 .controls-col {
   text-align: center;
+  display: flex;
+  justify-content: center;
 }
 
 .filename-container {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
 }
 
 .main-container {
@@ -86,4 +94,85 @@
   padding: 30px;
   max-width: 900px;
   margin: 0 auto;
+}
+
+/* 美化按钮和工具栏 */
+.el-button.is-circle {
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.el-button.is-circle:hover {
+  transform: scale(1.05);
+  background-color: var(--el-color-primary-light-7);
+}
+
+.el-space {
+  display: flex;
+  align-items: center;
+}
+
+/* 美化文件名标签 */
+.el-tag {
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-weight: 500;
+  border: none;
+  background-color: rgba(64, 158, 255, 0.1);
+}
+
+/* 页面头部导航栏样式 */
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  padding: 0 8px;
+}
+
+/* 窗口控制按钮 */
+.window-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  -webkit-app-region: no-drag; /* 不可拖动 */
+}
+
+.window-controls .el-button {
+  -webkit-app-region: no-drag; /* 确保按钮不可拖动 */
+}
+
+.header-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 修改按钮组样式 */
+.btn-group {
+  display: flex;
+  align-items: center;
+  background-color: var(--el-fill-color-light);
+  padding: 2px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin: 0 8px;
+  -webkit-app-region: no-drag; /* 不可拖动 */
+}
+
+.btn-group .el-button {
+  margin: 0 2px;
+  border: none;
+  -webkit-app-region: no-drag; /* 不可拖动 */
+}
+
+.file-open-btn {
+  font-weight: 500;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  -webkit-app-region: no-drag; /* 不可拖动 */
 }

@@ -2,6 +2,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
+mod tray;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ReadResult {
@@ -27,6 +28,12 @@ fn read_markdown_file(path: &str) -> Result<ReadResult, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .setup(|app| {
+            // setup the tray icon
+            tray::setup_tray(app).unwrap();
+
+            Ok(())
+        })
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![read_markdown_file])

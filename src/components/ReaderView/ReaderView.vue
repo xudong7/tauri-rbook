@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import { openMarkdownFile } from "../../api/markdown.ts";
-import { ElMessage } from "element-plus";
+// import { ElMessage } from "element-plus";
 import {
   Document,
   Menu as IconMenu,
@@ -44,16 +44,16 @@ const openFile = async () => {
       htmlContent.value = renderMarkdown(result.content);
       currentFile.value = result.filename;
 
-      ElMessage({
-        message: `已成功打开文件: ${result.filename}`,
-        type: "success",
-      });
+      // ElMessage({
+      //   message: `已成功打开文件: ${result.filename}`,
+      //   type: "success",
+      // });
     }
 
     isLoading.value = false;
   } catch (error) {
     console.error("Error opening file:", error);
-    ElMessage.error("打开文件失败，请重试");
+    // ElMessage.error("打开文件失败，请重试");
     isLoading.value = false;
   }
 };
@@ -155,19 +155,20 @@ onMounted(async () => {
     <el-container>
       <el-header class="el-header">
         <div class="header-section">
-          <el-button
-            class="file-open-btn"
-            type="primary"
-            @click="openFile"
-            :loading="isLoading"
-            :icon="Document"
-            size="small"
-          >
-            打开文件
-          </el-button>
+          <!-- <el-tooltip content="打开文件"> -->
+            <el-button
+              class="file-open-btn"
+              type="default"
+              @click="openFile"
+              :loading="isLoading"
+              :icon="Document"
+              circle
+              size="small"
+            />
+          <!-- </el-tooltip> -->
 
           <div class="btn-group">
-            <el-tooltip content="目录">
+            <!-- <el-tooltip content="目录"> -->
               <el-button
                 :type="showToc ? 'primary' : 'default'"
                 @click="toggleToc"
@@ -175,23 +176,23 @@ onMounted(async () => {
                 size="small"
                 :icon="IconMenu"
               />
-            </el-tooltip>
+            <!-- </el-tooltip> -->
 
-            <el-tooltip
+            <!-- <el-tooltip
               :content="theme === 'light' ? '切换到暗色模式' : '切换到亮色模式'"
-            >
+            > -->
               <el-button
                 type="default"
                 @click="toggleTheme"
                 circle
                 size="small"
-                :icon="theme === 'light' ? Moon : Sunny"
+                :icon="theme === 'light' ? Sunny : Moon"
               />
-            </el-tooltip>
+            <!-- </el-tooltip> -->
           </div>
 
           <div class="btn-group">
-            <el-tooltip content="减小字体">
+            <!-- <el-tooltip content="减小字体"> -->
               <el-button
                 type="default"
                 @click="decreaseFontSize"
@@ -199,9 +200,9 @@ onMounted(async () => {
                 size="small"
                 :icon="Minus"
               />
-            </el-tooltip>
+            <!-- </el-tooltip> -->
 
-            <el-tooltip content="增大字体">
+            <!-- <el-tooltip content="增大字体"> -->
               <el-button
                 type="default"
                 @click="increaseFontSize"
@@ -209,7 +210,7 @@ onMounted(async () => {
                 size="small"
                 :icon="Plus"
               />
-            </el-tooltip>
+            <!-- </el-tooltip> -->
           </div>
 
           <div v-if="currentFile" class="filename-container">
@@ -218,7 +219,7 @@ onMounted(async () => {
         </div>
 
         <div class="window-controls">
-          <el-tooltip content="最小化窗口">
+          <!-- <el-tooltip content="最小化窗口"> -->
             <el-button
               type="default"
               @click="minimizeWindow"
@@ -226,9 +227,9 @@ onMounted(async () => {
               size="small"
               :icon="Minimize"
             />
-          </el-tooltip>
+          <!-- </el-tooltip> -->
 
-          <el-tooltip content="切换最大化">
+          <!-- <el-tooltip content="切换最大化"> -->
             <el-button
               type="default"
               @click="toggleMaximize"
@@ -236,17 +237,17 @@ onMounted(async () => {
               size="small"
               :icon="FullScreen"
             />
-          </el-tooltip>
+          <!-- </el-tooltip> -->
 
-          <el-tooltip content="关闭窗口">
+          <!-- <el-tooltip content="关闭窗口"> -->
             <el-button
-              type="danger"
+              type="default"
               @click="closeWindow"
               circle
               size="small"
               :icon="Close"
             />
-          </el-tooltip>
+          <!-- </el-tooltip> -->
         </div>
       </el-header>
 

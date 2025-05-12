@@ -29,6 +29,21 @@
   -webkit-app-region: no-drag;
 }
 
+.reader-toolbar .icon-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.reader-toolbar .icon-button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
 .reader-toolbar button:hover:not(:disabled) {
   background-color: #666;
 }
@@ -41,6 +56,30 @@
 
 .reader-toolbar span {
   margin: 0 10px;
+}
+
+.reader-toolbar .page-counter {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 4px 8px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .placeholder {

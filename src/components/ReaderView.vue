@@ -3,6 +3,11 @@ import { ref, onMounted, computed } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import "./ReaderView.css";
+import {
+  Document,
+  Menu as IconMenu,
+  DocumentCopy,
+} from "@element-plus/icons-vue";
 
 interface EpubFile {
   content: number[];
@@ -399,14 +404,26 @@ onMounted(() => {
   <div class="reader-container">
     <!-- Toolbar -->
     <div class="reader-toolbar">
-      <button @click="openFile" :disabled="loading">
-        {{ loading ? "Loading..." : "Open EPUB" }}
+      <button
+        class="icon-button"
+        @click="openFile"
+        :disabled="loading"
+        title="Open EPUB"
+      >
+        <el-icon :size="20" v-if="!loading"><Document /></el-icon>
+        <span v-else class="loading-spinner"></span>
       </button>
-      <span v-if="book">{{ currentPage + 1 }} / {{ totalPages }}</span>
-      <button @click="showToc = !showToc" :disabled="!book">
-        Table of Contents
+      <span v-if="book" class="page-counter"
+        >{{ currentPage + 1 }} / {{ totalPages }}</span
+      >
+      <button
+        class="icon-button"
+        @click="showToc = !showToc"
+        :disabled="!book"
+        title="Table of Contents"
+      >
+        <el-icon :size="20"><IconMenu /></el-icon>
       </button>
-      <button @click="showDebug = !showDebug" :disabled="!book">Debug</button>
     </div>
 
     <!-- Book Cover or Placeholder -->

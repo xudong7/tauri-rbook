@@ -1,36 +1,13 @@
 use anyhow::Result;
 use epub::doc::EpubDoc;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
-use std::{fs, vec};
+use std::vec;
 mod tray;
-
-#[derive(Debug, Serialize, Deserialize)]
-struct ReadResult {
-    content: String,
-    filename: String,
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 struct EpubFile {
     content: Vec<u8>,
     mime: String,
-}
-
-// Read a markdown file and return its content and filename
-#[tauri::command]
-fn read_markdown_file(path: &str) -> Result<ReadResult, String> {
-    // Read the file
-    let content = fs::read_to_string(path).map_err(|e| e.to_string())?;
-
-    // Get the filename
-    let filename = Path::new(path)
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("Unknown")
-        .to_string();
-
-    Ok(ReadResult { content, filename })
 }
 
 // read epub file
@@ -63,7 +40,7 @@ pub fn run() {
         })
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![read_markdown_file, read_epub_file])
+        .invoke_handler(tauri::generate_handler![read_epub_file])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

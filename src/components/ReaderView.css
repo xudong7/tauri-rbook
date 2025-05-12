@@ -63,21 +63,29 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin: 10px;
+  margin: 15px;
   overflow: hidden;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .content-viewer {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 2em 3em;
+  line-height: 1.7;
+  font-size: 1.05em;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .empty-content {
   flex: 1;
   background-color: white;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  border-radius: 5px;
+  border-radius: 8px;
   line-height: 1.6;
 }
 
@@ -208,38 +216,51 @@
   max-width: 100%;
   height: auto;
   display: block;
+  margin: 1.5em auto;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .content-viewer :deep(figure) {
-  margin: 20px 0;
+  margin: 2em 0;
   text-align: center;
   break-inside: avoid;
   page-break-inside: avoid;
+  background-color: rgba(0, 0, 0, 0.02);
+  padding: 1em;
+  border-radius: 8px;
 }
 
 .content-viewer :deep(figure.figright) {
   float: right;
-  margin-left: 20px;
-  margin-bottom: 10px;
-  max-width: 40%;
+  margin-left: 2em;
+  margin-bottom: 1.5em;
+  max-width: 45%;
+  clear: right;
 }
 
 .content-viewer :deep(figure.figleft) {
   float: left;
-  margin-right: 20px;
-  margin-bottom: 10px;
-  max-width: 40%;
+  margin-right: 2em;
+  margin-bottom: 1.5em;
+  max-width: 45%;
+  clear: left;
 }
 
 .content-viewer :deep(figure img) {
   max-width: 100%;
   height: auto;
+  margin: 0;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .content-viewer :deep(figure figcaption) {
   font-size: 0.9em;
-  color: #666;
-  margin-top: 8px;
+  color: #555;
+  margin-top: 12px;
+  font-style: italic;
+  line-height: 1.4;
 }
 
 .content-viewer :deep(h1),
@@ -285,13 +306,18 @@
 .content-viewer :deep(.figcenter),
 .content-viewer :deep(.centered) {
   text-align: center;
-  margin: 1em auto;
+  margin: 2em auto;
+  max-width: 80%;
+  padding: 0.5em;
+  background-color: rgba(0, 0, 0, 0.01);
+  border-radius: 8px;
 }
 
 .content-viewer :deep(.w100) {
   width: 100%;
   max-width: 100%;
   height: auto;
+  margin: 1.5em 0;
 }
 
 /* Clear floats after sections with floating images */

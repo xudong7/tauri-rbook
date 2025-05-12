@@ -1,0 +1,304 @@
+.reader-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  position: relative;
+  background-color: #f5f5f5;
+}
+
+.reader-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background-color: #333;
+  color: white;
+  z-index: 10;
+  -webkit-app-region: drag;
+}
+
+.reader-toolbar button {
+  background-color: #4a4a4a;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  margin-right: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  -webkit-app-region: no-drag;
+}
+
+.reader-toolbar button:hover:not(:disabled) {
+  background-color: #666;
+}
+
+.reader-toolbar button:disabled {
+  background-color: #333;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.reader-toolbar span {
+  margin: 0 10px;
+}
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  background-color: #f0f0f0;
+}
+
+.instruction {
+  font-size: 1.5rem;
+  color: #666;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.content-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin: 10px;
+  overflow: hidden;
+}
+
+.content-viewer {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.empty-content {
+  flex: 1;
+  background-color: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  line-height: 1.6;
+}
+
+.cover-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  margin: 20px 0;
+}
+
+.book-cover {
+  max-height: 80vh;
+  max-width: 90%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.toc-sidebar {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  bottom: 0;
+  width: 300px;
+  background-color: white;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 5;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+}
+
+.toc-header,
+.debug-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.toc-header h3,
+.debug-header h3 {
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #999;
+}
+
+.close-btn:hover {
+  color: #333;
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc-list li {
+  padding: 10px 15px;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.toc-list li:hover {
+  background-color: #f0f0f0;
+}
+
+.debug-panel {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  bottom: 0;
+  width: 400px;
+  background-color: white;
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+  z-index: 5;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+}
+
+.debug-content {
+  padding: 15px;
+}
+
+.debug-content h4 {
+  margin-top: 15px;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.debug-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  font-size: 0.9em;
+  font-family: monospace;
+}
+
+.debug-list li {
+  padding: 5px 10px;
+  border-bottom: 1px solid #eee;
+  word-break: break-all;
+}
+
+.resources-list {
+  max-height: 300px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .toc-sidebar,
+  .debug-panel {
+    width: 100%;
+  }
+}
+
+/* Styling for the epub content */
+.content-viewer :deep(img) {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.content-viewer :deep(figure) {
+  margin: 20px 0;
+  text-align: center;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.content-viewer :deep(figure.figright) {
+  float: right;
+  margin-left: 20px;
+  margin-bottom: 10px;
+  max-width: 40%;
+}
+
+.content-viewer :deep(figure.figleft) {
+  float: left;
+  margin-right: 20px;
+  margin-bottom: 10px;
+  max-width: 40%;
+}
+
+.content-viewer :deep(figure img) {
+  max-width: 100%;
+  height: auto;
+}
+
+.content-viewer :deep(figure figcaption) {
+  font-size: 0.9em;
+  color: #666;
+  margin-top: 8px;
+}
+
+.content-viewer :deep(h1),
+.content-viewer :deep(h2),
+.content-viewer :deep(h3),
+.content-viewer :deep(h4),
+.content-viewer :deep(h5),
+.content-viewer :deep(h6) {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+.content-viewer :deep(p) {
+  margin: 1em 0;
+  line-height: 1.6;
+}
+
+.content-viewer :deep(a) {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.content-viewer :deep(a:hover) {
+  text-decoration: underline;
+}
+
+/* Additional EPUB-specific styling */
+.content-viewer :deep(.chapter) {
+  margin-bottom: 2em;
+}
+
+.content-viewer :deep(.x-ebookmaker) {
+  font-family: "Georgia", serif;
+}
+
+.content-viewer :deep(.nobreak) {
+  white-space: nowrap;
+}
+
+/* Support for common EPUB image layouts */
+.content-viewer :deep(.illowp52),
+.content-viewer :deep(.figcenter),
+.content-viewer :deep(.centered) {
+  text-align: center;
+  margin: 1em auto;
+}
+
+.content-viewer :deep(.w100) {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Clear floats after sections with floating images */
+.content-viewer :deep(section)::after,
+.content-viewer :deep(div.chapter)::after,
+.content-viewer :deep(p)::after {
+  content: "";
+  display: table;
+  clear: both;
+}

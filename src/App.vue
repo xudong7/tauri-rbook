@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ReaderView from "./components/ReaderView/ReaderView.vue";
+import ReaderView from "./components/ReaderView.vue";
 import "./assets/global.css";
 </script>
 

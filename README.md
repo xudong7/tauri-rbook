@@ -31,14 +31,18 @@ pnpm run tauri build
 
 ### Vue
 
-1. 排版改进
+- [ ] 排版改进
 
-2. header美化，添加控制按钮
+- [ ] header美化
 
-3. 目录页跳转功能
+- [x] 添加控制按钮
+
+- [ ] 目录页跳转功能
 
 ### Rust
 
-1. 加载默认文件夹下的epub文件
+- [ ] 加载默认文件夹下的epub文件
 
-2. 保存epub文件
+- [ ] 保存epub文件
+
+- [ ] 搜索功能：[网站1](https://digilibraries.com/) 和 [网站2](https://www.gutenberg.org/) 的epub文件

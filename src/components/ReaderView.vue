@@ -2,11 +2,14 @@
 import { ref, onMounted, computed } from "vue";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
+import { Window } from "@tauri-apps/api/window";
 import "./ReaderView.css";
 import {
   Document,
   Menu as IconMenu,
-  DocumentCopy,
+  Minus,
+  FullScreen,
+  Close,
 } from "@element-plus/icons-vue";
 
 interface EpubFile {
@@ -41,6 +44,7 @@ const filePath = ref<string>("");
 const showToc = ref<boolean>(false);
 const showDebug = ref<boolean>(false);
 const missingResources = ref<string[]>([]);
+const appWindow = Window.getCurrent();
 
 const coverImage = computed(() => {
   if (!book.value || !book.value.metadata.cover_id) return null;
@@ -398,32 +402,74 @@ const handleKeyDown = (event: KeyboardEvent) => {
 onMounted(() => {
   window.addEventListener("keydown", handleKeyDown);
 });
+
+// Add window control functions
+const minimizeWindow = async () => {
+  await appWindow.minimize();
+};
+
+const maximizeWindow = async () => {
+  if (await appWindow.isMaximized()) {
+    await appWindow.unmaximize();
+  } else {
+    await appWindow.maximize();
+  }
+};
+
+const closeWindow = async () => {
+  await appWindow.close();
+};
 </script>
 
 <template>
   <div class="reader-container">
     <!-- Toolbar -->
     <div class="reader-toolbar">
-      <button
-        class="icon-button"
-        @click="openFile"
-        :disabled="loading"
-        title="Open EPUB"
-      >
-        <el-icon :size="20" v-if="!loading"><Document /></el-icon>
-        <span v-else class="loading-spinner"></span>
-      </button>
-      <span v-if="book" class="page-counter"
-        >{{ currentPage + 1 }} / {{ totalPages }}</span
-      >
-      <button
-        class="icon-button"
-        @click="showToc = !showToc"
-        :disabled="!book"
-        title="Table of Contents"
-      >
-        <el-icon :size="20"><IconMenu /></el-icon>
-      </button>
+      <div class="left-controls">
+        <button
+          class="icon-button"
+          @click="openFile"
+          :disabled="loading"
+          title="Open EPUB"
+        >
+          <el-icon :size="20" v-if="!loading"><Document /></el-icon>
+          <span v-else class="loading-spinner"></span>
+        </button>
+        <span v-if="book" class="page-counter"
+          >{{ currentPage + 1 }} / {{ totalPages }}</span
+        >
+        <button
+          class="icon-button"
+          @click="showToc = !showToc"
+          :disabled="!book"
+          title="Table of Contents"
+        >
+          <el-icon :size="20"><IconMenu /></el-icon>
+        </button>
+      </div>
+      <div class="window-controls">
+        <button
+          class="window-control-button"
+          @click="minimizeWindow"
+          title="Minimize"
+        >
+          <el-icon :size="16"><Minus /></el-icon>
+        </button>
+        <button
+          class="window-control-button"
+          @click="maximizeWindow"
+          title="Maximize"
+        >
+          <el-icon :size="16"><FullScreen /></el-icon>
+        </button>
+        <button
+          class="window-control-button close-button"
+          @click="closeWindow"
+          title="Close"
+        >
+          <el-icon :size="16"><Close /></el-icon>
+        </button>
+      </div>
     </div>
 
     <!-- Book Cover or Placeholder -->

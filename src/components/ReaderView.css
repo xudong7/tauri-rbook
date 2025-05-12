@@ -10,11 +10,47 @@
 .reader-toolbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 10px;
   background-color: #333;
   color: white;
   z-index: 10;
   -webkit-app-region: drag;
+}
+
+.left-controls {
+  display: flex;
+  align-items: center;
+}
+
+.window-controls {
+  display: flex;
+  align-items: center;
+  -webkit-app-region: no-drag;
+}
+
+.window-control-button {
+  width: 34px;
+  height: 34px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  color: white;
+  border: none;
+  margin-left: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  -webkit-app-region: no-drag;
+}
+
+.window-control-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.close-button:hover {
+  background-color: #e81123;
 }
 
 .reader-toolbar button {

@@ -402,16 +402,7 @@ onMounted(() => {
       <button @click="openFile" :disabled="loading">
         {{ loading ? "Loading..." : "Open EPUB" }}
       </button>
-      <button @click="prevPage" :disabled="!book || currentPage <= 0">
-        Previous
-      </button>
       <span v-if="book">{{ currentPage + 1 }} / {{ totalPages }}</span>
-      <button
-        @click="nextPage"
-        :disabled="!book || currentPage >= totalPages - 1"
-      >
-        Next
-      </button>
       <button @click="showToc = !showToc" :disabled="!book">
         Table of Contents
       </button>
@@ -441,6 +432,24 @@ onMounted(() => {
     </div>
     <!-- Content Viewer with optional cover display -->
     <div v-if="book" class="content-container">
+      <!-- Navigation Arrows -->
+      <div
+        v-if="currentPage > 0"
+        class="nav-arrow nav-arrow-left"
+        @click="prevPage"
+        title="Previous Page"
+      >
+        ‹
+      </div>
+      <div
+        v-if="currentPage < totalPages - 1"
+        class="nav-arrow nav-arrow-right"
+        @click="nextPage"
+        title="Next Page"
+      >
+        ›
+      </div>
+
       <div v-if="currentPage === 0 && coverImage" class="cover-container">
         <img :src="coverImage" alt="Book Cover" class="book-cover" />
       </div>

@@ -121,13 +121,13 @@
   width: 100%;
 }
 
-.empty-content {
+/* .empty-content {
   flex: 1;
   background-color: white;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   line-height: 1.6;
-}
+} */
 
 .cover-container {
   display: flex;

@@ -43,6 +43,6 @@ pnpm run tauri build
 
 - [ ] 加载默认文件夹下的epub文件
 
-- [ ] 保存epub文件
+- [x] 保存epub文件
 
 - [ ] 搜索功能：[网站1](https://digilibraries.com/) 和 [网站2](https://www.gutenberg.org/) 的epub文件

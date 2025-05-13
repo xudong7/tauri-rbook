@@ -9,6 +9,90 @@ use tauri::{AppHandle, Manager};
 // read epub file from the given path
 #[tauri::command]
 pub fn read_epub_file(app_handle: AppHandle, path: &str) -> Result<EpubBook, String> {
+    // save the epub file and get returned path
+    let local_path = save_epub_file(app_handle, path)?;
+    let local_path = local_path.as_str();
+
+    println!("local_path: {}", local_path);
+
+    // load the epub file by given path
+    load_epub_file_by_given_path(local_path).map_err(|e| format!("Failed to load epub file: {}", e))
+}
+
+// Get a specific page from the epub file
+#[tauri::command]
+pub fn get_epub_page(path: &str, page_index: usize) -> Result<String, String> {
+    let mut doc = match EpubDoc::new(path) {
+        Ok(doc) => doc,
+        Err(e) => return Err(format!("Failed to open epub file: {}", e)),
+    };
+
+    // Try to navigate to the specified page
+    if page_index >= doc.spine.len() {
+        return Err(format!("Page index out of range: {}", page_index));
+    }
+
+    doc.set_current_page(page_index);
+    // Get the current page content
+    match doc.get_current_str() {
+        Some((content, _)) => Ok(content),
+        None => Err("Failed to get page content".to_string()),
+    }
+}
+
+// save the epub file to the default directory
+// if the file already exists, return the existing path
+fn save_epub_file(app_handle: AppHandle, origin_path: &str) -> Result<String, String> {
+    let app_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("unable to get dir: {}", e))?;
+
+    // Create books directory if it doesn't exist
+    let books_dir = app_dir.join("books");
+    std::fs::create_dir_all(&books_dir)
+        .map_err(|e| format!("Failed to create books directory: {}", e))?;
+
+    // generate md5 hash of origin file
+    let origin_hash = calculate_md5_hash(origin_path)?;
+
+    // compare hash with existing files
+    // scan books dir
+    if let Some(existing_path) = compare_if_has_exists(&books_dir, &origin_hash) {
+        // if file exists, return local path
+        return Ok(existing_path);
+    }
+
+    // if not, copy file to books directory
+    // Create a unique directory for this book
+    let book_dir_name = generate_random_string(10);
+    let book_dir = books_dir.join(&book_dir_name);
+    std::fs::create_dir_all(&book_dir)
+        .map_err(|e| format!("Failed to create book directory: {}", e))?;
+
+    // Keep the original file name if possible, or use a generic name
+    let origin_file_name = Path::new(origin_path)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("book.epub");
+
+    let dest_path = book_dir.join(origin_file_name);
+
+    // Copy the file from origin path to the new path
+    std::fs::copy(origin_path, &dest_path).map_err(|e| format!("Failed to copy file: {}", e))?;
+
+    // Save the hash to a file inside the book directory
+    let hash_file_path = book_dir.join("file_hash.txt");
+    std::fs::write(hash_file_path, origin_hash)
+        .map_err(|e| format!("Failed to write hash file: {}", e))?;
+
+    // return local path
+    Ok(dest_path.to_string_lossy().to_string())
+}
+
+// load epub file by given path
+// return EpubBook
+fn load_epub_file_by_given_path(path: &str) -> Result<EpubBook, String> {
     let doc = match EpubDoc::new(path) {
         Ok(doc) => doc,
         Err(e) => return Err(format!("Failed to open epub file: {}", e)),
@@ -91,79 +175,5 @@ pub fn read_epub_file(app_handle: AppHandle, path: &str) -> Result<EpubBook, Str
         current_page: 0,
     };
 
-    // Save the book to the default directory if it's not already saved
-    let _ = save_epub_file(app_handle.clone(), path);
-
     Ok(book)
-}
-
-// Get a specific page from the epub file
-#[tauri::command]
-pub fn get_epub_page(path: &str, page_index: usize) -> Result<String, String> {
-    let mut doc = match EpubDoc::new(path) {
-        Ok(doc) => doc,
-        Err(e) => return Err(format!("Failed to open epub file: {}", e)),
-    };
-
-    // Try to navigate to the specified page
-    if page_index >= doc.spine.len() {
-        return Err(format!("Page index out of range: {}", page_index));
-    }
-
-    doc.set_current_page(page_index);
-    // Get the current page content
-    match doc.get_current_str() {
-        Some((content, _)) => Ok(content),
-        None => Err("Failed to get page content".to_string()),
-    }
-}
-
-// save the epub file to the default directory
-// if the file already exists, return the existing path
-fn save_epub_file(app_handle: AppHandle, origin_path: &str) -> Result<String, String> {
-    let app_dir = app_handle
-        .path()
-        .app_data_dir()
-        .map_err(|e| format!("unable to get dir: {}", e))?;
-
-    // Create books directory if it doesn't exist
-    let books_dir = app_dir.join("books");
-    std::fs::create_dir_all(&books_dir)
-        .map_err(|e| format!("Failed to create books directory: {}", e))?;
-
-    // generate md5 hash of origin file
-    let origin_hash = calculate_md5_hash(origin_path)?;
-
-    // compare hash with existing files
-    // scan books dir
-    if let Some(existing_path) = compare_if_has_exists(&books_dir, &origin_hash) {
-        // if file exists, return local path
-        return Ok(existing_path);
-    }
-
-    // if not, copy file to books directory
-    // Create a unique directory for this book
-    let book_dir_name = generate_random_string(10);
-    let book_dir = books_dir.join(&book_dir_name);
-    std::fs::create_dir_all(&book_dir)
-        .map_err(|e| format!("Failed to create book directory: {}", e))?;
-
-    // Keep the original file name if possible, or use a generic name
-    let origin_file_name = Path::new(origin_path)
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("book.epub");
-
-    let dest_path = book_dir.join(origin_file_name);
-
-    // Copy the file from origin path to the new path
-    std::fs::copy(origin_path, &dest_path).map_err(|e| format!("Failed to copy file: {}", e))?;
-
-    // Save the hash to a file inside the book directory
-    let hash_file_path = book_dir.join("file_hash.txt");
-    std::fs::write(hash_file_path, origin_hash)
-        .map_err(|e| format!("Failed to write hash file: {}", e))?;
-
-    // return local path
-    Ok(dest_path.to_string_lossy().to_string())
 }

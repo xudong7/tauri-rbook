@@ -1,38 +1,14 @@
+use crate::file::{calculate_md5_hash, compare_if_has_exists, generate_random_string};
+use crate::model::{EpubBook, EpubFile, EpubMetadata, SpineItem, TocItem};
 use anyhow::Result;
 use epub::doc::EpubDoc;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::Path;
+use tauri::{AppHandle, Manager};
 
-#[derive(Debug, Serialize, Deserialize)]
-struct EpubFile {
-    content: Vec<u8>,
-    mime: String,
-    path: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct EpubMetadata {
-    title: Option<String>,
-    author: Option<String>,
-    description: Option<String>,
-    language: Option<String>,
-    publisher: Option<String>,
-    toc: Vec<String>,
-    spine: Vec<String>,
-    cover_id: Option<String>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct EpubBook {
-    metadata: EpubMetadata,
-    resources: HashMap<String, EpubFile>,
-    current_page: usize,
-}
-
-// read epub file
+// read epub file from the given path
 #[tauri::command]
-pub fn read_epub_file(path: &str) -> Result<EpubBook, String> {
-
+pub fn read_epub_file(app_handle: AppHandle, path: &str) -> Result<EpubBook, String> {
     let doc = match EpubDoc::new(path) {
         Ok(doc) => doc,
         Err(e) => return Err(format!("Failed to open epub file: {}", e)),
@@ -43,15 +19,37 @@ pub fn read_epub_file(path: &str) -> Result<EpubBook, String> {
     let description = doc.mdata("description").map(|s| s.to_string());
     let language = doc.mdata("language").map(|s| s.to_string());
     let publisher = doc.mdata("publisher").map(|s| s.to_string());
-
-    // Get the table of contents and spine
-    let toc = doc
+    let toc: Vec<TocItem> = doc
         .toc
         .clone()
         .into_iter()
-        .map(|item| item.label.clone())
+        .map(|item| TocItem {
+            label: item.label.clone(),
+            content: item.content.to_string_lossy().to_string(),
+            children: item
+                .children
+                .into_iter()
+                .map(|child| TocItem {
+                    label: child.label.clone(),
+                    content: child.content.to_string_lossy().to_string(),
+                    children: Vec::new(),
+                    play_order: child.play_order,
+                })
+                .collect(),
+            play_order: item.play_order,
+        })
         .collect();
-    let spine = doc.spine.iter().map(|item| item.idref.clone()).collect();
+
+    let spine: Vec<SpineItem> = doc
+        .spine
+        .iter()
+        .map(|item| SpineItem {
+            idref: item.idref.clone(),
+            id: item.id.clone(),
+            properties: item.properties.clone(),
+            linear: item.linear,
+        })
+        .collect();
 
     // Get cover ID
     let cover_id = doc.get_cover_id().map(|s| s.to_string());
@@ -93,7 +91,8 @@ pub fn read_epub_file(path: &str) -> Result<EpubBook, String> {
         current_page: 0,
     };
 
-    save_epub_file(&book);
+    // Save the book to the default directory if it's not already saved
+    let _ = save_epub_file(app_handle.clone(), path);
 
     Ok(book)
 }
@@ -119,27 +118,52 @@ pub fn get_epub_page(path: &str, page_index: usize) -> Result<String, String> {
     }
 }
 
-// save the epub file on the default disk location
-fn save_epub_file(book: &EpubBook) {
-    // TODO: Implement saving logic
-    // Save the book to a file or database
-    // This is a placeholder function. You can implement the actual saving logic here.
-}
+// save the epub file to the default directory
+// if the file already exists, return the existing path
+fn save_epub_file(app_handle: AppHandle, origin_path: &str) -> Result<String, String> {
+    let app_dir = app_handle
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("unable to get dir: {}", e))?;
 
-fn load_epub_file(path: &str) -> Result<EpubBook, String> {
-    // TODO: Implement loading logic
-    // Load the book from a file or database
-    // This is a placeholder function. You can implement the actual loading logic here.
-    println!("Loading EPUB book from path: {}", path);
-    Err("Not implemented".to_string())
-}
+    // Create books directory if it doesn't exist
+    let books_dir = app_dir.join("books");
+    std::fs::create_dir_all(&books_dir)
+        .map_err(|e| format!("Failed to create books directory: {}", e))?;
 
-// load the imported epub file previously
-#[tauri::command]
-pub fn load_imported_epub_file(path: &str) -> Result<Vec<EpubBook>, String> {
-    // TODO: Implement the logic to load the imported EPUB file
-    // Load the book from a file or database
-    // This is a placeholder function. You can implement the actual loading logic here.
-    println!("Loading imported EPUB book from path: {}", path);
-    Err("Not implemented".to_string())
+    // generate md5 hash of origin file
+    let origin_hash = calculate_md5_hash(origin_path)?;
+
+    // compare hash with existing files
+    // scan books dir
+    if let Some(existing_path) = compare_if_has_exists(&books_dir, &origin_hash) {
+        // if file exists, return local path
+        return Ok(existing_path);
+    }
+
+    // if not, copy file to books directory
+    // Create a unique directory for this book
+    let book_dir_name = generate_random_string(10);
+    let book_dir = books_dir.join(&book_dir_name);
+    std::fs::create_dir_all(&book_dir)
+        .map_err(|e| format!("Failed to create book directory: {}", e))?;
+
+    // Keep the original file name if possible, or use a generic name
+    let origin_file_name = Path::new(origin_path)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("book.epub");
+
+    let dest_path = book_dir.join(origin_file_name);
+
+    // Copy the file from origin path to the new path
+    std::fs::copy(origin_path, &dest_path).map_err(|e| format!("Failed to copy file: {}", e))?;
+
+    // Save the hash to a file inside the book directory
+    let hash_file_path = book_dir.join("file_hash.txt");
+    std::fs::write(hash_file_path, origin_hash)
+        .map_err(|e| format!("Failed to write hash file: {}", e))?;
+
+    // return local path
+    Ok(dest_path.to_string_lossy().to_string())
 }

@@ -1,0 +1,8 @@
+[package]
+name = "epub-reader"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+epub = "2.1.3"
+urlencoding = "2.1.3"

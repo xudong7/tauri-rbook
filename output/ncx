@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+  <head>
+    <meta name="dtb:uid" content="urn:isbn:9784046827647" />
+    <meta name="dtb:depth" content="2" />
+    <meta name="dtb:totalPageCount" content="0" />
+    <meta name="dtb:maxPageNumber" content="0" />
+  </head>
+<docTitle>
+  <text>义妹生活 11</text>
+</docTitle>
+<navMap>
+  <navPoint id="navPoint1">
+    <navLabel>
+      <text>封面</text>
+    </navLabel>
+    <content src="Text/%2A%2A%3F%3F%3F%3F%2A%3A%2A%3A%2A%3A%2A%3A%2A%3A%3F%7C%2A%3A%2A%2A%2A%3A%2A%3A%2A%3A%3A%7C.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint2">
+    <navLabel>
+      <text>标题</text>
+    </navLabel>
+    <content src="Text/%2A%3A%2A%3A%7C%7C%2A%3A%2A%2A%7C%3A%2A%3A%2A%3A%7C%7C%2A%3A%2A%2A%3F%7C%2A%3A%2A%2A%2A%3A.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint3">
+    <navLabel>
+      <text>制作信息</text>
+    </navLabel>
+    <content src="Text/%2A%3A%2A%2A%3F%3F%2A%3A%2A%2A%2A%3A%2A%3A%2A%3A%7C%3A%2A%3A%2A%3A%7C%3A%2A%2A%3F%3F%7C%3F%2A%3A%2A%2A%3A%3A%2A%3A%2A%2A%2A%3A.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint4">
+    <navLabel>
+      <text>简介</text>
+    </navLabel>
+    <content src="Text/%2A%3A%2A%3A%7C%3A%2A%3A%2A%3A%7C%3F%2A%3A%2A%2A%3F%3F%2A%3A%2A%2A%3F%3F%2A%2A%3F%3F%7C%3F%2A%3A%2A%3A%3A%7C%2A%3A%3A%2A%2A%3A.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint5">
+    <navLabel>
+      <text>目录</text>
+    </navLabel>
+    <content src="Text/%2A%2A%3F%7C%3A%7C%2A%2A%7C%3F%3F%3F%2A%2A%7C%7C%7C%3F.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint6">
+    <navLabel>
+      <text>序章 浅村悠太</text>
+    </navLabel>
+    <content src="Text/%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%3A%7C%2A%2A%3F%3F%7C%3F%2A%3A%2A%3A%3A%2A%2A%3A%2A%3A%7C%7C%2A%3A%2A%2A%2A%3A%2A%3A%2A%3A%3A%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint7">
+    <navLabel>
+      <text>9月15日（星期三） 浅村悠太</text>
+    </navLabel>
+    <content src="Text/%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%3A%7C%2A%2A%3F%3F%7C%3F%2A%3A%2A%3A%3A%2A%2A%3A%2A%3A%7C%7C%2A%3A%2A%2A%2A%3A%2A%3A%2A%3A%3A%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%3F.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint8">
+    <navLabel>
+      <text>9月15日（星期三） 绫濑沙季</text>
+    </navLabel>
+    <content src="Text/%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%3A%7C%2A%2A%3F%3F%7C%3F%2A%3A%2A%3A%3A%2A%2A%3A%2A%3A%7C%7C%2A%3A%2A%2A%2A%3A%2A%3A%2A%3A%3A%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%7C%3A%2A%2A.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint9">
+    <navLabel>
+      <text>9月20日（星期一•祝日） 浅村悠太</text>
+    </navLabel>
+    <content src="Text/%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%3A%7C%2A%2A%3F%3F%7C%3F%2A%3A%2A%3A%3A%2A%2A%3A%2A%3A%7C%7C%2A%3A%2A%2A%2A%3A%2A%3A%2A%3A%3A%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%7C%3A%2A%3A.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint10">
+    <navLabel>
+      <text>9月20日（星期一•祝日） 绫濑沙季</text>
+    </navLabel>
+    <content src="Text/%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%3A%7C%2A%2A%3F%3F%7C%3F%2A%3A%2A%3A%3A%2A%2A%3A%2A%3A%7C%7C%2A%3A%2A%2A%2A%3A%2A%3A%2A%3A%3A%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%7C%3A%3A%2A.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint11">
+    <navLabel>
+      <text>9月23日（星期四•祝日） 浅村悠太</text>
+    </navLabel>
+    <content src="Text/%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%3A%7C%2A%2A%3F%3F%7C%3F%2A%3A%2A%3A%3A%2A%2A%3A%2A%3A%7C%7C%2A%3A%2A%2A%2A%3A%2A%3A%2A%3A%3A%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%7C%3A%3A%3A.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint12">
+    <navLabel>
+      <text>9月23日（星期四•祝日） 绫濑沙季</text>
+    </navLabel>
+    <content src="Text/%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%3A%7C%2A%2A%3F%3F%7C%3F%2A%3A%2A%3A%3A%2A%2A%3A%2A%3A%7C%7C%2A%3A%2A%2A%2A%3A%2A%3A%2A%3A%3A%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%7C%3A%3A%7C.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint13">
+    <navLabel>
+      <text>9月24日（星期五） 浅村悠太</text>
+    </navLabel>
+    <content src="Text/%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%3A%7C%2A%2A%3F%3F%7C%3F%2A%3A%2A%3A%3A%2A%2A%3A%2A%3A%7C%7C%2A%3A%2A%2A%2A%3A%2A%3A%2A%3A%3A%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%7C%3A%7C%3A.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint14">
+    <navLabel>
+      <text>10月9日（星期六） 浅村悠太</text>
+    </navLabel>
+    <content src="Text/%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%3A%7C%2A%2A%3F%3F%7C%3F%2A%3A%2A%3A%3A%2A%2A%3A%2A%3A%7C%7C%2A%3A%2A%2A%2A%3A%2A%3A%2A%3A%3A%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%7C%3A%7C%7C.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint15">
+    <navLabel>
+      <text>10月10日（星期日） 浅村悠太</text>
+    </navLabel>
+    <content src="Text/%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%3A%7C%2A%2A%3F%3F%7C%3F%2A%3A%2A%3A%3A%2A%2A%3A%2A%3A%7C%7C%2A%3A%2A%2A%2A%3A%2A%3A%2A%3A%3A%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%7C%3A%7C%3F.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint16">
+    <navLabel>
+      <text>尾声 绫濑沙季的日记</text>
+    </navLabel>
+    <content src="Text/%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%3A%7C%2A%2A%3F%3F%7C%3F%2A%3A%2A%3A%3A%2A%2A%3A%2A%3A%7C%7C%2A%3A%2A%2A%2A%3A%2A%3A%2A%3A%3A%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint17">
+    <navLabel>
+      <text>后记</text>
+    </navLabel>
+    <content src="Text/%2A%3A%2A%3A%3A%2A%2A%3A%2A%3A%2A%3A%2A%3A%2A%2A%3F%7C%2A%3A%2A%3A%2A%3A.xhtml" />
+  </navPoint>
+  <navPoint id="navPoint18">
+    <navLabel>
+      <text>特典合集</text>
+    </navLabel>
+    <content src="Text/%2A%3A%2A%3A%7C%3A%2A%3A%2A%3A%3A%2A%2A%3A%2A%2A%2A%3A%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%7C%3A%2A%2A%3F%3F%7C%3F%2A%3A%2A%2A%3F%7C%2A%3A%2A%3A%7C%3A%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%3F.xhtml" />
+    <navPoint id="navPoint19">
+      <navLabel>
+        <text>电子书特典 『卡拉OK女子会』</text>
+      </navLabel>
+      <content src="Text/%2A%3A%2A%3A%7C%3A%2A%3A%2A%3A%3A%2A%2A%3A%2A%2A%2A%3A%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%7C%3A%2A%2A%3F%3F%7C%3F%2A%3A%2A%2A%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%3F.xhtml" />
+    </navPoint>
+    <navPoint id="navPoint20">
+      <navLabel>
+        <text>虎穴特典 『卡拉OK男子会』</text>
+      </navLabel>
+      <content src="Text/%2A%3A%2A%3A%7C%3A%2A%3A%2A%3A%3A%2A%2A%3A%2A%2A%2A%3A%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%7C%3A%2A%2A%3F%3F%7C%3F%2A%3A%2A%2A%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%7C%3A%2A%2A.xhtml" />
+    </navPoint>
+    <navPoint id="navPoint21">
+      <navLabel>
+        <text>蜜瓜特典 『即使回忆会消逝』</text>
+      </navLabel>
+      <content src="Text/%2A%3A%2A%3A%7C%3A%2A%3A%2A%3A%3A%2A%2A%3A%2A%2A%2A%3A%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%7C%3A%2A%2A%3F%3F%7C%3F%2A%3A%2A%2A%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%7C%3A%2A%3A.xhtml" />
+    </navPoint>
+    <navPoint id="navPoint22">
+      <navLabel>
+        <text>A店特典 『读书的哈姆雷特』</text>
+      </navLabel>
+      <content src="Text/%2A%3A%2A%3A%7C%3A%2A%3A%2A%3A%3A%2A%2A%3A%2A%2A%2A%3A%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%7C%3A%2A%2A%3F%3F%7C%3F%2A%3A%2A%2A%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%7C%3A%3A%2A.xhtml" />
+    </navPoint>
+    <navPoint id="navPoint23">
+      <navLabel>
+        <text>Gamers特典 『误解』</text>
+      </navLabel>
+      <content src="Text/%2A%3A%2A%3A%7C%3A%2A%3A%2A%3A%3A%2A%2A%3A%2A%2A%2A%3A%2A%2A%3F%3F%3F%3F%2A%3A%2A%2A%7C%3A%2A%2A%3F%3F%7C%3F%2A%3A%2A%2A%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%3A%7C%3F%7C%2A%2A%7C%3A%3A%3A.xhtml" />
+    </navPoint>
+  </navPoint>
+</navMap>
+</ncx>

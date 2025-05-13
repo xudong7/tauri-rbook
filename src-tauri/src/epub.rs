@@ -177,3 +177,11 @@ fn load_epub_file_by_given_path(path: &str) -> Result<EpubBook, String> {
 
     Ok(book)
 }
+
+
+// load all default epub files
+#[tauri::command]
+fn load_all_default_epub_files(app_handle: AppHandle) -> Result<Vec<EpubBook>, String> {
+    // TODO: implement this function
+    Ok(vec![])
+}

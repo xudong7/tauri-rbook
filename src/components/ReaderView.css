@@ -90,16 +90,90 @@
   cursor: not-allowed;
 }
 
-.reader-toolbar span {
-  margin: 0 10px;
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
 }
 
-.reader-toolbar .page-counter {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-  padding: 4px 8px;
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 12px;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  background-color: #f0f0f0;
+}
+
+.instruction {
+  font-size: 1.5rem;
+  color: #666;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.html-view-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #ffffff;
+  height: calc(100vh - 60px);
+}
+
+.html-content-viewer {
+  flex: 1;
+  overflow: auto;
+  padding: 0;
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.html-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  margin: 0;
+  padding: 0;
+  background: #ffffff;
+}
+
+.reader-toolbar .icon-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.reader-toolbar .icon-button:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.reader-toolbar button:hover:not(:disabled) {
+  background-color: #666;
+}
+
+.reader-toolbar button:disabled {
+  background-color: #333;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .loading-spinner {
@@ -134,307 +208,33 @@
   margin-top: 20px;
 }
 
-.content-container {
+
+
+.html-view-container {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin: 15px;
   overflow: hidden;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  background: #ffffff;
+  height: calc(100vh - 60px);
+}
+
+.html-content-viewer {
+  flex: 1;
+  overflow: auto;
+  padding: 0;
   position: relative;
-}
-
-.content-viewer {
-  flex: 1;
-  overflow-y: auto;
-  padding: 2em 3em;
-  line-height: 1.7;
-  font-size: 1.05em;
-  max-width: 900px;
-  margin: 0 auto;
+  height: 100%;
   width: 100%;
-}
-
-/* .empty-content {
-  flex: 1;
-  background-color: white;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  line-height: 1.6;
-} */
-
-.cover-container {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  flex: 1;
-  margin: 20px 0;
+  flex-direction: column;
 }
 
-.book-cover {
-  max-height: 80vh;
-  max-width: 90%;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
-}
-
-/* Navigation Arrows */
-.nav-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 50px;
-  color: rgba(0, 0, 0, 0.3);
-  cursor: pointer;
-  z-index: 20;
-  transition: all 0.2s ease;
-  width: 50px;
-  height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 5px;
-  background-color: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-}
-
-.nav-arrow:hover {
-  color: rgba(0, 0, 0, 0.7);
-  background-color: rgba(255, 255, 255, 0.8);
-}
-
-.nav-arrow-left {
-  left: 10px;
-}
-
-.nav-arrow-right {
-  right: 10px;
-}
-
-.toc-sidebar {
-  position: absolute;
-  top: 60px;
-  left: 0;
-  bottom: 0;
-  width: 300px;
-  background-color: white;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-  z-index: 5;
-  overflow-y: auto;
-  transition: transform 0.3s ease;
-}
-
-.toc-header,
-.debug-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 15px;
-  border-bottom: 1px solid #eee;
-}
-
-.toc-header h3,
-.debug-header h3 {
-  margin: 0;
-}
-
-.close-btn {
-  background: none;
+.html-iframe {
+  width: 100%;
+  height: 100%;
   border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #999;
-}
-
-.close-btn:hover {
-  color: #333;
-}
-
-.toc-list {
-  list-style: none;
+  margin: 0;
   padding: 0;
-  margin: 0;
-}
-
-.toc-list li {
-  padding: 10px 15px;
-  border-bottom: 1px solid #eee;
-  cursor: pointer;
-}
-
-.toc-list li:hover {
-  background-color: #f0f0f0;
-}
-
-.debug-panel {
-  position: absolute;
-  top: 60px;
-  right: 0;
-  bottom: 0;
-  width: 400px;
-  background-color: white;
-  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-  z-index: 5;
-  overflow-y: auto;
-  transition: transform 0.3s ease;
-}
-
-.debug-content {
-  padding: 15px;
-}
-
-.debug-content h4 {
-  margin-top: 15px;
-  margin-bottom: 5px;
-  color: #333;
-}
-
-.debug-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid #eee;
-  font-size: 0.9em;
-  font-family: monospace;
-}
-
-.debug-list li {
-  padding: 5px 10px;
-  border-bottom: 1px solid #eee;
-  word-break: break-all;
-}
-
-.resources-list {
-  max-height: 300px;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-  .toc-sidebar,
-  .debug-panel {
-    width: 100%;
-  }
-}
-
-/* Styling for the epub content */
-.content-viewer :deep(img) {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  margin: 1.5em auto;
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.content-viewer :deep(figure) {
-  margin: 2em 0;
-  text-align: center;
-  break-inside: avoid;
-  page-break-inside: avoid;
-  background-color: rgba(0, 0, 0, 0.02);
-  padding: 1em;
-  border-radius: 8px;
-}
-
-.content-viewer :deep(figure.figright) {
-  float: right;
-  margin-left: 2em;
-  margin-bottom: 1.5em;
-  max-width: 45%;
-  clear: right;
-}
-
-.content-viewer :deep(figure.figleft) {
-  float: left;
-  margin-right: 2em;
-  margin-bottom: 1.5em;
-  max-width: 45%;
-  clear: left;
-}
-
-.content-viewer :deep(figure img) {
-  max-width: 100%;
-  height: auto;
-  margin: 0;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.content-viewer :deep(figure figcaption) {
-  font-size: 0.9em;
-  color: #555;
-  margin-top: 12px;
-  font-style: italic;
-  line-height: 1.4;
-}
-
-.content-viewer :deep(h1),
-.content-viewer :deep(h2),
-.content-viewer :deep(h3),
-.content-viewer :deep(h4),
-.content-viewer :deep(h5),
-.content-viewer :deep(h6) {
-  margin-top: 1.5em;
-  margin-bottom: 0.5em;
-  line-height: 1.3;
-}
-
-.content-viewer :deep(p) {
-  margin: 1em 0;
-  line-height: 1.6;
-}
-
-.content-viewer :deep(a) {
-  color: #0066cc;
-  text-decoration: none;
-}
-
-.content-viewer :deep(a:hover) {
-  text-decoration: underline;
-}
-
-/* Additional EPUB-specific styling */
-.content-viewer :deep(.chapter) {
-  margin-bottom: 2em;
-}
-
-.content-viewer :deep(.x-ebookmaker) {
-  font-family: "Georgia", serif;
-}
-
-.content-viewer :deep(.nobreak) {
-  white-space: nowrap;
-}
-
-/* Support for common EPUB image layouts */
-.content-viewer :deep(.illowp52),
-.content-viewer :deep(.figcenter),
-.content-viewer :deep(.centered) {
-  text-align: center;
-  margin: 2em auto;
-  max-width: 80%;
-  padding: 0.5em;
-  background-color: rgba(0, 0, 0, 0.01);
-  border-radius: 8px;
-}
-
-.content-viewer :deep(.w100) {
-  width: 100%;
-  max-width: 100%;
-  height: auto;
-  margin: 1.5em 0;
-}
-
-/* Clear floats after sections with floating images */
-.content-viewer :deep(section)::after,
-.content-viewer :deep(div.chapter)::after,
-.content-viewer :deep(p)::after {
-  content: "";
-  display: table;
-  clear: both;
+  background: #ffffff;
 }

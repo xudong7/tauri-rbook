@@ -1,112 +1,48 @@
-import { invoke } from '@tauri-apps/api/core';
-import { open } from '@tauri-apps/plugin-dialog';
+import { invoke } from "@tauri-apps/api/core";
 
-export interface EpubFile {
-  content: number[];
-  mime: string;
-  path: string;
-}
-
-export interface EpubMetadata {
-  title: string | null;
-  author: string | null;
-  description: string | null;
-  language: string | null;
-  publisher: string | null;
-  toc: string[];
-  spine: string[];
-  cover_id: string | null;
-}
-
-export interface EpubBook {
-  metadata: EpubMetadata;
-  resources: Record<string, EpubFile>;
-  current_page: number;
+/**
+ * 表示HTML内容及相关图片的接口
+ */
+export interface HtmlWithImages {
+  html_content: string;
+  images: ImageItem[];
 }
 
 /**
- * Opens a file dialog to select an EPUB file and reads its contents
+ * 图片项接口
  */
-export const openEpubFile = async (): Promise<{ path: string; book: EpubBook } | null> => {
-  // Open file dialog
-  const selected = await open({
-    multiple: false,
-    filters: [{
-      name: 'EPUB',
-      extensions: ['epub']
-    }]
-  });
-  
-  if (!selected || Array.isArray(selected)) {
-    return null;
+export interface ImageItem {
+  path: string; // 图片在HTML中的相对路径
+  content: string; // base64编码的图片内容
+  mime_type: string; // 图片的MIME类型
+}
+
+/**
+ * 提交EPUB文件路径，获取转换后的HTML文件路径
+ * @param path EPUB文件路径
+ * @returns HTML文件路径
+ */
+export const getEpubToHtmlFile = async (path: string): Promise<string> => {
+  try {
+    return await invoke<string>("get_epub_to_html_file_command", { path });
+  } catch (error) {
+    console.error("Error converting EPUB to HTML:", error);
+    throw error;
   }
-  
-  const path = selected as string;
-  
-  // Read the EPUB file
-  const book = await invoke('read_epub_file', { path }) as EpubBook;
-  
-  return { path, book };
 };
 
 /**
- * Gets the content of a specific page from an EPUB file
+ * 提交EPUB文件路径，获取HTML内容和相关图片
+ * @param path EPUB文件路径
+ * @returns HTML内容和相关图片
  */
-export const getEpubPage = async (path: string, pageIndex: number): Promise<string> => {
-  return await invoke('get_epub_page', { path, pageIndex }) as string;
-};
-
-/**
- * Converts binary content to base64
- */
-export const binaryToBase64 = (content: number[]): string => {
-  const uint8Array = new Uint8Array(content);
-  let binaryString = '';
-  uint8Array.forEach(byte => {
-    binaryString += String.fromCharCode(byte);
-  });
-  return btoa(binaryString);
-};
-
-/**
- * Gets the data URL for a resource in the EPUB book
- */
-export const getResourceDataUrl = (book: EpubBook, path: string): string => {
-  if (!book || !book.resources[path]) return '';
-  
-  const resource = book.resources[path];
-  return `data:${resource.mime};base64,${binaryToBase64(resource.content)}`;
-};
-
-/**
- * Processes HTML content from an EPUB page to replace relative URLs with data URLs
- */
-export const processEpubHtml = (html: string, book: EpubBook): string => {
-  // Replace relative URLs with data URLs
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
-  
-  // Process images
-  doc.querySelectorAll('img').forEach(img => {
-    const src = img.getAttribute('src');
-    if (src && !src.startsWith('data:') && !src.startsWith('http')) {
-      const dataUrl = getResourceDataUrl(book, src);
-      if (dataUrl) {
-        img.setAttribute('src', dataUrl);
-      }
-    }
-  });
-  
-  // Process stylesheets
-  doc.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
-    const href = link.getAttribute('href');
-    if (href && !href.startsWith('data:') && !href.startsWith('http')) {
-      const dataUrl = getResourceDataUrl(book, href);
-      if (dataUrl) {
-        link.setAttribute('href', dataUrl);
-      }
-    }
-  });
-  
-  return doc.documentElement.outerHTML;
+export const getEpubHtmlWithImages = async (
+  path: string
+): Promise<HtmlWithImages> => {
+  try {
+    return await invoke<HtmlWithImages>("get_epub_html_with_images_command", { path });
+  } catch (error) {
+    console.error("Error getting HTML with images:", error);
+    throw error;
+  }
 };

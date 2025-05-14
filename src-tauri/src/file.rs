@@ -1,79 +1,65 @@
-use rand::{thread_rng, Rng};
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::Read;
 use std::path::Path;
 
-// compare hash with existing files to find if the file already exists
-pub fn compare_if_has_exists(books_dir: &std::path::PathBuf, origin_hash: &String) -> Option<String> {
-    // recursive scan books directory to find matching hash
-    if let Ok(entries) = std::fs::read_dir(books_dir) {
-        for entry in entries {
-            if let Ok(entry) = entry {
-                let path = entry.path();
-
-                if path.is_dir() {
-                    // Check if this directory contains a hash file
-                    let hash_file_path = path.join("file_hash.txt");
-                    if hash_file_path.exists() {
-                        if let Ok(hash_content) = std::fs::read_to_string(&hash_file_path) {
-                            // Compare the hash
-                            if hash_content == *origin_hash {
-                                // Found matching hash, now find the epub file in this directory
-                                if let Ok(dir_entries) = std::fs::read_dir(&path) {
-                                    for file_entry in dir_entries {
-                                        if let Ok(file_entry) = file_entry {
-                                            let file_path = file_entry.path();
-                                            if file_path.extension().and_then(|e| e.to_str())
-                                                == Some("epub")
-                                            {
-                                                // Found the epub file with matching hash
-                                                return Some(
-                                                    file_path.to_string_lossy().to_string(),
-                                                );
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+// 遍历目录，查找 HTML 文件
+// 如果找到多个 HTML 文件，优先选择 index.html
+fn scan_directory(dir: &Path, html_files: &mut Vec<String>) -> std::io::Result<()> {
+    if dir.is_dir() {
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                scan_directory(&path, html_files)?;
+            } else if let Some(ext) = path.extension() {
+                if ext == "html" || ext == "htm" {
+                    html_files.push(path.to_string_lossy().to_string());
                 }
             }
         }
     }
-
-    None
+    Ok(())
 }
 
-// Calculate MD5 hash of a file
+// 查找解压目录中的 HTML 文件
+pub fn find_html_file(extract_dir: &str) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    let mut html_files = Vec::new();
+
+    // 遍历解压目录，查找 HTML 文件
+    scan_directory(Path::new(extract_dir), &mut html_files)?;
+
+    // 如果找到多个 HTML 文件，优先选择 index.html
+    if !html_files.is_empty() {
+        // 优先返回 index.html
+        if let Some(index_html) = html_files.iter().find(|path| {
+            let file_name = Path::new(path).file_name().and_then(|name| name.to_str());
+            file_name
+                .map(|name| name.to_lowercase() == "index.html")
+                .unwrap_or(false)
+        }) {
+            return Ok(Some(index_html.clone()));
+        }
+
+        // 否则返回第一个 HTML 文件
+        return Ok(Some(html_files[0].clone()));
+    }
+
+    Ok(None)
+}
+
+// 计算文件的 MD5 哈希值
 pub fn calculate_md5_hash(file_path: &str) -> Result<String, String> {
     let path = Path::new(file_path);
 
-    // Open the file
     let mut file =
         File::open(path).map_err(|e| format!("Failed to open file for hashing: {}", e))?;
 
-    // Read file content
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)
         .map_err(|e| format!("Failed to read file for hashing: {}", e))?;
 
-    // Calculate MD5 hash
     let digest = md5::compute(&buffer);
 
-    // Return the hash as a hexadecimal string
+    // 返回 MD5 哈希值的十六进制字符串
     Ok(format!("{:x}", digest))
-}
-
-// Generate a random string to use as file name
-pub fn generate_random_string(length: usize) -> String {
-    const CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyz0123456789";
-    let mut rng = thread_rng();
-
-    (0..length)
-        .map(|_| {
-            let idx = rng.gen_range(0..CHARSET.len());
-            CHARSET[idx] as char
-        })
-        .collect()
 }

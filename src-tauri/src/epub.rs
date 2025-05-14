@@ -1,187 +1,158 @@
-use crate::file::{calculate_md5_hash, compare_if_has_exists, generate_random_string};
-use crate::model::{EpubBook, EpubFile, EpubMetadata, SpineItem, TocItem};
-use anyhow::Result;
-use epub::doc::EpubDoc;
-use std::collections::HashMap;
+use crate::convert::{download_converted_file, upload_epub_to_fileformat_api};
+use crate::file::{calculate_md5_hash, find_html_file};
+use base64::{engine::general_purpose, Engine as _};
+use std::fs;
 use std::path::Path;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
+use tauri::Manager;
 
-// read epub file from the given path
-#[tauri::command]
-pub fn read_epub_file(app_handle: AppHandle, path: &str) -> Result<EpubBook, String> {
-    // save the epub file and get returned path
-    let local_path = save_epub_file(app_handle, path)?;
-    let local_path = local_path.as_str();
+// 调用函数，传入epub文件路径，得到转换后的html文件路径
+pub async fn get_epub_to_html_file(app_handle: AppHandle, path: &str) -> Result<String, String> {
+    // 获取epub文件名和哈希值
+    let epub_file_name = Path::new(path)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("unknown");
 
-    println!("local_path: {}", local_path);
-
-    // load the epub file by given path
-    load_epub_file_by_given_path(local_path).map_err(|e| format!("Failed to load epub file: {}", e))
-}
-
-// Get a specific page from the epub file
-#[tauri::command]
-pub fn get_epub_page(path: &str, page_index: usize) -> Result<String, String> {
-    let mut doc = match EpubDoc::new(path) {
-        Ok(doc) => doc,
-        Err(e) => return Err(format!("Failed to open epub file: {}", e)),
+    // 计算文件的MD5哈希值作为目录名，确保不同文件使用不同目录
+    let file_hash = match calculate_md5_hash(path) {
+        Ok(hash) => hash,
+        Err(e) => return Err(format!("Failed to calculate file hash: {}", e)),
     };
 
-    // Try to navigate to the specified page
-    if page_index >= doc.spine.len() {
-        return Err(format!("Page index out of range: {}", page_index));
-    }
-
-    doc.set_current_page(page_index);
-    // Get the current page content
-    match doc.get_current_str() {
-        Some((content, _)) => Ok(content),
-        None => Err("Failed to get page content".to_string()),
-    }
-}
-
-// save the epub file to the default directory
-// if the file already exists, return the existing path
-fn save_epub_file(app_handle: AppHandle, origin_path: &str) -> Result<String, String> {
+    // 获取应用数据目录，如 C:\Users\XU Dong\AppData\Roaming\com.rbook.app
     let app_dir = app_handle
         .path()
         .app_data_dir()
         .map_err(|e| format!("unable to get dir: {}", e))?;
+    let book_dir = app_dir.join("books").join(&file_hash);
+    let epub_copy_path = book_dir.join(epub_file_name).to_string_lossy().to_string();
+    let zip_output_path = book_dir
+        .join(format!("{}.zip", epub_file_name))
+        .to_string_lossy()
+        .to_string();
+    let extract_dir = book_dir.join("extracted").to_string_lossy().to_string();
 
-    // Create books directory if it doesn't exist
-    let books_dir = app_dir.join("books");
-    std::fs::create_dir_all(&books_dir)
-        .map_err(|e| format!("Failed to create books directory: {}", e))?;
-
-    // generate md5 hash of origin file
-    let origin_hash = calculate_md5_hash(origin_path)?;
-
-    // compare hash with existing files
-    // scan books dir
-    if let Some(existing_path) = compare_if_has_exists(&books_dir, &origin_hash) {
-        // if file exists, return local path
-        return Ok(existing_path);
+    println!("Using app data directory: {}", book_dir.display()); // 确保目录存在
+    if let Err(e) = fs::create_dir_all(&book_dir) {
+        return Err(format!("Failed to create books directory: {}", e));
     }
 
-    // if not, copy file to books directory
-    // Create a unique directory for this book
-    let book_dir_name = generate_random_string(10);
-    let book_dir = books_dir.join(&book_dir_name);
-    std::fs::create_dir_all(&book_dir)
-        .map_err(|e| format!("Failed to create book directory: {}", e))?;
-
-    // Keep the original file name if possible, or use a generic name
-    let origin_file_name = Path::new(origin_path)
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("book.epub");
-
-    let dest_path = book_dir.join(origin_file_name);
-
-    // Copy the file from origin path to the new path
-    std::fs::copy(origin_path, &dest_path).map_err(|e| format!("Failed to copy file: {}", e))?;
-
-    // Save the hash to a file inside the book directory
+    // 保存文件哈希值，便于以后查询
     let hash_file_path = book_dir.join("file_hash.txt");
-    std::fs::write(hash_file_path, origin_hash)
-        .map_err(|e| format!("Failed to write hash file: {}", e))?;
-
-    // return local path
-    Ok(dest_path.to_string_lossy().to_string())
-}
-
-// load epub file by given path
-// return EpubBook
-fn load_epub_file_by_given_path(path: &str) -> Result<EpubBook, String> {
-    let doc = match EpubDoc::new(path) {
-        Ok(doc) => doc,
-        Err(e) => return Err(format!("Failed to open epub file: {}", e)),
-    };
-    // Extract metadata
-    let title = doc.mdata("title").map(|s| s.to_string());
-    let author = doc.mdata("creator").map(|s| s.to_string());
-    let description = doc.mdata("description").map(|s| s.to_string());
-    let language = doc.mdata("language").map(|s| s.to_string());
-    let publisher = doc.mdata("publisher").map(|s| s.to_string());
-    let toc: Vec<TocItem> = doc
-        .toc
-        .clone()
-        .into_iter()
-        .map(|item| TocItem {
-            label: item.label.clone(),
-            content: item.content.to_string_lossy().to_string(),
-            children: item
-                .children
-                .into_iter()
-                .map(|child| TocItem {
-                    label: child.label.clone(),
-                    content: child.content.to_string_lossy().to_string(),
-                    children: Vec::new(),
-                    play_order: child.play_order,
-                })
-                .collect(),
-            play_order: item.play_order,
-        })
-        .collect();
-
-    let spine: Vec<SpineItem> = doc
-        .spine
-        .iter()
-        .map(|item| SpineItem {
-            idref: item.idref.clone(),
-            id: item.id.clone(),
-            properties: item.properties.clone(),
-            linear: item.linear,
-        })
-        .collect();
-
-    // Get cover ID
-    let cover_id = doc.get_cover_id().map(|s| s.to_string());
-
-    // Create resources map
-    let mut resources = HashMap::new();
-    let mut doc_clone = match EpubDoc::new(path) {
-        Ok(doc) => doc,
-        Err(e) => return Err(format!("Failed to open epub file for resources: {}", e)),
-    };
-
-    doc.resources.keys().for_each(|k| {
-        if let Some(content) = doc_clone.get_resource(k) {
-            let (content, mime) = content;
-            let part = EpubFile {
-                content: content.to_vec(),
-                mime: mime.to_string(),
-                path: k.clone(),
-            };
-            resources.insert(k.clone(), part);
+    if !hash_file_path.exists() {
+        if let Err(e) = fs::write(&hash_file_path, &file_hash) {
+            println!("Warning: Failed to write hash file: {}", e);
         }
-    });
+    }
 
-    // Construct the book
-    let metadata = EpubMetadata {
-        title,
-        author,
-        description,
-        language,
-        publisher,
-        toc,
-        spine,
-        cover_id,
+    // 保存原始EPUB文件
+    if !Path::new(&epub_copy_path).exists() {
+        if let Err(e) = fs::copy(path, &epub_copy_path) {
+            println!("Warning: Failed to copy EPUB file: {}", e);
+        }
+    }
+
+    // 检查是否已经转换过，如果已存在HTML文件就直接返回
+    if Path::new(&extract_dir).exists() {
+        if let Ok(Some(file)) = find_html_file(&extract_dir) {
+            // 检查文件是否存在
+            if Path::new(&file).exists() {
+                println!("Using existing HTML file: {}", file);
+                return Ok(file);
+            }
+        }
+    }
+
+    // 上传 EPUB 文件到 API
+    let response = match upload_epub_to_fileformat_api(path).await {
+        Ok(response) => response,
+        Err(e) => return Err(format!("Failed to upload EPUB file: {}", e)),
     };
 
-    let book = EpubBook {
-        metadata,
-        resources,
-        current_page: 0,
+    // 下载并解压转换后的文件
+    if let Err(e) = download_converted_file(&response.id, &zip_output_path, &extract_dir).await {
+        return Err(format!("Failed to download converted file: {}", e));
+    }
+
+    // 查找解压后的 HTML 文件
+    let html_file = match find_html_file(&extract_dir) {
+        Ok(Some(file)) => file,
+        Ok(None) => return Err("No HTML file found in the extracted directory".to_string()),
+        Err(e) => return Err(format!("Error finding HTML file: {}", e)),
     };
 
-    Ok(book)
+    // 返回 HTML 文件路径
+    Ok(html_file)
 }
 
+// 获取HTML内容和相关图片
+pub async fn get_epub_html_with_images(
+    app_handle: AppHandle,
+    path: &str,
+) -> Result<crate::model::HtmlWithImages, String> {
+    // 首先获取HTML文件路径
+    let html_file_path = get_epub_to_html_file(app_handle, path).await?;
 
-// load all default epub files
-#[tauri::command]
-fn load_all_default_epub_files(app_handle: AppHandle) -> Result<Vec<EpubBook>, String> {
-    // TODO: implement this function
-    Ok(vec![])
+    // 读取HTML内容
+    let html_content = match std::fs::read_to_string(&html_file_path) {
+        Ok(content) => content,
+        Err(e) => return Err(format!("Failed to read HTML file: {}", e)),
+    };
+
+    // 查找images文件夹
+    let html_dir = Path::new(&html_file_path).parent().unwrap_or(Path::new(""));
+    let images_dir = html_dir.join("images");
+
+    let mut images = Vec::new();
+
+    // 如果images文件夹存在，读取其中的所有图片
+    if images_dir.exists() && images_dir.is_dir() {
+        let read_dir = match std::fs::read_dir(&images_dir) {
+            Ok(read_dir) => read_dir,
+            Err(e) => return Err(format!("Failed to read images directory: {}", e)),
+        };
+
+        for entry in read_dir {
+            if let Ok(entry) = entry {
+                let file_path = entry.path();
+                if file_path.is_file() {
+                    // 图片的相对路径，相对于HTML文件
+                    let relative_path = format!(
+                        "images/{}",
+                        file_path.file_name().unwrap_or_default().to_string_lossy()
+                    );
+
+                    // 读取图片内容
+                    if let Ok(file_content) = std::fs::read(&file_path) {
+                        // 获取MIME类型
+                        let mime_type = match file_path.extension().and_then(|ext| ext.to_str()) {
+                            Some("jpg") | Some("jpeg") => "image/jpeg".to_string(),
+                            Some("png") => "image/png".to_string(),
+                            Some("gif") => "image/gif".to_string(),
+                            Some("svg") => "image/svg+xml".to_string(),
+                            Some("webp") => "image/webp".to_string(),
+                            _ => "application/octet-stream".to_string(),
+                        };
+
+                        // Base64编码图片内容
+                        let content = general_purpose::STANDARD.encode(&file_content);
+
+                        // 添加到图片列表
+                        images.push(crate::model::ImageItem {
+                            path: relative_path,
+                            content,
+                            mime_type,
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    // 返回HTML内容和图片列表
+    Ok(crate::model::HtmlWithImages {
+        html_content,
+        images,
+    })
 }

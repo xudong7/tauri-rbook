@@ -25,16 +25,31 @@ const totalPages = ref<number>(0);
 const allPages = ref<string[]>([]);
 
 const noScrollStyle = `<style>
-  html, body { overflow: hidden!important; }
-  body::-webkit-scrollbar { display: none!important; }
+  html, body { overflow: hidden!important; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Serif', 'Times New Roman', serif!important;
+    font-size: 16px!important;
+    line-height: 1.6!important;
+    color: #333!important;
+    padding: 30px!important;
+    box-sizing: border-box!important;
+  }
+  p {
+    margin: 1em 0!important;
+    text-indent: 2em!important;
+  }
+  h1, h2, h3, h4, h5 {
+    margin: 1.5em 0 0.5em!important;
+    font-weight: bold!important;
+  }
   img {
     width: auto!important;
     height: auto!important;
-    max-width: 100%!important;
-    max-height: 100%!important;
+    max-width: 85%!important;
+    max-height: 85%!important;
     object-fit: contain;
     display: block;
-    margin: 0 auto!important;
+    margin: 1em auto!important;
   }
 </style>`;
 

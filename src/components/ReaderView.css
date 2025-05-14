@@ -2,323 +2,250 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  width: 100%;
-  position: relative;
   background-color: #f5f5f5;
+  overflow: hidden;
 }
 
 .reader-toolbar {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 10px;
-  background-color: #333;
-  color: white;
-  z-index: 10;
-  -webkit-app-region: drag;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  height: 48px;
+  z-index: 100;
+  flex-shrink: 0;
 }
 
 .left-controls {
   display: flex;
   align-items: center;
+  gap: 16px;
 }
 
 .window-controls {
   display: flex;
-  align-items: center;
-  -webkit-app-region: no-drag;
+  gap: 8px;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  color: #606266;
+}
+
+.icon-button:hover {
+  background-color: #f5f7fa;
 }
 
 .window-control-button {
-  width: 34px;
-  height: 34px;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: transparent;
-  color: white;
+  background: none;
   border: none;
-  margin-left: 5px;
   cursor: pointer;
-  transition: background-color 0.2s;
-  -webkit-app-region: no-drag;
+  padding: 8px;
+  border-radius: 4px;
+  color: #606266;
 }
 
 .window-control-button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #f5f7fa;
 }
 
 .close-button:hover {
-  background-color: #e81123;
-}
-
-.reader-toolbar button {
-  background-color: #4a4a4a;
+  background-color: #f56c6c;
   color: white;
-  border: none;
-  padding: 8px 16px;
+}
+
+.nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-button-inline {
+  background: none;
+  border: 1px solid #dcdfe6;
+  padding: 6px 12px;
   border-radius: 4px;
-  margin-right: 10px;
   cursor: pointer;
-  transition: background-color 0.2s;
-  -webkit-app-region: no-drag;
+  color: #606266;
 }
 
-.reader-toolbar .icon-button {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  background-color: rgba(255, 255, 255, 0.1);
+.page-button-inline:hover:not(:disabled) {
+  background-color: #f5f7fa;
+  border-color: #c0c4cc;
 }
 
-.reader-toolbar .icon-button:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.reader-toolbar button:hover:not(:disabled) {
-  background-color: #666;
-}
-
-.reader-toolbar button:disabled {
-  background-color: #333;
-  opacity: 0.5;
+.page-button-inline:disabled {
   cursor: not-allowed;
+  opacity: 0.5;
 }
 
-.loading-spinner {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: #fff;
-  animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.placeholder {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  background-color: #f0f0f0;
-}
-
-.instruction {
-  font-size: 1.5rem;
-  color: #666;
-  text-align: center;
-  margin-top: 20px;
+.page-indicator-inline {
+  color: #606266;
+  font-size: 14px;
 }
 
 .html-view-container {
   flex: 1;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
-  background: #f4efe1; /* 更改为与两列布局相同的背景色 */
-  height: calc(100vh - 60px);
-  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1); /* 添加内阴影 */
-  position: relative; /* 添加相对定位，为重新布局指示器做准备 */
+  position: relative;
+  padding: 20px;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.html-content-viewer {
-  flex: 1;
-  overflow: auto;
-  padding: 0;
-  position: relative;
-  height: 100%;
+.two-column-layout {
+  display: flex;
   width: 100%;
+  height: 100%;
+  justify-content: center;
+  perspective: 1000px;
+  max-width: 100%;
+  max-height: 100%;
+  gap: 0;
+}
+
+.column {
+  flex: none;
+  width: 50%;
+  background-color: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.3s ease;
   display: flex;
   flex-direction: column;
 }
 
-/* 添加页面翻转动画 */
-@keyframes pageFlip {
-  0% {
-    opacity: 0.9;
-    transform: scale(0.98);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
+.column:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
 }
 
 .html-iframe {
   width: 100%;
   height: 100%;
   border: none;
-  margin: 0;
-  padding: 0;
-  background: #fff9ee; /* 暖色背景模拟纸张 */
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
-  border-radius: 4px; /* 微弱的圆角增加视觉美感 */
-  animation: pageFlip 0.3s ease-in-out;
-  overflow: hidden !important; /* 确保没有滚动条 */
+  background-color: white;
+  padding: 40px;
+  box-sizing: border-box;
+  overflow: hidden !important;
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE 10+ */
 }
 
-/* 书籍双页式布局样式 */
-.two-column-layout {
-  display: flex;
-  width: 100%;
-  height: calc(100% - 40px); /* 减去书籍控制栏的高度 */
-  background-color: #f4efe1; /* 温暖的米色背景模拟书本颜色 */
-  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
-  position: relative;
+.html-iframe::-webkit-scrollbar {
+  display: none !important; /* Chrome/Safari/Webkit */
 }
 
-/* 添加书脊效果 */
-.two-column-layout::after {
+/* 添加页面翻页效果 */
+.page-transition-enter-active,
+.page-transition-leave-active {
+  transition: all 0.3s ease;
+}
+
+.page-transition-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.page-transition-leave-to {
+  opacity: 0;
+  transform: translateX(-30px);
+}
+
+/* 添加页面装饰 */
+.column::before {
   content: "";
   position: absolute;
   top: 0;
-  left: 50%;
-  width: 4px;
-  height: 100%;
-  background: linear-gradient(
-    to right,
-    rgba(0, 0, 0, 0.1) 0%,
-    rgba(0, 0, 0, 0.2) 50%,
-    rgba(0, 0, 0, 0.1) 100%
-  );
-  transform: translateX(-50%);
-  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
-  z-index: 2;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.05), transparent);
+  pointer-events: none;
+  z-index: 1;
 }
 
-.column {
-  flex: 0 0 50%; /* 固定50%宽度，不伸缩 */
-  height: 100%;
-  padding: 10px;
-  position: relative;
+.column::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.05), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 添加页面阴影效果 */
+.column.left-column {
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+}
+
+.column.right-column {
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+}
+
+/* 确保内容容器不会出现滚动条 */
+.column > * {
+  overflow: hidden !important;
+}
+
+.placeholder {
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
   height: 100%;
-  overflow: hidden !important; /* 确保没有滚动条 */
-  padding: 0;
-  position: relative;
-  width: 50%; /* 固定50%宽度 */
-  max-width: 50%; /* 确保每列不超过50%宽度 */
-  box-sizing: border-box;
+  color: #909399;
+  font-size: 16px;
 }
 
-.left-column {
-  border-right: 1px solid #ccc; /* 添加一条分隔线模拟书脊 */
-  box-shadow: 5px 0 10px -5px rgba(0, 0, 0, 0.1);
-  padding-right: 0; /* 移除右边距，最大化内容空间 */
-  background: url('data:image/svg+xml,%3Csvg width="6" height="100%25" xmlns="http://www.w3.org/2000/svg"%3E%3Crect width="1" height="100%25" fill="%23888" x="5" /%3E%3C/svg%3E')
-    right repeat-y;
-}
-
-.right-column {
-  padding-left: 0; /* 移除左边距，最大化内容空间 */
-}
-
-.book-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 16px;
-  background-color: #e8e2d0; /* 浅棕色背景 */
-  border-bottom: 1px solid #d8ceb5;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.page-button {
-  background-color: #8b7765; /* 棕色按钮 */
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.2s;
-  min-width: 80px; /* 确保按钮宽度足够 */
-}
-
-.page-button:hover:not(:disabled) {
-  background-color: #6d5c4d; /* 深棕色 */
-}
-
-.page-button:disabled {
-  background-color: #ccc;
-  color: #888;
-  cursor: not-allowed;
-}
-
-.page-indicator {
-  font-family: "Times New Roman", serif;
-  font-size: 0.9rem;
-  color: #5a4b3e;
-  padding: 0 10px;
-  font-weight: bold;
-}
-
-/* 添加针对重新布局指示器的样式 */
 .resize-hint {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 10;
   background-color: rgba(0, 0, 0, 0.7);
   color: white;
   padding: 12px 24px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  animation: fadeInOut 1s infinite alternate;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  border-radius: 4px;
+  z-index: 1000;
 }
 
-.hint-text {
-  font-size: 1rem;
-  font-weight: 500;
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-@keyframes fadeInOut {
-  from { opacity: 0.85; }
-  to { opacity: 1; }
-}
-
-/* 添加针对图片页的特殊样式 */
-.full-page-image-container {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #fff9ee;
-  padding: 10px;
-}
-
-/* 优化移动设备上的体验 */
-@media (max-width: 480px) {
-  .book-controls {
-    padding: 6px 10px;
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
   }
-  
-  .page-button {
-    padding: 3px 8px;
-    font-size: 0.85rem;
+  100% {
+    transform: rotate(360deg);
   }
-  
-  .page-indicator {
-    font-size: 0.8rem;
-  }
+}
+
+.column img,
+.html-iframe img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
 }

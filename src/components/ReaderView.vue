@@ -147,6 +147,7 @@ const styleForBookPages = `    <style>
         border: 1px solid #ddd;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         object-fit: contain; /* 确保图片保持比例 */
+        max-height: 75vh; /* 限制图片高度为视口高度的75% */
       }
       h1, h2, h3, h4, h5, h6 {
         margin-top: 0.8em;
@@ -198,226 +199,228 @@ const styleForBookPages = `    <style>
     </style>
   `;
 
-// 分割HTML内容到左右两栏，模拟书籍页面
-const splitContentForTwoColumns = (html: string) => {
-  try {
-    // 将HTML文档分割成页面大小的块，根据内容动态适配页面
-    const extractPages = (htmlContent: string) => {
-      // 提取原HTML的head部分
-      let headContent = "";
-      const headMatch = htmlContent.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
-      if (headMatch) {
-        headContent = headMatch[1];
-      }
+// 将HTML文档分割成页面大小的块，根据内容动态适配页面
+const extractPages = (htmlContent: string) => {
+  // 提取原HTML的head部分
+  let headContent = "";
+  const headMatch = htmlContent.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+  if (headMatch) {
+    headContent = headMatch[1];
+  }
 
-      // 提取body中的内容
-      let bodyContent = "";
-      const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
-      if (bodyMatch) {
-        bodyContent = bodyMatch[1];
-      } else {
-        // 如果没有找到body标签，使用整个HTML
-        bodyContent = htmlContent;
-      }
+  // 提取body中的内容
+  let bodyContent = "";
+  const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  if (bodyMatch) {
+    bodyContent = bodyMatch[1];
+  } else {
+    // 如果没有找到body标签，使用整个HTML
+    bodyContent = htmlContent;
+  }
 
-      // 使用正则表达式查找段落、标题、图片和其他块级HTML元素
-      const elements = [];
-      let match;
-      const regex =
-        /<(p|h[1-6]|div|section|article|aside|blockquote|figure|table)[^>]*>([\s\S]*?)<\/\1>|<(img|hr)[^>]*\/?>/gi;
+  // 使用正则表达式查找段落、标题、图片和其他块级HTML元素
+  const elements = [];
+  let match;
+  const regex =
+    /<(p|h[1-6]|div|section|article|aside|blockquote|figure|table)[^>]*>([\s\S]*?)<\/\1>|<(img|hr)[^>]*\/?>/gi;
 
-      while ((match = regex.exec(bodyContent)) !== null) {
-        // 检查是否是图片元素
-        if (match[0].startsWith("<img") || (match[3] && match[3] === "img")) {
-          // 为图片添加特殊标记，以便后续处理
-          elements.push({
-            content: match[0],
-            type: "image",
-            estimatedHeight: 400, // 图片估计高度，可根据实际情况调整
-          });
-        } else {
-          // 其他元素
-          elements.push({
-            content: match[0],
-            type: "text",
-            // 估算元素的高度，根据内容长度和类型
-            estimatedHeight: calculateEstimatedHeight(match[0]),
-          });
-        }
-      }
+  while ((match = regex.exec(bodyContent)) !== null) {
+    // 检查是否是图片元素
+    if (match[0].startsWith("<img") || (match[3] && match[3] === "img")) {
+      // 为图片添加特殊标记，以便后续处理
+      elements.push({
+        content: match[0],
+        type: "image",
+        estimatedHeight: 400, // 图片估计高度，可根据实际情况调整
+      });
+    } else {
+      // 其他元素
+      elements.push({
+        content: match[0],
+        type: "text",
+        // 估算元素的高度，根据内容长度和类型
+        estimatedHeight: calculateEstimatedHeight(match[0]),
+      });
+    }
+  }
 
-      // 如果没有找到元素，尝试使用简单的文本分割
-      if (elements.length === 0) {
-        // 尝试分割文本段落
-        const textBlocks = bodyContent.split(/\n\s*\n/);
-        if (textBlocks.length > 0) {
-          elements.push(
-            ...textBlocks.map((block) => ({
-              content: `<p>${block.trim()}</p>`,
-              type: "text",
-              estimatedHeight: 50 + block.length / 20, // 简单估算段落高度
-            }))
-          );
-        } else {
-          // 如果仍然没有内容，直接作为一个段落
-          elements.push({
-            content: `<p>${bodyContent}</p>`,
-            type: "text",
-            estimatedHeight: 50 + bodyContent.length / 20,
-          });
-        }
-      }
+  // 如果没有找到元素，尝试使用简单的文本分割
+  if (elements.length === 0) {
+    // 尝试分割文本段落
+    const textBlocks = bodyContent.split(/\n\s*\n/);
+    if (textBlocks.length > 0) {
+      elements.push(
+        ...textBlocks.map((block) => ({
+          content: `<p>${block.trim()}</p>`,
+          type: "text",
+          estimatedHeight: 50 + block.length / 20, // 简单估算段落高度
+        }))
+      );
+    } else {
+      // 如果仍然没有内容，直接作为一个段落
+      elements.push({
+        content: `<p>${bodyContent}</p>`,
+        type: "text",
+        estimatedHeight: 50 + bodyContent.length / 20,
+      });
+    }
+  }
 
-      // 计算视窗高度，作为每页内容的高度限制
-      const viewportHeight = window.innerHeight - 80; // 减去页面上下边距和控制区域
+  // 计算视窗高度，作为每页内容的高度限制
+  const viewportHeight = window.innerHeight - 80; // 减去页面上下边距和控制区域
 
-      // 生成页面
-      const pages = [];
-      let currentPageElements = [];
-      let currentPageHeight = 0;
+  // 生成页面
+  const pages = [];
+  let currentPageElements = [];
+  let currentPageHeight = 0;
 
-      // 处理图片元素 - 如果图片较大，单独分配一页
-      for (let i = 0; i < elements.length; i++) {
-        const element = elements[i];
+  // 处理图片元素 - 如果图片较大，单独分配一页
+  for (let i = 0; i < elements.length; i++) {
+    const element = elements[i];
 
-        // 如果是图片元素且估计较大，则单独分配一页
-        if (
-          element.type === "image" &&
-          element.estimatedHeight > viewportHeight * 0.5
-        ) {
-          // 如果当前页已经有内容，先完成当前页
-          if (currentPageElements.length > 0) {
-            pages.push(createPageHtml(currentPageElements, headContent));
-            currentPageElements = [];
-            currentPageHeight = 0;
-          }
-
-          // 创建只包含图片的页面
-          pages.push(
-            createPageHtml(
-              [
-                {
-                  content: element.content,
-                  type: "image",
-                  estimatedHeight: element.estimatedHeight,
-                },
-              ],
-              headContent,
-              true
-            ) // true表示这是一个图片页
-          );
-        } else {
-          // 检查添加此元素后是否会超过页面高度
-          if (
-            currentPageHeight + element.estimatedHeight > viewportHeight &&
-            currentPageElements.length > 0
-          ) {
-            // 当前页已满，创建新页
-            pages.push(createPageHtml(currentPageElements, headContent));
-            currentPageElements = [];
-            currentPageHeight = 0;
-          }
-
-          // 添加元素到当前页
-          currentPageElements.push(element);
-          currentPageHeight += element.estimatedHeight;
-        }
-      }
-
-      // 将剩余元素添加到最后一页
+    // 如果是图片元素且估计较大，则单独分配一页
+    if (
+      element.type === "image" &&
+      element.estimatedHeight > viewportHeight * 0.5
+    ) {
+      // 如果当前页已经有内容，先完成当前页
       if (currentPageElements.length > 0) {
         pages.push(createPageHtml(currentPageElements, headContent));
+        currentPageElements = [];
+        currentPageHeight = 0;
       }
 
-      // 确保至少有一页
-      if (pages.length === 0) {
-        pages.push(
-          createPageHtml(
-            [
-              {
-                content: `<p>内容为空</p>`,
-                type: "text",
-                estimatedHeight: 50,
-              },
-            ],
-            headContent
-          )
-        );
-      }
-
-      return pages;
-    };
-
-    // 帮助函数：估算元素的显示高度
-    const calculateEstimatedHeight = (elementHtml: string): number => {
-      // 根据元素类型和内容长度估算高度
-      if (elementHtml.startsWith("<h1")) return 70;
-      if (elementHtml.startsWith("<h2")) return 60;
-      if (elementHtml.startsWith("<h3")) return 55;
+      // 创建只包含图片的页面
+      pages.push(
+        createPageHtml(
+          [
+            {
+              content: element.content,
+              type: "image",
+              estimatedHeight: element.estimatedHeight,
+            },
+          ],
+          headContent,
+          true
+        ) // true表示这是一个图片页
+      );
+    } else {
+      // 检查添加此元素后是否会超过页面高度
       if (
-        elementHtml.startsWith("<h4") ||
-        elementHtml.startsWith("<h5") ||
-        elementHtml.startsWith("<h6")
-      )
-        return 50;
-      if (elementHtml.startsWith("<p")) {
-        // 根据段落文本长度估算高度
-        const textLength = elementHtml.length;
-        return 40 + textLength / 20; // 假设每20个字符增加1行
-      }
-      if (
-        elementHtml.startsWith("<div") ||
-        elementHtml.startsWith("<section") ||
-        elementHtml.startsWith("<article")
+        currentPageHeight + element.estimatedHeight > viewportHeight &&
+        currentPageElements.length > 0
       ) {
-        return 100 + elementHtml.length / 15;
+        // 当前页已满，创建新页
+        pages.push(createPageHtml(currentPageElements, headContent));
+        currentPageElements = [];
+        currentPageHeight = 0;
       }
-      if (elementHtml.startsWith("<blockquote"))
-        return 80 + elementHtml.length / 25;
-      if (elementHtml.startsWith("<table"))
-        return 150 + elementHtml.length / 10;
 
-      // 默认高度
-      return 50 + elementHtml.length / 30;
-    };
+      // 添加元素到当前页
+      currentPageElements.push(element);
+      currentPageHeight += element.estimatedHeight;
+    }
+  }
 
-    // 帮助函数：创建一个页面的HTML
-    const createPageHtml = (
-      elements: Array<{
-        content: string;
-        type: string;
-        estimatedHeight: number;
-      }>,
-      headContent: string,
-      isImagePage: boolean = false
-    ) => {
-      // 如果是图片页，添加特殊样式使图片居中且适合页面
-      const imageStyles = isImagePage
-        ? `
+  // 将剩余元素添加到最后一页
+  if (currentPageElements.length > 0) {
+    pages.push(createPageHtml(currentPageElements, headContent));
+  }
+
+  // 确保至少有一页
+  if (pages.length === 0) {
+    pages.push(
+      createPageHtml(
+        [
+          {
+            content: `<p>内容为空</p>`,
+            type: "text",
+            estimatedHeight: 50,
+          },
+        ],
+        headContent
+      )
+    );
+  }
+
+  return pages;
+};
+
+// 帮助函数：估算元素的显示高度
+const calculateEstimatedHeight = (elementHtml: string): number => {
+  // 根据元素类型和内容长度估算高度
+  if (elementHtml.startsWith("<h1")) return 70;
+  if (elementHtml.startsWith("<h2")) return 60;
+  if (elementHtml.startsWith("<h3")) return 55;
+  if (
+    elementHtml.startsWith("<h4") ||
+    elementHtml.startsWith("<h5") ||
+    elementHtml.startsWith("<h6")
+  )
+    return 50;
+  if (elementHtml.startsWith("<p")) {
+    // 根据段落文本长度估算高度
+    const textLength = elementHtml.length;
+    return 40 + textLength / 20; // 假设每20个字符增加1行
+  }
+  if (
+    elementHtml.startsWith("<div") ||
+    elementHtml.startsWith("<section") ||
+    elementHtml.startsWith("<article")
+  ) {
+    return 100 + elementHtml.length / 15;
+  }
+  if (elementHtml.startsWith("<blockquote"))
+    return 80 + elementHtml.length / 25;
+  if (elementHtml.startsWith("<table")) return 150 + elementHtml.length / 10;
+
+  // 默认高度
+  return 50 + elementHtml.length / 30;
+};
+
+// 帮助函数：创建一个页面的HTML
+const createPageHtml = (
+  elements: Array<{
+    content: string;
+    type: string;
+    estimatedHeight: number;
+  }>,
+  headContent: string,
+  isImagePage: boolean = false
+) => {
+  // 如果是图片页，添加特殊样式使图片居中且适合页面
+  const imageStyles = isImagePage
+    ? `
           <style>
             .image-container {
               display: flex;
               justify-content: center;
               align-items: center;
               height: 100%;
-              padding: 20px;
+              padding: 10px;
+              box-sizing: border-box;
+              overflow: hidden;
             }
             .image-container img {
-              max-width: 95%;
-              max-height: 95%;
+              max-width: 90%;
+              max-height: 90%;
               object-fit: contain;
+              margin: 0 auto;
+              display: block;
+              box-shadow: none;
+              border: none;
             }
           </style>
         `
-        : "";
+    : "";
 
-      const pageContent = isImagePage
-        ? `<div class="image-container">${elements
-            .map((e) => e.content)
-            .join("")}</div>`
-        : elements.map((e) => e.content).join("");
+  const pageContent = isImagePage
+    ? `<div class="image-container">${elements
+        .map((e) => e.content)
+        .join("")}</div>`
+    : elements.map((e) => e.content).join("");
 
-      return `
+  return `
         <!DOCTYPE html>
         <html>
           <head>
@@ -432,8 +435,11 @@ const splitContentForTwoColumns = (html: string) => {
           </body>
         </html>
       `;
-    };
+};
 
+// 分割HTML内容到左右两栏，模拟书籍页面
+const splitContentForTwoColumns = (html: string) => {
+  try {
     // 生成所有页面
     allPages.value = extractPages(html);
     totalPages.value = allPages.value.length;

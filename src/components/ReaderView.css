@@ -127,8 +127,10 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: #ffffff;
+  background: #f4efe1; /* 更改为与两列布局相同的背景色 */
   height: calc(100vh - 60px);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1); /* 添加内阴影 */
+  position: relative; /* 添加相对定位，为重新布局指示器做准备 */
 }
 
 .html-content-viewer {
@@ -142,99 +144,181 @@
   flex-direction: column;
 }
 
-.html-iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-  margin: 0;
-  padding: 0;
-  background: #ffffff;
-}
-
-.reader-toolbar .icon-button {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.reader-toolbar .icon-button:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.2);
-}
-
-.reader-toolbar button:hover:not(:disabled) {
-  background-color: #666;
-}
-
-.reader-toolbar button:disabled {
-  background-color: #333;
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.loading-spinner {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-radius: 50%;
-  border-top-color: #fff;
-  animation: spin 1s ease-in-out infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+/* 添加页面翻转动画 */
+@keyframes pageFlip {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
-.placeholder {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  background-color: #f0f0f0;
-}
-
-.instruction {
-  font-size: 1.5rem;
-  color: #666;
-  text-align: center;
-  margin-top: 20px;
-}
-
-
-
-.html-view-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: #ffffff;
-  height: calc(100vh - 60px);
-}
-
-.html-content-viewer {
-  flex: 1;
-  overflow: auto;
-  padding: 0;
-  position: relative;
-  height: 100%;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
 .html-iframe {
   width: 100%;
   height: 100%;
   border: none;
   margin: 0;
   padding: 0;
-  background: #ffffff;
+  background: #fff9ee; /* 暖色背景模拟纸张 */
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
+  border-radius: 4px; /* 微弱的圆角增加视觉美感 */
+  animation: pageFlip 0.3s ease-in-out;
+  overflow: hidden !important; /* 确保没有滚动条 */
+}
+
+/* 书籍双页式布局样式 */
+.two-column-layout {
+  display: flex;
+  width: 100%;
+  height: calc(100% - 40px); /* 减去书籍控制栏的高度 */
+  background-color: #f4efe1; /* 温暖的米色背景模拟书本颜色 */
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+/* 添加书脊效果 */
+.two-column-layout::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.1) 0%,
+    rgba(0, 0, 0, 0.2) 50%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
+  transform: translateX(-50%);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  z-index: 2;
+}
+
+.column {
+  flex: 0 0 50%; /* 固定50%宽度，不伸缩 */
+  height: 100%;
+  padding: 10px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  height: 100%;
+  overflow: hidden !important; /* 确保没有滚动条 */
+  padding: 0;
+  position: relative;
+  width: 50%; /* 固定50%宽度 */
+  max-width: 50%; /* 确保每列不超过50%宽度 */
+  box-sizing: border-box;
+}
+
+.left-column {
+  border-right: 1px solid #ccc; /* 添加一条分隔线模拟书脊 */
+  box-shadow: 5px 0 10px -5px rgba(0, 0, 0, 0.1);
+  padding-right: 0; /* 移除右边距，最大化内容空间 */
+  background: url('data:image/svg+xml,%3Csvg width="6" height="100%25" xmlns="http://www.w3.org/2000/svg"%3E%3Crect width="1" height="100%25" fill="%23888" x="5" /%3E%3C/svg%3E')
+    right repeat-y;
+}
+
+.right-column {
+  padding-left: 0; /* 移除左边距，最大化内容空间 */
+}
+
+.book-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: #e8e2d0; /* 浅棕色背景 */
+  border-bottom: 1px solid #d8ceb5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.page-button {
+  background-color: #8b7765; /* 棕色按钮 */
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.2s;
+  min-width: 80px; /* 确保按钮宽度足够 */
+}
+
+.page-button:hover:not(:disabled) {
+  background-color: #6d5c4d; /* 深棕色 */
+}
+
+.page-button:disabled {
+  background-color: #ccc;
+  color: #888;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  font-family: "Times New Roman", serif;
+  font-size: 0.9rem;
+  color: #5a4b3e;
+  padding: 0 10px;
+  font-weight: bold;
+}
+
+/* 添加针对重新布局指示器的样式 */
+.resize-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  animation: fadeInOut 1s infinite alternate;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hint-text {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+@keyframes fadeInOut {
+  from { opacity: 0.85; }
+  to { opacity: 1; }
+}
+
+/* 添加针对图片页的特殊样式 */
+.full-page-image-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff9ee;
+  padding: 10px;
+}
+
+/* 优化移动设备上的体验 */
+@media (max-width: 480px) {
+  .book-controls {
+    padding: 6px 10px;
+  }
+  
+  .page-button {
+    padding: 3px 8px;
+    font-size: 0.85rem;
+  }
+  
+  .page-indicator {
+    font-size: 0.8rem;
+  }
 }

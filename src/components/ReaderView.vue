@@ -31,7 +31,7 @@ const noScrollStyle = `<style>
     font-size: 16px!important;
     line-height: 1.6!important;
     color: #333!important;
-    padding: 30px!important;
+    padding: 80px!important;
     box-sizing: border-box!important;
   }
   p {
@@ -46,10 +46,10 @@ const noScrollStyle = `<style>
     width: auto!important;
     height: auto!important;
     max-width: 85%!important;
-    max-height: 85%!important;
+    max-height: 60%!important;
     object-fit: contain;
     display: block;
-    margin: 1em auto!important;
+    margin: 1em auto 2em auto!important;
   }
 </style>`;
 
@@ -158,10 +158,10 @@ const splitContentForTwoColumns = async (html: string) => {
   const tempDiv = document.createElement("div");
   tempDiv.innerHTML = html;
   const elements = Array.from(tempDiv.children);
-  const pageHeight = window.innerHeight * 0.85 - PAGE_PADDING * 2;
-  const pageWidth = (window.innerWidth - 60) / 2 - PAGE_PADDING * 2;
+  // 减少有效页面高度，确保内容不会被遮挡
+  const pageHeight = window.innerHeight * 0.65 - PAGE_PADDING;
+  const pageWidth = (window.innerWidth - PAGE_PADDING) / 2;
   let currentPageContent = "";
-  let currentHeight = 0;
   allPages.value = [];
   const measureContainer = document.createElement("div");
   measureContainer.style.width = `${pageWidth}px`;
@@ -195,12 +195,11 @@ const splitContentForTwoColumns = async (html: string) => {
       );
       const displayWidth = img.naturalWidth * scale;
       const displayHeight = img.naturalHeight * scale;
-      // 外层div不再设置padding和margin，img最大宽高100%，外层div高度自适应
-      const imgHtml = `<div style="display:flex;align-items:center;justify-content:center;width:100%;box-sizing:border-box;"><img src="${imgSrc}" style="width:${displayWidth}px;height:${displayHeight}px;object-fit:contain;max-width:100%;max-height:100%;" /></div>`;
+      const imgHtml = `<div style="display:flex;align-items:center;justify-content:center;width:85%;box-sizing:border-box;"><img src="${imgSrc}" style="width:${displayWidth}px;height:${displayHeight}px;object-fit:contain;max-width:100%;max-height:100%;" /></div>`;
       // 检查当前页是否还能放下图片
       pageContainer.innerHTML = currentPageContent + imgHtml;
       if (
-        pageContainer.clientHeight > pageHeight - PAGE_PADDING ||
+        pageContainer.clientHeight > pageHeight ||
         currentPageContent === ""
       ) {
         if (currentPageContent) {
@@ -209,7 +208,6 @@ const splitContentForTwoColumns = async (html: string) => {
         allPages.value.push(noScrollStyle + imgHtml);
         pageContainer.innerHTML = "";
         currentPageContent = "";
-        currentHeight = 0;
       } else {
         currentPageContent += imgHtml;
       }
@@ -221,14 +219,14 @@ const splitContentForTwoColumns = async (html: string) => {
     ];
     for (const paragraph of paragraphs) {
       pageContainer.innerHTML = currentPageContent + paragraph;
-      if (pageContainer.clientHeight > pageHeight - PAGE_PADDING) {
+      if (pageContainer.clientHeight > pageHeight) {
         if (currentPageContent) {
           allPages.value.push(noScrollStyle + currentPageContent);
         }
         currentPageContent = paragraph;
         pageContainer.innerHTML = currentPageContent;
         // 如果单个段落本身就超出一页，强制分页
-        if (pageContainer.clientHeight > pageHeight - PAGE_PADDING) {
+        if (pageContainer.clientHeight > pageHeight) {
           allPages.value.push(noScrollStyle + currentPageContent);
           currentPageContent = "";
           pageContainer.innerHTML = "";

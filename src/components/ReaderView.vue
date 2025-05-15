@@ -200,7 +200,7 @@ const splitContentForTwoColumns = async (html: string) => {
       // 检查当前页是否还能放下图片
       pageContainer.innerHTML = currentPageContent + imgHtml;
       if (
-        pageContainer.clientHeight > pageHeight ||
+        pageContainer.clientHeight > pageHeight - PAGE_PADDING ||
         currentPageContent === ""
       ) {
         if (currentPageContent) {
@@ -221,14 +221,14 @@ const splitContentForTwoColumns = async (html: string) => {
     ];
     for (const paragraph of paragraphs) {
       pageContainer.innerHTML = currentPageContent + paragraph;
-      if (pageContainer.clientHeight > pageHeight) {
+      if (pageContainer.clientHeight > pageHeight - PAGE_PADDING) {
         if (currentPageContent) {
           allPages.value.push(noScrollStyle + currentPageContent);
         }
         currentPageContent = paragraph;
         pageContainer.innerHTML = currentPageContent;
         // 如果单个段落本身就超出一页，强制分页
-        if (pageContainer.clientHeight > pageHeight) {
+        if (pageContainer.clientHeight > pageHeight - PAGE_PADDING) {
           allPages.value.push(noScrollStyle + currentPageContent);
           currentPageContent = "";
           pageContainer.innerHTML = "";

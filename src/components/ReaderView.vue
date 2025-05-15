@@ -25,13 +25,13 @@ const totalPages = ref<number>(0);
 const allPages = ref<string[]>([]);
 
 const noScrollStyle = `<style>
-  html, body { overflow: hidden!important; margin: 0; padding: 0; }
+  html, body { overflow: hidden!important; margin: 1%; padding: 0; }
   body {
     font-family: 'Noto Serif', 'Times New Roman', serif!important;
     font-size: 16px!important;
     line-height: 1.6!important;
     color: #333!important;
-    padding: 80px!important;
+    padding: 10%!important;
     box-sizing: border-box!important;
   }
   p {
@@ -39,7 +39,7 @@ const noScrollStyle = `<style>
     text-indent: 2em!important;
   }
   h1, h2, h3, h4, h5 {
-    margin: 1.5em 0 0.5em!important;
+    margin: 0.5em 0 0.5em!important;
     font-weight: bold!important;
   }
   img {
@@ -49,7 +49,7 @@ const noScrollStyle = `<style>
     max-height: 60%!important;
     object-fit: contain;
     display: block;
-    margin: 1em auto 2em auto!important;
+    margin: 0.5em auto 0 auto!important;
   }
 </style>`;
 
@@ -195,7 +195,7 @@ const splitContentForTwoColumns = async (html: string) => {
       );
       const displayWidth = img.naturalWidth * scale;
       const displayHeight = img.naturalHeight * scale;
-      const imgHtml = `<div style="display:flex;align-items:center;justify-content:center;width:85%;box-sizing:border-box;"><img src="${imgSrc}" style="width:${displayWidth}px;height:${displayHeight}px;object-fit:contain;max-width:100%;max-height:100%;" /></div>`;
+      const imgHtml = `<div style="display:block;width:100%;box-sizing:border-box;"><img src="${imgSrc}" style="width:${displayWidth}px;height:${displayHeight}px;object-fit:contain;max-width:100%;max-height:100%;" /></div>`;
       // 检查当前页是否还能放下图片
       pageContainer.innerHTML = currentPageContent + imgHtml;
       if (

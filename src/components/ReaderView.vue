@@ -3,7 +3,13 @@ import { ref, onMounted, onUnmounted, watch } from "vue";
 import { Window } from "@tauri-apps/api/window";
 import "./ReaderView.css";
 import { getEpubHtmlWithImages, HtmlWithImages } from "../api";
-import { ArrowLeft, Minus, FullScreen, Close } from "@element-plus/icons-vue";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Minus,
+  FullScreen,
+  Close,
+} from "@element-plus/icons-vue";
 
 // Props and emits
 const props = defineProps<{
@@ -345,29 +351,11 @@ const closeWindow = async () => {
         <button class="icon-button" @click="goBackToMenu" title="返回书架">
           <el-icon :size="20"><ArrowLeft /></el-icon>
         </button>
-        <div v-if="currentContent" class="nav-controls">
-          <button
-            class="page-button-inline prev-button"
-            @click="goToPreviousPage"
-            :disabled="currentPage <= 0"
-            title="上一页"
-          >
-            « 上一页
-          </button>
-          <div class="page-indicator-inline">
-            {{ currentPage + 1 }}-{{ Math.min(currentPage + 2, totalPages) }}/{{
-              totalPages
-            }}
-          </div>
-          <button
-            class="page-button-inline next-button"
-            @click="goToNextPage"
-            :disabled="currentPage + 2 >= totalPages"
-            title="下一页"
-          >
-            下一页 »
-          </button>
-        </div>
+      </div>
+      <div class="page-indicator-inline" v-if="currentContent">
+        {{ currentPage + 1 }} - {{ Math.min(currentPage + 2, totalPages) }} / {{
+          totalPages
+        }}
       </div>
       <div class="window-controls">
         <button
@@ -405,6 +393,17 @@ const closeWindow = async () => {
       </div>
 
       <div class="two-column-layout">
+        <button
+          class="page-button-side prev-button-side"
+          @click="goToPreviousPage"
+          :disabled="currentPage <= 0"
+          title="上一页"
+        >
+          <el-icon :size="16">
+            <ArrowLeft />
+          </el-icon>
+        </button>
+
         <div class="column left-column">
           <iframe
             :srcdoc="leftColumnContent"
@@ -419,6 +418,16 @@ const closeWindow = async () => {
             frameborder="0"
           ></iframe>
         </div>
+        <button
+          class="page-button-side next-button-side"
+          @click="goToNextPage"
+          :disabled="currentPage + 2 >= totalPages"
+          title="下一页"
+        >
+          <el-icon :size="16">
+            <ArrowRight />
+          </el-icon>
+        </button>
       </div>
     </div>
   </div>

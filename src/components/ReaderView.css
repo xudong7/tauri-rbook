@@ -11,12 +11,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 16px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e0e0e0;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid rgba(224, 224, 224, 0.5);
   height: 48px;
   z-index: 100;
   flex-shrink: 0;
   -webkit-app-region: drag;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .left-controls {
@@ -35,13 +37,16 @@
   border: none;
   cursor: pointer;
   padding: 8px;
-  border-radius: 4px;
+  border-radius: 50%;
   color: #606266;
   -webkit-app-region: no-drag; /* 按钮区域不可拖动 */
+  transition: all 0.2s ease;
 }
 
 .icon-button:hover {
   background-color: #f5f7fa;
+  color: #409eff;
+  transform: translateY(-1px);
 }
 
 .window-control-button {
@@ -49,13 +54,16 @@
   border: none;
   cursor: pointer;
   padding: 8px;
-  border-radius: 4px;
+  border-radius: 50%;
   color: #606266;
   -webkit-app-region: no-drag; /* 按钮区域不可拖动 */
+  transition: all 0.2s ease;
+  margin-left: 4px;
 }
 
 .window-control-button:hover {
   background-color: #f5f7fa;
+  transform: translateY(-1px);
 }
 
 .close-button:hover {
@@ -103,6 +111,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  background-image: linear-gradient(to bottom, #e8e8e8, #f5f5f5);
 }
 
 .two-column-layout {
@@ -114,19 +123,21 @@
   max-width: 100%;
   max-height: 100%;
   gap: 0;
+  position: relative;
 }
 
 .column {
   flex: none;
   width: 50%;
-  background-color: white;
+  background-color: #ffffff;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   border-radius: 2px;
   overflow: hidden;
   position: relative;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
+  background-image: linear-gradient(to bottom, #fffdf9, #ffffff);
 }
 
 .column:hover {
@@ -194,10 +205,34 @@
 /* 添加页面阴影效果 */
 .column.left-column {
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  margin-right: -1px;
 }
 
 .column.right-column {
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+  border-left: 1px solid rgba(0, 0, 0, 0.05);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+/* 书脊效果 */
+.two-column-layout::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.05),
+    rgba(0, 0, 0, 0.1),
+    rgba(0, 0, 0, 0.05)
+  );
+  z-index: 2;
 }
 
 /* 确保内容容器不会出现滚动条 */
@@ -207,11 +242,14 @@
 
 .placeholder {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   height: 100%;
+  background-color: #f5f5f5;
   color: #909399;
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 500;
+  flex-grow: 1;
 }
 
 .resize-hint {
@@ -221,9 +259,24 @@
   transform: translate(-50%, -50%);
   background-color: rgba(0, 0, 0, 0.7);
   color: white;
-  padding: 12px 24px;
-  border-radius: 4px;
-  z-index: 1000;
+  padding: 16px 24px;
+  border-radius: 8px;
+  z-index: 100;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.hint-text {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.instruction {
+  padding: 20px;
+  text-align: center;
+  max-width: 500px;
 }
 
 .loading-spinner {
@@ -252,4 +305,88 @@
   object-fit: contain;
   display: block;
   /* margin: 0 auto; */
+}
+
+/* 侧边翻页按钮样式 */
+.page-button-side {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  opacity: 0.7;
+}
+
+.page-button-side:hover {
+  opacity: 1;
+  background-color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.page-button-side:disabled {
+  opacity: 0;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: translateY(-50%) scale(0.9);
+  pointer-events: none;
+}
+
+.prev-button-side {
+  left: 10px;
+}
+
+.next-button-side {
+  right: 10px;
+}
+
+/* 在小屏幕上调整按钮位置和大小 */
+@media (max-width: 768px) {
+  .page-button-side {
+    width: 40px;
+    height: 40px;
+  }
+
+  .prev-button-side {
+    left: 5px;
+  }
+
+  .next-button-side {
+    right: 5px;
+  }
+}
+
+/* 添加当鼠标不悬停时淡入淡出效果 */
+.two-column-layout:hover .page-button-side:not(:disabled) {
+  opacity: 0.8;
+}
+
+.two-column-layout .page-button-side:not(:hover):not(:disabled) {
+  opacity: 0.5;
+}
+
+/* 页码指示器样式 */
+.page-indicator {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }

@@ -93,7 +93,7 @@ const noScrollStyle = `<style>
     width: auto!important;
     height: auto!important;
     max-width: 85%!important;
-    max-height: 85%!important;
+    max-height: 60%!important;
     object-fit: contain;
     display: block;
     margin: 0.5em auto 0.5em auto!important;
@@ -186,7 +186,7 @@ const splitContentForTwoColumns = async (html: string) => {
   tempDiv.innerHTML = html;
   const elements = Array.from(tempDiv.children);
   // 减少有效页面高度，确保内容不会被遮挡
-  const pageHeight = window.innerHeight * 0.65;
+  const pageHeight = window.innerHeight * 0.6;
   const pageWidth = (window.innerWidth - PAGE_PADDING) / 2;
   let currentPageContent = "";
   allPages.value = [];
@@ -227,7 +227,7 @@ const splitContentForTwoColumns = async (html: string) => {
         // 如果图片高度占据页面高度的50%以上，或者添加图片后超出页面高度，则开始新页面
         const imageHeightRatio = imageHeight / pageHeight;
         if (
-          (imageHeightRatio > 0.5 && currentHeight > 0) ||
+          (currentHeight > pageHeight * 0.4 && imageHeightRatio > 0.5) ||
           (totalHeight > pageHeight * 0.7 && currentHeight > 0)
         ) {
           allPages.value.push(noScrollStyle + currentPageContent);
@@ -250,9 +250,7 @@ const splitContentForTwoColumns = async (html: string) => {
           // 对于超大图片，调整其大小限制以确保完整显示
           if (isImage) {
             // 不使用溢出隐藏，而是缩放图片到适合的大小
-            const wrappedImage = `<div style="height:${
-              pageHeight - 40
-            }px; display:flex; align-items:center; justify-content:center;">
+            const wrappedImage = `<div style="display:flex; align-items:center; justify-content:center;">
               <img style="max-width:100%; max-height:100%; object-fit:contain;" 
               src=${
                 paragraph.match(/src=["']([^"']*)["']/)?.[1] || ""

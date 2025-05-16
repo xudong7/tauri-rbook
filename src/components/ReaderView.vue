@@ -3,12 +3,7 @@ import { ref, onMounted, onUnmounted, watch } from "vue";
 import { Window } from "@tauri-apps/api/window";
 import "./ReaderView.css";
 import { getEpubHtmlWithImages, HtmlWithImages } from "../api";
-import {
-  ArrowLeft,
-  Minus,
-  FullScreen,
-  Close,
-} from "@element-plus/icons-vue";
+import { ArrowLeft, Minus, FullScreen, Close } from "@element-plus/icons-vue";
 
 // Props and emits
 const props = defineProps<{
@@ -82,25 +77,26 @@ const noScrollStyle = `<style>
     font-size: 16px!important;
     line-height: 1.2!important;
     color: #333!important;
-    padding: 20px!important;
+    padding: 0!important;
     box-sizing: border-box!important;
   }
   p {
     margin: 1em 0!important;
+    max-height: 50%!important;
     text-indent: 1em!important;
   }
   h1, h2, h3, h4, h5 {
     margin: 0.5em 0 0.5em!important;
     font-weight: bold!important;
-  }
+  }  
   img {
     width: auto!important;
     height: auto!important;
     max-width: 85%!important;
-    max-height: 60%!important;
+    max-height: 85%!important;
     object-fit: contain;
     display: block;
-    margin: 0.5em auto 0 auto!important;
+    margin: 0.5em auto 0.5em auto!important;
   }
   svg {
     width: auto!important;
@@ -190,7 +186,7 @@ const splitContentForTwoColumns = async (html: string) => {
   tempDiv.innerHTML = html;
   const elements = Array.from(tempDiv.children);
   // 减少有效页面高度，确保内容不会被遮挡
-  const pageHeight = window.innerHeight * 0.65 - PAGE_PADDING;
+  const pageHeight = window.innerHeight * 0.65;
   const pageWidth = (window.innerWidth - PAGE_PADDING) / 2;
   let currentPageContent = "";
   allPages.value = [];
@@ -206,22 +202,66 @@ const splitContentForTwoColumns = async (html: string) => {
   pageContainer.style.padding = `${PAGE_PADDING}px`;
   pageContainer.style.boxSizing = "border-box";
   measureContainer.appendChild(pageContainer);
-
   const processElement = async (element: Element) => {
-    const paragraphs = element.outerHTML.match(/<p[\s\S]*?<\/p>/g) || [
-      element.outerHTML,
-    ];
+    const paragraphs = element.outerHTML.match(
+      /<p[\s\S]*?<\/p>|<img[\s\S]*?(?:>|<\/img>)/g
+    ) || [element.outerHTML];
     for (const paragraph of paragraphs) {
+      // 检查是否是图片元素
+      const isImage = paragraph.includes("<img");
+
+      // 对图片做特殊处理
+      if (isImage && currentPageContent.trim() !== "") {
+        // 先测量当前内容高度
+        pageContainer.innerHTML = currentPageContent;
+        const currentHeight = pageContainer.clientHeight;
+
+        // 测量当前图片高度
+        pageContainer.innerHTML = paragraph;
+        const imageHeight = pageContainer.clientHeight;
+
+        // 再测量当前内容加上图片的高度
+        pageContainer.innerHTML = currentPageContent + paragraph;
+        const totalHeight = pageContainer.clientHeight;
+
+        // 如果图片高度占据页面高度的50%以上，或者添加图片后超出页面高度，则开始新页面
+        const imageHeightRatio = imageHeight / pageHeight;
+        if (
+          (imageHeightRatio > 0.5 && currentHeight > 0) ||
+          (totalHeight > pageHeight * 0.7 && currentHeight > 0)
+        ) {
+          allPages.value.push(noScrollStyle + currentPageContent);
+          currentPageContent = "";
+        } else {
+          // 恢复只有当前内容的状态，后面会正常添加图片
+          pageContainer.innerHTML = currentPageContent;
+        }
+      }
+
+      // 添加内容并检查高度
       pageContainer.innerHTML = currentPageContent + paragraph;
       if (pageContainer.clientHeight > pageHeight) {
         if (currentPageContent) {
           allPages.value.push(noScrollStyle + currentPageContent);
         }
         currentPageContent = paragraph;
-        pageContainer.innerHTML = currentPageContent;
-        // 如果单个段落本身就超出一页，强制分页
+        pageContainer.innerHTML = currentPageContent; // 如果单个段落或图片本身就超出一页，强制分页
         if (pageContainer.clientHeight > pageHeight) {
-          allPages.value.push(noScrollStyle + currentPageContent);
+          // 对于超大图片，调整其大小限制以确保完整显示
+          if (isImage) {
+            // 不使用溢出隐藏，而是缩放图片到适合的大小
+            const wrappedImage = `<div style="height:${
+              pageHeight - 40
+            }px; display:flex; align-items:center; justify-content:center;">
+              <img style="max-width:100%; max-height:100%; object-fit:contain;" 
+              src=${
+                paragraph.match(/src=["']([^"']*)["']/)?.[1] || ""
+              } alt="image" />
+            </div>`;
+            allPages.value.push(noScrollStyle + wrappedImage);
+          } else {
+            allPages.value.push(noScrollStyle + currentPageContent);
+          }
           currentPageContent = "";
           pageContainer.innerHTML = "";
         }

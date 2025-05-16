@@ -1,17 +1,10 @@
 <script setup lang="ts">
-import {
-  ref,
-  onMounted,
-  onUnmounted,
-  watch,
-} from "vue";
-import { open } from "@tauri-apps/plugin-dialog";
+import { ref, onMounted, onUnmounted, watch } from "vue";
 import { Window } from "@tauri-apps/api/window";
 import "./ReaderView.css";
 import { getEpubHtmlWithImages, HtmlWithImages } from "../api";
 import {
   ArrowLeft,
-  Document,
   Minus,
   FullScreen,
   Close,
@@ -83,24 +76,42 @@ const goBackToMenu = () => {
 };
 
 const noScrollStyle = `<style>
-  html, body { overflow: hidden!important; margin: 1%; padding: 0; }
+  html, body { overflow: hidden!important; margin: 40px; padding: 0; }
   body {
     font-family: 'Noto Serif', 'Times New Roman', serif!important;
     font-size: 16px!important;
-    line-height: 1.6!important;
+    line-height: 1.2!important;
     color: #333!important;
-    padding: 10%!important;
+    padding: 20px!important;
     box-sizing: border-box!important;
   }
   p {
     margin: 1em 0!important;
-    text-indent: 2em!important;
+    text-indent: 1em!important;
   }
   h1, h2, h3, h4, h5 {
     margin: 0.5em 0 0.5em!important;
     font-weight: bold!important;
   }
   img {
+    width: auto!important;
+    height: auto!important;
+    max-width: 85%!important;
+    max-height: 60%!important;
+    object-fit: contain;
+    display: block;
+    margin: 0.5em auto 0 auto!important;
+  }
+  svg {
+    width: auto!important;
+    height: auto!important;
+    max-width: 85%!important;
+    max-height: 60%!important;
+    object-fit: contain;
+    display: block;
+    margin: 0.5em auto 0 auto!important;
+  }
+  image {
     width: auto!important;
     height: auto!important;
     max-width: 85%!important;
@@ -157,44 +168,6 @@ onUnmounted(() => {
   }
 });
 
-// 打开并转换EPUB为HTML
-const openAndConvertEpub = async () => {
-  try {
-    loading.value = true;
-
-    // Open file dialog
-    const selected = await open({
-      multiple: false,
-      filters: [
-        {
-          name: "EPUB",
-          extensions: ["epub"],
-        },
-      ],
-    });
-
-    if (!selected || Array.isArray(selected)) {
-      loading.value = false;
-      return;
-    }
-
-    filePath.value = selected;
-
-    // 调用后端API获取HTML和图片
-    htmlWithImages.value = await getEpubHtmlWithImages(filePath.value);
-
-    // 跳转到第一页
-    currentPage.value = 0;
-
-    // 处理HTML内容和图片
-    processHtmlContent();
-
-    loading.value = false;
-  } catch (error) {
-    loading.value = false;
-  }
-};
-
 // 处理HTML内容和图片
 const processHtmlContent = async () => {
   if (!htmlWithImages.value) return;
@@ -235,43 +208,6 @@ const splitContentForTwoColumns = async (html: string) => {
   measureContainer.appendChild(pageContainer);
 
   const processElement = async (element: Element) => {
-    if (element.tagName === "IMG") {
-      // 预加载图片，获取原始宽高
-      const imgSrc = (element as HTMLImageElement).src;
-      const img = new window.Image();
-      img.src = imgSrc;
-      await new Promise((resolve) => {
-        if (img.complete) resolve(true);
-        img.onload = () => resolve(true);
-        img.onerror = () => resolve(true);
-      });
-      // 等比例缩放图片，保证宽高都不超过页面
-      const scale = Math.min(
-        (pageWidth - PAGE_PADDING) / img.naturalWidth,
-        (pageHeight - PAGE_PADDING) / img.naturalHeight,
-        1
-      );
-      const displayWidth = img.naturalWidth * scale;
-      const displayHeight = img.naturalHeight * scale;
-      const imgHtml = `<div style="display:block;width:100%;box-sizing:border-box;"><img src="${imgSrc}" style="width:${displayWidth}px;height:${displayHeight}px;object-fit:contain;max-width:100%;max-height:100%;" /></div>`;
-      // 检查当前页是否还能放下图片
-      pageContainer.innerHTML = currentPageContent + imgHtml;
-      if (
-        pageContainer.clientHeight > pageHeight ||
-        currentPageContent === ""
-      ) {
-        if (currentPageContent) {
-          allPages.value.push(noScrollStyle + currentPageContent);
-        }
-        allPages.value.push(noScrollStyle + imgHtml);
-        pageContainer.innerHTML = "";
-        currentPageContent = "";
-      } else {
-        currentPageContent += imgHtml;
-      }
-      return true;
-    }
-    // 非图片内容，按段落分割分页
     const paragraphs = element.outerHTML.match(/<p[\s\S]*?<\/p>/g) || [
       element.outerHTML,
     ];
@@ -298,8 +234,6 @@ const splitContentForTwoColumns = async (html: string) => {
   };
 
   for (const element of elements) {
-    // 依次处理每个元素，图片异步处理
-    // eslint-disable-next-line no-await-in-loop
     await processElement(element);
   }
 

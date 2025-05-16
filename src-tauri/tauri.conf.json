@@ -11,7 +11,7 @@
   },  "app": {
     "windows": [
       {
-        "title": "RBook - Markdown Reader",
+        "title": "RBook",
         "width": 1440,
         "height": 960,
         "minWidth": 800,

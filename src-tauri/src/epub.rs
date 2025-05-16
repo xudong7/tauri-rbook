@@ -1,10 +1,42 @@
 use crate::convert::{download_converted_file, upload_epub_to_fileformat_api};
 use crate::file::{calculate_md5_hash, find_html_file};
+use crate::model::{HtmlWithImages, ImageItem};
 use base64::{engine::general_purpose, Engine as _};
+use epub::doc::EpubDoc;
 use std::fs;
+use std::io::Write;
 use std::path::Path;
 use tauri::AppHandle;
 use tauri::Manager;
+
+// 保存epub文件的封面图片到本地
+fn save_epub_cover(epub_path: &str, save_path: &str) -> Result<String, String> {
+    // 创建保存目录
+    if let Some(parent) = Path::new(save_path).parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)
+                .map_err(|e| format!("Failed to create cover directory: {}", e))?;
+        }
+    }
+
+    // 从epub中提取封面
+    let mut doc = EpubDoc::new(epub_path).map_err(|e| e.to_string())?;
+    let cover_data = doc.get_cover().unwrap();
+
+    let (image_data, _mime_type) = cover_data;
+
+    // 保存图片到文件
+    let mut f =
+        fs::File::create(save_path).map_err(|e| format!("Failed to create cover file: {}", e))?;
+
+    f.write_all(&image_data)
+        .map_err(|e| format!("Failed to write cover file: {}", e))?;
+
+    // 同时返回base64编码，以便在前端显示
+    let base64_image = general_purpose::STANDARD.encode(image_data);
+
+    Ok(base64_image)
+}
 
 // 调用函数，传入epub文件路径，得到转换后的html文件路径
 pub async fn get_epub_to_html_file(app_handle: AppHandle, path: &str) -> Result<String, String> {
@@ -53,6 +85,14 @@ pub async fn get_epub_to_html_file(app_handle: AppHandle, path: &str) -> Result<
         }
     }
 
+    // 保存封面图片
+    let cover_image_path = book_dir.join("cover.jpg").to_string_lossy().to_string();
+    if !Path::new(&cover_image_path).exists() {
+        if let Err(e) = save_epub_cover(path, &cover_image_path) {
+            println!("Warning: Failed to save cover image: {}", e);
+        }
+    }
+
     // 检查是否已经转换过，如果已存在HTML文件就直接返回
     if Path::new(&extract_dir).exists() {
         if let Ok(Some(file)) = find_html_file(&extract_dir) {
@@ -90,7 +130,7 @@ pub async fn get_epub_to_html_file(app_handle: AppHandle, path: &str) -> Result<
 pub async fn get_epub_html_with_images(
     app_handle: AppHandle,
     path: &str,
-) -> Result<crate::model::HtmlWithImages, String> {
+) -> Result<HtmlWithImages, String> {
     // 首先获取HTML文件路径
     let html_file_path = get_epub_to_html_file(app_handle, path).await?;
 
@@ -139,7 +179,7 @@ pub async fn get_epub_html_with_images(
                         let content = general_purpose::STANDARD.encode(&file_content);
 
                         // 添加到图片列表
-                        images.push(crate::model::ImageItem {
+                        images.push(ImageItem {
                             path: relative_path,
                             content,
                             mime_type,
@@ -151,7 +191,7 @@ pub async fn get_epub_html_with_images(
     }
 
     // 返回HTML内容和图片列表
-    Ok(crate::model::HtmlWithImages {
+    Ok(HtmlWithImages {
         html_content,
         images,
     })

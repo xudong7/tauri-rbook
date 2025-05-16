@@ -22,3 +22,10 @@ pub struct ImageItem {
     pub content: String,   // base64编码的图片内容
     pub mime_type: String, // 图片的MIME类型
 }
+
+// 返回的HTML内容和图片，菜单展示已有电子书，展示封面
+#[derive(serde::Serialize)]
+pub struct MenuItem {
+    pub cover: String, // 封面图片的base64编码
+    pub file_path: String, // 文件路径
+}

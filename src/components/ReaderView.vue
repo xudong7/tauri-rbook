@@ -1,10 +1,30 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import {
+  ref,
+  onMounted,
+  onUnmounted,
+  watch,
+} from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Window } from "@tauri-apps/api/window";
 import "./ReaderView.css";
 import { getEpubHtmlWithImages, HtmlWithImages } from "../api";
-import { Document, Minus, FullScreen, Close } from "@element-plus/icons-vue";
+import {
+  ArrowLeft,
+  Document,
+  Minus,
+  FullScreen,
+  Close,
+} from "@element-plus/icons-vue";
+
+// Props and emits
+const props = defineProps<{
+  initialFilePath?: string;
+}>();
+
+const emit = defineEmits<{
+  back: [];
+}>();
 
 const currentContent = ref<string>("");
 const leftColumnContent = ref<string>("");
@@ -23,6 +43,44 @@ const resizeTimeout = ref<number | null>(null);
 const currentPage = ref<number>(0);
 const totalPages = ref<number>(0);
 const allPages = ref<string[]>([]);
+
+// Function to load a book from a specified path
+const loadBookFromPath = async (path: string) => {
+  try {
+    loading.value = true;
+    filePath.value = path;
+
+    // 调用后端API获取HTML和图片
+    htmlWithImages.value = await getEpubHtmlWithImages(path);
+
+    // 跳转到第一页
+    currentPage.value = 0;
+
+    // 处理HTML内容和图片
+    processHtmlContent();
+
+    loading.value = false;
+  } catch (error) {
+    console.error("Error loading book:", error);
+    loading.value = false;
+  }
+};
+
+// Watch for initialFilePath changes to load book
+watch(
+  () => props.initialFilePath,
+  (newPath) => {
+    if (newPath) {
+      loadBookFromPath(newPath);
+    }
+  },
+  { immediate: true }
+);
+
+// Go back to menu
+const goBackToMenu = () => {
+  emit("back");
+};
 
 const noScrollStyle = `<style>
   html, body { overflow: hidden!important; margin: 1%; padding: 0; }
@@ -312,14 +370,8 @@ const closeWindow = async () => {
     <!-- Toolbar -->
     <div class="reader-toolbar">
       <div class="left-controls">
-        <button
-          class="icon-button"
-          @click="openAndConvertEpub"
-          :disabled="loading"
-          title="Open EPUB as HTML"
-        >
-          <el-icon :size="20" v-if="!loading"><Document /></el-icon>
-          <span v-else class="loading-spinner"></span>
+        <button class="icon-button" @click="goBackToMenu" title="返回书架">
+          <el-icon :size="20"><ArrowLeft /></el-icon>
         </button>
         <div v-if="currentContent" class="nav-controls">
           <button
@@ -372,7 +424,7 @@ const closeWindow = async () => {
 
     <!-- Placeholder -->
     <div v-if="!currentContent" class="placeholder">
-      <div class="instruction">Please open an EPUB file to view as HTML</div>
+      <div class="instruction">正在准备电子书内容...</div>
     </div>
     <!-- HTML Viewer - 书籍双页式布局 -->
     <div v-if="currentContent" class="html-view-container">

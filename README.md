@@ -39,6 +39,8 @@ pnpm run tauri build
 
 - [ ] 目录页跳转功能
 
+- [ ] 主页书库页面
+
 ### Rust
 
 - [ ] 加载默认文件夹下的epub文件

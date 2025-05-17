@@ -145,7 +145,7 @@ const noScrollStyle = `<style>
   }
 </style>`;
 
-const PAGE_PADDING = 80; // px
+const PAGE_PADDING = 90; // px
 
 // 监听窗口大小变化，以重新布局页面内容
 const handleWindowResize = () => {
@@ -255,7 +255,7 @@ const splitContentForTwoColumns = async (html: string) => {
         const imageHeightRatio = imageHeight / pageHeight;
         if (
           (imageHeightRatio > 0.5 && currentHeight > pageHeight * 0.5) ||
-          totalHeight > pageHeight * 0.6
+          totalHeight > pageHeight * 0.8
         ) {
           allPages.value.push(noScrollStyle + currentPageContent);
           currentPageContent = "";

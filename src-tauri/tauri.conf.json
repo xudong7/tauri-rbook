@@ -14,10 +14,11 @@
         "title": "RBook",
         "width": 1440,
         "height": 960,
-        "minWidth": 800,
-        "minHeight": 600,
+        "minWidth": 1200,
+        "minHeight": 900,
         "center": true,
-        "decorations": false
+        "decorations": false,
+        "shadow": true
       }
     ],
     "security": {

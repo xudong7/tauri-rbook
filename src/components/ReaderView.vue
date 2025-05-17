@@ -81,17 +81,24 @@ const noScrollStyle = `<style>
   body {
     font-family: 'Noto Serif', 'Times New Roman', serif!important;
     font-size: 18px!important;
-    line-height: 1.1!important;
+    line-height: 1.2!important;
     color: #333!important;
-    padding: 40px!important;
+    padding: 20px!important;
     box-sizing: border-box!important;
-  }
+  }  
   p {
     margin: 0.2em 0 0.2em 0!important;
     text-indent: 1em!important;
   }
+  p:has(svg) {
+    padding: 20px!important;
+  }
+  p:has(a) {
+    margin: 0px!important;
+    line-height: 1!important;
+  }
   h1, h2, h3, h4, h5 {
-    margin: 0.5em 0 0.5em!important;
+    margin: 0.2em 0 0.2em!important;
     font-weight: bold!important;
   }  
   img {
@@ -120,12 +127,15 @@ const noScrollStyle = `<style>
     object-fit: contain;
     display: block;
     margin: 0.5em auto 0 auto!important;
-  }
+  }  
   a {
     color: inherit!important;
     text-decoration: none!important;
     pointer-events: none!important;
     cursor: default!important;
+    line-height: 1!important;
+    padding: 0!important;
+    display: inline-block!important;
   }
 </style>`;
 
@@ -247,9 +257,7 @@ const splitContentForTwoColumns = async (html: string) => {
           // 恢复只有当前内容的状态，后面会正常添加图片
           pageContainer.innerHTML = currentPageContent;
         }
-      }
-
-      // 添加内容并检查高度
+      } // 添加内容并检查高度
       pageContainer.innerHTML = currentPageContent + paragraph;
       if (pageContainer.clientHeight > pageHeight) {
         if (currentPageContent) {

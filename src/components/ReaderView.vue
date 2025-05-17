@@ -121,6 +121,12 @@ const noScrollStyle = `<style>
     display: block;
     margin: 0.5em auto 0 auto!important;
   }
+  a {
+    color: inherit!important;
+    text-decoration: none!important;
+    pointer-events: none!important;
+    cursor: default!important;
+  }
 </style>`;
 
 const PAGE_PADDING = 80; // px

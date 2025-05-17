@@ -81,9 +81,9 @@ const noScrollStyle = `<style>
   body {
     font-family: 'Noto Serif', 'Times New Roman', serif!important;
     font-size: 18px!important;
-    line-height: 1.2!important;
+    line-height: 1.4!important;
     color: #333!important;
-    padding: 20px!important;
+    padding: 0!important;
     box-sizing: border-box!important;
   }  
   p {
@@ -91,10 +91,16 @@ const noScrollStyle = `<style>
     text-indent: 1em!important;
   }
   p:has(svg) {
-    padding: 20px!important;
+    padding: 40px!important;
+  }
+  p:has(img) {
+    padding: 10px!important;
   }
   p:has(a) {
-    margin: 0px!important;
+    margin: 0!important;
+    line-height: 1.2!important;
+  }
+  p:has(br) {
     line-height: 1!important;
   }
   h1, h2, h3, h4, h5 {
@@ -207,7 +213,7 @@ const splitContentForTwoColumns = async (html: string) => {
   tempDiv.innerHTML = html;
   const elements = Array.from(tempDiv.children);
   // 减少有效页面高度，确保内容不会被遮挡
-  const pageHeight = window.innerHeight - PAGE_PADDING;
+  const pageHeight = window.innerHeight - PAGE_PADDING * 2;
   const pageWidth = window.innerWidth / 2;
   let currentPageContent = "";
   allPages.value = [];

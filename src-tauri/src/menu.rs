@@ -33,8 +33,14 @@ async fn read_epub_cover(epub_path: &str) -> Result<String, String> {
     }
     
     // 否则从epub中提取封面图片
+    // let mut doc = EpubDoc::new(epub_path).map_err(|e| e.to_string())?;
+    // let cover_data = doc.get_cover().unwrap();
+    // 否则从epub中提取封面图片
     let mut doc = EpubDoc::new(epub_path).map_err(|e| e.to_string())?;
-    let cover_data = doc.get_cover().unwrap();
+    let cover_data = match doc.get_cover() {
+        Some(data) => data,
+        None => return Err("读取EPUB文件封面失败".to_string()),
+    };
     
     let (image_data, _mime_type) = cover_data;
     // 保存图片到文件

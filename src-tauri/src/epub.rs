@@ -21,7 +21,10 @@ fn save_epub_cover(epub_path: &str, save_path: &str) -> Result<String, String> {
 
     // 从epub中提取封面
     let mut doc = EpubDoc::new(epub_path).map_err(|e| e.to_string())?;
-    let cover_data = doc.get_cover().unwrap();
+    let cover_data = match doc.get_cover() {
+        Some(data) => data,
+        None => return Err("EPUB 文件没有封面".to_string()),
+    };
 
     let (image_data, _mime_type) = cover_data;
 

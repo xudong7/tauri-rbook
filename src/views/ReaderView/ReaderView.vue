@@ -82,10 +82,17 @@ const noScrollStyle = `<style>
     line-height: 1.4!important;
     color: #333!important;
     box-sizing: border-box!important;
-  }  
+  }    
   p {
     margin: 1em!important;
     text-indent: 1em!important;
+  }
+  p.pre {
+    margin: 0!important;
+  }
+  a {
+    pointer-events: none!important;
+    text-decoration: none!important;
   }
 </style>`;
 
@@ -173,7 +180,6 @@ const splitContentForTwoColumns = async (html: string) => {
   pageContainer.style.position = "relative";
   pageContainer.style.boxSizing = "border-box";
   document.body.appendChild(pageContainer);
-
   const processElement = async (element: Element) => {
     const paragraphs = element.outerHTML.match(/<p[\s\S]*?<\/p>/g) || [
       element.outerHTML,
@@ -185,7 +191,8 @@ const splitContentForTwoColumns = async (html: string) => {
       const isSvg = paragraph.includes("<svg");
       // 检查是否包含'image'标签
       const isImageTag = paragraph.includes("<image");
-      // 包含'img'或'svg'或'image'的段落
+
+      // 是否包含图片
       if (
         (isImage || isSvg || isImageTag) &&
         currentPageContent.trim() !== ""
@@ -293,13 +300,15 @@ const splitContentForTwoColumns = async (html: string) => {
         pageContainer.innerHTML =
           noScrollStyle + currentPageContent + paragraph;
         const currentHeight = pageContainer.clientHeight;
+
         // 如果当前高度超过页面高度，强制分页
         if (currentHeight > pageHeight) {
           allPages.value.push(noScrollStyle + currentPageContent);
-          currentPageContent = "";
+          currentPageContent = paragraph; // 将当前段落放到新页面
+        } else {
+          // 如果当前高度未超过页面高度，继续添加
+          currentPageContent += paragraph;
         }
-        // 如果当前高度未超过页面高度，继续添加
-        currentPageContent += paragraph;
       }
     }
     pageContainer.innerHTML = "";

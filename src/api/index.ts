@@ -40,9 +40,81 @@ export const getEpubHtmlWithImages = async (
   path: string
 ): Promise<HtmlWithImages> => {
   try {
-    return await invoke<HtmlWithImages>("get_epub_html_with_images_command", { path });
+    return await invoke<HtmlWithImages>("get_epub_html_with_images_command", {
+      path,
+    });
   } catch (error) {
     console.error("Error getting HTML with images:", error);
+    throw error;
+  }
+};
+
+/**
+ * 菜单项接口
+ */
+export interface MenuItem {
+  cover: string; // 封面图片的base64编码
+  file_path: string; // 文件路径
+}
+
+/**
+ * 获取所有本地电子书文件
+ * @returns 菜单项列表
+ */
+export const getAllLocalFiles = async (): Promise<MenuItem[]> => {
+  try {
+    return await invoke<MenuItem[]>("get_all_local_files_command");
+  } catch (error) {
+    console.error("Error getting local files:", error);
+    throw error;
+  }
+};
+
+/**
+ * 书籍搜索结果接口
+ */
+export interface BookSearchResult {
+  title: string; // 书籍标题
+  author: string; // 作者
+  cover_image: string; // 封面图片URL
+  description: string; // 书籍描述/摘要
+  details_url: string; // 书籍详情页面URL
+  download_url: string; // 书籍下载链接
+}
+
+/**
+ * 搜索在线书籍
+ * @param keyword 关键词
+ * @param page 页码
+ * @returns 搜索结果列表
+ */
+export const searchOnlineBooks = async (
+  keyword: string,
+  page: number = 1
+): Promise<BookSearchResult[]> => {
+  try {
+    return await invoke<BookSearchResult[]>("search_online_books_command", {
+      keyword,
+      page,
+    });
+  } catch (error) {
+    console.error("Error searching online books:", error);
+    throw error;
+  }
+};
+
+/**
+ * 下载指定的在线书籍
+ * @param book 要下载的书籍信息
+ * @returns 下载后的文件路径
+ */
+export const downloadOnlineBook = async (
+  book: BookSearchResult
+): Promise<string> => {
+  try {
+    return await invoke<string>("download_online_book_command", { book });
+  } catch (error) {
+    console.error("Error downloading online book:", error);
     throw error;
   }
 };

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from "vue";
+import { useRouter } from "vue-router";
 import { Window } from "@tauri-apps/api/window";
-import "./ReaderView.css";
-import { getEpubHtmlWithImages, HtmlWithImages } from "../api";
+import { getEpubHtmlWithImages, HtmlWithImages } from "../../api";
 import {
   ArrowLeft,
   ArrowRight,
@@ -11,13 +11,11 @@ import {
   Close,
 } from "@element-plus/icons-vue";
 
-// Props and emits
+const router = useRouter();
+
+// Props
 const props = defineProps<{
   initialFilePath?: string;
-}>();
-
-const emit = defineEmits<{
-  back: [];
 }>();
 
 const currentContent = ref<string>("");
@@ -73,79 +71,25 @@ watch(
 
 // Go back to menu
 const goBackToMenu = () => {
-  emit("back");
+  router.push("/");
 };
 
 const noScrollStyle = `<style>
-  html, body { overflow: hidden!important; margin: 20px; padding: 0; }
+  html { overflow: hidden!important; margin: 20px; padding: 0; }
   body {
     font-family: 'Noto Serif', 'Times New Roman', serif!important;
     font-size: 18px!important;
     line-height: 1.4!important;
     color: #333!important;
-    padding: 0!important;
     box-sizing: border-box!important;
   }  
   p {
-    margin: 0.2em 0 0.2em 0!important;
+    margin: 1em!important;
     text-indent: 1em!important;
-  }
-  p:has(svg) {
-    padding: 40px!important;
-  }
-  p:has(img) {
-    padding: 10px!important;
-  }
-  p:has(a) {
-    margin: 0!important;
-    line-height: 1.2!important;
-  }
-  p:has(br) {
-    line-height: 1!important;
-  }
-  h1, h2, h3, h4, h5 {
-    margin: 0.2em 0 0.2em!important;
-    font-weight: bold!important;
-  }  
-  img {
-    width: auto!important;
-    height: auto!important;
-    max-width: 85%!important;
-    max-height: 60%!important;
-    object-fit: contain;
-    display: block;
-    margin: 0.5em auto 0.5em auto!important;
-  }
-  svg {
-    width: auto!important;
-    height: auto!important;
-    max-width: 85%!important;
-    max-height: 60%!important;
-    object-fit: contain;
-    display: block;
-    margin: 0.5em auto 0 auto!important;
-  }
-  image {
-    width: auto!important;
-    height: auto!important;
-    max-width: 85%!important;
-    max-height: 60%!important;
-    object-fit: contain;
-    display: block;
-    margin: 0.5em auto 0 auto!important;
-  }  
-  a {
-    color: inherit!important;
-    text-decoration: none!important;
-    pointer-events: none!important;
-    cursor: default!important;
-    line-height: 1!important;
-    padding: 0!important;
-    display: inline-block!important;
   }
 </style>`;
 
-const PAGE_PADDING = 90; // px
+const PAGE_PADDING = 20; // px
 
 // 监听窗口大小变化，以重新布局页面内容
 const handleWindowResize = () => {
@@ -209,86 +153,152 @@ const processHtmlContent = async () => {
 
 // 分割内容到左右栏
 const splitContentForTwoColumns = async (html: string) => {
+  // 存储所有页面的内容
   const tempDiv = document.createElement("div");
   tempDiv.innerHTML = html;
   const elements = Array.from(tempDiv.children);
-  // 减少有效页面高度，确保内容不会被遮挡
-  const pageHeight = window.innerHeight - PAGE_PADDING * 2;
+
+  // 得到页面宽度和高度
+  const pageHeight = window.innerHeight * 0.9;
   const pageWidth = window.innerWidth / 2;
+
+  // 初始化当前页面的内容
   let currentPageContent = "";
   allPages.value = [];
-  const measureContainer = document.createElement("div");
-  measureContainer.style.width = `${pageWidth}px`;
-  measureContainer.style.position = "absolute";
-  measureContainer.style.visibility = "hidden";
-  measureContainer.style.padding = `${PAGE_PADDING}px`;
-  measureContainer.style.boxSizing = "border-box";
-  document.body.appendChild(measureContainer);
+
   const pageContainer = document.createElement("div");
   pageContainer.style.width = `${pageWidth}px`;
   pageContainer.style.padding = `${PAGE_PADDING}px`;
+  pageContainer.style.overflow = "hidden";
+  pageContainer.style.position = "relative";
   pageContainer.style.boxSizing = "border-box";
-  measureContainer.appendChild(pageContainer);
-  const processElement = async (element: Element) => {
-    const paragraphs = element.outerHTML.match(
-      /<p[\s\S]*?<\/p>|<img[\s\S]*?(?:>|<\/img>)/g
-    ) || [element.outerHTML];
-    for (const paragraph of paragraphs) {
-      // 检查是否是图片元素
-      const isImage = paragraph.includes("<img");
+  document.body.appendChild(pageContainer);
 
-      // 对图片做特殊处理
-      if (isImage && currentPageContent.trim() !== "") {
-        // 先测量当前内容高度
-        pageContainer.innerHTML = currentPageContent;
+  const processElement = async (element: Element) => {
+    const paragraphs = element.outerHTML.match(/<p[\s\S]*?<\/p>/g) || [
+      element.outerHTML,
+    ];
+    for (const paragraph of paragraphs) {
+      // 检查是否包含'img'标签
+      const isImage = paragraph.includes("<img");
+      // 检查是否包含'svg'标签
+      const isSvg = paragraph.includes("<svg");
+      // 检查是否包含'image'标签
+      const isImageTag = paragraph.includes("<image");
+      // 包含'img'或'svg'或'image'的段落
+      if (
+        (isImage || isSvg || isImageTag) &&
+        currentPageContent.trim() !== ""
+      ) {
+        // 创建临时容器来获取图片并处理图片尺寸
+        const tempImgContainer = document.createElement("div");
+        tempImgContainer.innerHTML = paragraph; // 设置最大尺寸限制
+        const maxWidth = pageWidth * 0.9;
+        const maxHeight = pageHeight * 0.9; // 为页面留出一些空间
+
+        // 处理img标签图片大小
+        const imgElements = tempImgContainer.querySelectorAll("img");
+        if (imgElements.length > 0) {
+          for (const img of imgElements) {
+            // 设置图片样式，确保其不超出页面
+            // img.style.maxWidth = `${maxWidth}px`;
+            img.style.maxHeight = `${maxHeight}px`;
+            img.style.width = "auto"; // 保持纵横比
+            img.style.height = "auto"; // 保持纵横比
+            img.style.display = "block";
+            img.style.margin = "1em auto"; // 居中显示
+          }
+        }
+
+        // 处理SVG中的image标签
+        const svgElements = tempImgContainer.querySelectorAll("svg");
+        if (svgElements.length > 0) {
+          for (const svg of svgElements) {
+            // 获取SVG原始尺寸
+            const svgWidth = parseFloat(svg.getAttribute("width") || "0");
+            const svgHeight = parseFloat(svg.getAttribute("height") || "0");
+
+            if (svgWidth > 0 && svgHeight > 0) {
+              // 计算缩放比例
+              const scale = Math.min(
+                maxWidth / svgWidth,
+                maxHeight / svgHeight,
+                1 // 不放大，只缩小
+              );
+
+              // 设置新尺寸
+              const newWidth = Math.floor(svgWidth * scale);
+              const newHeight = Math.floor(svgHeight * scale);
+
+              // 应用新尺寸
+              svg.setAttribute("width", newWidth.toString());
+              svg.setAttribute("height", newHeight.toString());
+              svg.style.display = "block";
+              svg.style.margin = "1em auto"; // 居中显示
+            }
+
+            // 处理SVG内部的image标签
+            const imageElements = svg.querySelectorAll("image");
+            for (const image of imageElements) {
+              // 获取image标签的原始尺寸
+              const imageWidth = parseFloat(image.getAttribute("width") || "0");
+              const imageHeight = parseFloat(
+                image.getAttribute("height") || "0"
+              );
+
+              if (imageWidth > 0 && imageHeight > 0) {
+                // 应用与SVG相同的缩放
+                const scale = Math.min(
+                  maxWidth / imageWidth,
+                  maxHeight / imageHeight,
+                  1 // 不放大，只缩小
+                );
+
+                // 设置新尺寸
+                const newWidth = Math.floor(imageWidth * scale);
+                const newHeight = Math.floor(imageHeight * scale);
+
+                // 应用新尺寸
+                image.setAttribute("width", newWidth.toString());
+                image.setAttribute("height", newHeight.toString());
+              }
+            }
+          }
+        }
+        // 替换原始段落为处理过尺寸的段落
+        const processedParagraph = tempImgContainer.innerHTML;
+
+        // 如果当前页面为空，直接添加
+        if (currentPageContent === "") {
+          currentPageContent += processedParagraph;
+          continue;
+        }
+
+        // 计算加了noScrollStyle样式后的页面的高度
+        pageContainer.innerHTML =
+          noScrollStyle + currentPageContent + processedParagraph;
         const currentHeight = pageContainer.clientHeight;
 
-        // 测量当前图片高度
-        pageContainer.innerHTML = paragraph;
-        const imageHeight = pageContainer.clientHeight;
-
-        // 再测量当前内容加上图片的高度
-        pageContainer.innerHTML = currentPageContent + paragraph;
-        const totalHeight = pageContainer.clientHeight;
-
-        // 如果图片高度占据页面高度的50%以上，或者添加图片后超出页面高度，则开始新页面
-        const imageHeightRatio = imageHeight / pageHeight;
-        if (
-          (imageHeightRatio > 0.5 && currentHeight > pageHeight * 0.5) ||
-          totalHeight > pageHeight * 0.8
-        ) {
+        // 如果当前高度超过页面高度，强制分页后再添加图片
+        if (currentHeight > pageHeight) {
           allPages.value.push(noScrollStyle + currentPageContent);
-          currentPageContent = "";
+          currentPageContent = processedParagraph; // 将图片放到新页
         } else {
-          // 恢复只有当前内容的状态，后面会正常添加图片
-          pageContainer.innerHTML = currentPageContent;
-        }
-      } // 添加内容并检查高度
-      pageContainer.innerHTML = currentPageContent + paragraph;
-      if (pageContainer.clientHeight > pageHeight) {
-        if (currentPageContent) {
-          allPages.value.push(noScrollStyle + currentPageContent);
-        }
-        currentPageContent = paragraph;
-        pageContainer.innerHTML = currentPageContent; // 如果单个段落或图片本身就超出一页，强制分页
-        if (pageContainer.clientHeight > pageHeight) {
-          // 对于超大图片，调整其大小限制以确保完整显示
-          if (isImage) {
-            // 不使用溢出隐藏，而是缩放图片到适合的大小
-            const wrappedImage = `<div style="display:flex; align-items:center; justify-content:center;">
-              <img style="max-width:100%; max-height:100%; object-fit:contain;" 
-              src=${
-                paragraph.match(/src=["']([^"']*)["']/)?.[1] || ""
-              } alt="image" />
-            </div>`;
-            allPages.value.push(noScrollStyle + wrappedImage);
-          } else {
-            allPages.value.push(noScrollStyle + currentPageContent);
-          }
-          currentPageContent = "";
-          pageContainer.innerHTML = "";
+          // 当前高度未超过页面高度，继续添加
+          currentPageContent += processedParagraph;
         }
       } else {
+        // 非图片段落
+        // 计算加了noScrollStyle样式后的页面的高度
+        pageContainer.innerHTML =
+          noScrollStyle + currentPageContent + paragraph;
+        const currentHeight = pageContainer.clientHeight;
+        // 如果当前高度超过页面高度，强制分页
+        if (currentHeight > pageHeight) {
+          allPages.value.push(noScrollStyle + currentPageContent);
+          currentPageContent = "";
+        }
+        // 如果当前高度未超过页面高度，继续添加
         currentPageContent += paragraph;
       }
     }
@@ -303,7 +313,7 @@ const splitContentForTwoColumns = async (html: string) => {
   if (currentPageContent) {
     allPages.value.push(noScrollStyle + currentPageContent);
   }
-  document.body.removeChild(measureContainer);
+  document.body.removeChild(pageContainer);
   totalPages.value = allPages.value.length;
   updateVisiblePages();
 };
@@ -450,3 +460,5 @@ const closeWindow = async () => {
     </div>
   </div>
 </template>
+
+<style scoped src="./ReaderView.css" />

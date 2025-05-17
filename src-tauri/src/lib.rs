@@ -3,16 +3,18 @@ mod epub;
 mod file;
 mod menu;
 mod model;
+mod search;
 mod tray;
 
 use epub::{get_epub_html_with_images, get_epub_to_html_file};
 use file::init_default_cover;
 use menu::get_all_local_files;
-use tray::setup_tray;
 use model::{HtmlWithImages, MenuItem};
+use search::{download_certain_online_book, search_online_books_by_keyword, BookSearchResult};
 use tauri::path::BaseDirectory;
 use tauri::AppHandle;
 use tauri::Manager;
+use tray::setup_tray;
 
 // 获取HTML文件路径
 #[tauri::command]
@@ -38,6 +40,23 @@ async fn get_all_local_files_command(app_handle: AppHandle) -> Result<Vec<MenuIt
     get_all_local_files(app_handle).await
 }
 
+// 搜索在线书籍
+#[tauri::command]
+async fn search_online_books_command(
+    keyword: &str,
+    page: u32,
+) -> Result<Vec<BookSearchResult>, String> {
+    search_online_books_by_keyword(keyword, page).await
+}
+
+#[tauri::command]
+async fn download_online_book_command(
+    app_handle: AppHandle,
+    book: BookSearchResult,
+) -> Result<String, String> {
+    download_certain_online_book(app_handle, &book).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -60,6 +79,8 @@ pub fn run() {
             get_epub_to_html_file_command,
             get_epub_html_with_images_command,
             get_all_local_files_command,
+            search_online_books_command,
+            download_online_book_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

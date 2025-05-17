@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { getAllLocalFiles } from "../api";
+import { useRouter } from "vue-router";
+import { getAllLocalFiles } from "../../api";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Window } from "@tauri-apps/api/window";
+
+const router = useRouter();
 import {
   Upload,
   Search,
@@ -10,7 +13,6 @@ import {
   FullScreen,
   Close,
 } from "@element-plus/icons-vue";
-import "./MenuView.css";
 
 interface MenuItem {
   cover: string; // base64 encoded cover image
@@ -72,13 +74,16 @@ const uploadEpub = async () => {
 
 // Open a book in ReaderView
 const openBook = (filePath: string) => {
-  // Emit event to App.vue to switch to ReaderView with this book
-  window.dispatchEvent(new CustomEvent("open-book", { detail: { filePath } }));
+  // Use router to navigate to reader with file path
+  router.push({
+    path: "/reader",
+    query: { filePath },
+  });
 };
 
 // Open search view
 const openSearch = () => {
-  window.dispatchEvent(new CustomEvent("open-search"));
+  router.push("/search");
 };
 
 // Window control functions
@@ -180,3 +185,5 @@ const closeWindow = async () => {
     </div>
   </div>
 </template>
+
+<style scoped src="./MenuView.css" />

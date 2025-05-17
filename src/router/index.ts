@@ -1,0 +1,30 @@
+import { createRouter, createWebHistory } from 'vue-router'
+import MenuView from '../views/MenuView/MenuView.vue'
+import ReaderView from '../views/ReaderView/ReaderView.vue'
+import SearchView from '../views/SearchView/SearchView.vue'
+
+const routes = [
+  {
+    path: '/',
+    name: 'Menu',
+    component: MenuView
+  },
+  {
+    path: '/reader',
+    name: 'Reader',
+    component: ReaderView,
+    props: route => ({ initialFilePath: route.query.filePath as string })
+  },
+  {
+    path: '/search',
+    name: 'Search',
+    component: SearchView
+  }
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes
+})
+
+export default router

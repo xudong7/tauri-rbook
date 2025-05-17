@@ -2,23 +2,35 @@
 import { ref, onMounted } from "vue";
 import ReaderView from "./components/ReaderView.vue";
 import MenuView from "./components/MenuView.vue";
+import SearchView from "./components/SearchView.vue";
 import "./assets/global.css";
 
 // Simple routing system
-const currentView = ref<'menu' | 'reader'>('menu');
-const selectedFilePath = ref<string>('');
+const currentView = ref<"menu" | "reader" | "search">("menu");
+const selectedFilePath = ref<string>("");
 
-// Listen for the open-book event from MenuView
+// Listen for events
 onMounted(() => {
-  window.addEventListener('open-book', ((event: CustomEvent) => {
+  // Open book event
+  window.addEventListener("open-book", ((event: CustomEvent) => {
     selectedFilePath.value = event.detail.filePath;
-    currentView.value = 'reader';
+    currentView.value = "reader";
+  }) as EventListener);
+
+  // Open search event
+  window.addEventListener("open-search", (() => {
+    currentView.value = "search";
+  }) as EventListener);
+
+  // Back to menu event (used after download completion)
+  window.addEventListener("back-to-menu", (() => {
+    currentView.value = "menu";
   }) as EventListener);
 });
 
 // Function to go back to menu
 const goBackToMenu = () => {
-  currentView.value = 'menu';
+  currentView.value = "menu";
 };
 </script>
 
@@ -26,11 +38,12 @@ const goBackToMenu = () => {
   <el-config-provider>
     <div class="app-container">
       <MenuView v-if="currentView === 'menu'" />
-      <ReaderView 
-        v-else 
-        :initialFilePath="selectedFilePath" 
-        @back="goBackToMenu" 
+      <ReaderView
+        v-if="currentView === 'reader'"
+        :initialFilePath="selectedFilePath"
+        @back="goBackToMenu"
       />
+      <SearchView v-if="currentView === 'search'" @back="goBackToMenu" />
     </div>
   </el-config-provider>
 </template>

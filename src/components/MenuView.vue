@@ -1,9 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { invoke } from "@tauri-apps/api/core";
+import { getAllLocalFiles } from "../api";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Window } from "@tauri-apps/api/window";
-import { Upload, Minus, FullScreen, Close } from "@element-plus/icons-vue";
+import {
+  Upload,
+  Search,
+  Minus,
+  FullScreen,
+  Close,
+} from "@element-plus/icons-vue";
 import "./MenuView.css";
 
 interface MenuItem {
@@ -24,14 +30,13 @@ onMounted(async () => {
 const loadLocalBooks = async () => {
   try {
     loading.value = true;
-    books.value = await invoke<MenuItem[]>("get_all_local_files_command");
+    books.value = await getAllLocalFiles();
     loading.value = false;
   } catch (error) {
     console.error("Failed to load local books:", error);
     loading.value = false;
   }
 };
-
 
 // Upload new EPUB file
 const uploadEpub = async () => {
@@ -53,7 +58,7 @@ const uploadEpub = async () => {
       loading.value = false;
       return;
     }
-    
+
     filePath.value = selected;
 
     openBook(filePath.value);
@@ -69,6 +74,11 @@ const uploadEpub = async () => {
 const openBook = (filePath: string) => {
   // Emit event to App.vue to switch to ReaderView with this book
   window.dispatchEvent(new CustomEvent("open-book", { detail: { filePath } }));
+};
+
+// Open search view
+const openSearch = () => {
+  window.dispatchEvent(new CustomEvent("open-search"));
 };
 
 // Window control functions
@@ -103,6 +113,9 @@ const closeWindow = async () => {
           <el-icon :size="20" v-if="!loading"><Upload /></el-icon>
           <span v-else class="loading-spinner"></span>
         </button>
+        <button class="icon-button" @click="openSearch" title="搜索电子书">
+          <el-icon :size="20"><Search /></el-icon>
+        </button>
       </div>
       <div class="window-controls">
         <button
@@ -135,13 +148,18 @@ const closeWindow = async () => {
         <div class="loading-spinner large"></div>
         <div>正在加载书籍...</div>
       </div>
-
       <div v-else-if="books.length === 0" class="empty-state">
         <p>当前没有书籍</p>
-        <button @click="uploadEpub" class="upload-button">
-          <el-icon :size="24"><Upload /></el-icon>
-          上传电子书
-        </button>
+        <div class="empty-state-buttons">
+          <button @click="uploadEpub" class="upload-button">
+            <el-icon :size="24"><Upload /></el-icon>
+            上传电子书
+          </button>
+          <button @click="openSearch" class="upload-button">
+            <el-icon :size="24"><Search /></el-icon>
+            搜索电子书
+          </button>
+        </div>
       </div>
 
       <div v-else class="book-list">

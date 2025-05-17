@@ -1,42 +1,11 @@
 use crate::convert::{download_converted_file, upload_epub_to_fileformat_api};
-use crate::file::{calculate_md5_hash, find_html_file};
+use crate::file::{calculate_md5_hash, find_html_file, save_epub_cover};
 use crate::model::{HtmlWithImages, ImageItem};
 use base64::{engine::general_purpose, Engine as _};
-use epub::doc::EpubDoc;
 use std::fs;
-use std::io::Write;
 use std::path::Path;
 use tauri::AppHandle;
 use tauri::Manager;
-
-// 保存epub文件的封面图片到本地
-fn save_epub_cover(epub_path: &str, save_path: &str) -> Result<String, String> {
-    // 创建保存目录
-    if let Some(parent) = Path::new(save_path).parent() {
-        if !parent.exists() {
-            fs::create_dir_all(parent)
-                .map_err(|e| format!("Failed to create cover directory: {}", e))?;
-        }
-    }
-
-    // 从epub中提取封面
-    let mut doc = EpubDoc::new(epub_path).map_err(|e| e.to_string())?;
-    let cover_data = doc.get_cover().unwrap();
-
-    let (image_data, _mime_type) = cover_data;
-
-    // 保存图片到文件
-    let mut f =
-        fs::File::create(save_path).map_err(|e| format!("Failed to create cover file: {}", e))?;
-
-    f.write_all(&image_data)
-        .map_err(|e| format!("Failed to write cover file: {}", e))?;
-
-    // 同时返回base64编码，以便在前端显示
-    let base64_image = general_purpose::STANDARD.encode(image_data);
-
-    Ok(base64_image)
-}
 
 // 调用函数，传入epub文件路径，得到转换后的html文件路径
 pub async fn get_epub_to_html_file(app_handle: AppHandle, path: &str) -> Result<String, String> {

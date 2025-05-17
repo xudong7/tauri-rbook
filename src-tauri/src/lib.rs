@@ -1,14 +1,18 @@
 mod convert;
 mod epub;
 mod file;
+mod menu;
 mod model;
 mod tray;
-mod menu;
 
 use epub::{get_epub_html_with_images, get_epub_to_html_file};
+use file::init_default_cover;
 use menu::get_all_local_files;
-use model::{MenuItem, HtmlWithImages};
+use tray::setup_tray;
+use model::{HtmlWithImages, MenuItem};
+use tauri::path::BaseDirectory;
 use tauri::AppHandle;
+use tauri::Manager;
 
 // 获取HTML文件路径
 #[tauri::command]
@@ -30,9 +34,7 @@ async fn get_epub_html_with_images_command(
 
 // 获取菜单页面的全部电子书文件 带base64编码的封面和文件路径
 #[tauri::command]
-async fn get_all_local_files_command(
-    app_handle: AppHandle,
-) -> Result<Vec<MenuItem>, String> {
+async fn get_all_local_files_command(app_handle: AppHandle) -> Result<Vec<MenuItem>, String> {
     get_all_local_files(app_handle).await
 }
 
@@ -42,8 +44,15 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            // 将默认封面图片复制到应用程序目录
+            let resource_path = app
+                .path()
+                .resolve("resources/default_cover.png", BaseDirectory::Resource)?;
+            let app_handle = app.handle();
+            init_default_cover(&app_handle, &resource_path.to_string_lossy())?;
+
             // setup the tray icon
-            tray::setup_tray(app).unwrap();
+            setup_tray(app).unwrap();
 
             Ok(())
         })

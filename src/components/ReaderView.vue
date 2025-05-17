@@ -77,18 +77,17 @@ const goBackToMenu = () => {
 };
 
 const noScrollStyle = `<style>
-  html, body { overflow: hidden!important; margin: 40px; padding: 0; }
+  html, body { overflow: hidden!important; margin: 40px; padding: 20px; }
   body {
     font-family: 'Noto Serif', 'Times New Roman', serif!important;
-    font-size: 16px!important;
+    font-size: auto!important;
     line-height: 1.2!important;
     color: #333!important;
     padding: 0!important;
     box-sizing: border-box!important;
   }
   p {
-    margin: 1em 0!important;
-    max-height: 50%!important;
+    margin: 0.2em 0 0.2em 0!important;
     text-indent: 1em!important;
   }
   h1, h2, h3, h4, h5 {
@@ -124,7 +123,7 @@ const noScrollStyle = `<style>
   }
 </style>`;
 
-const PAGE_PADDING = 40; // px
+const PAGE_PADDING = 80; // px
 
 // 监听窗口大小变化，以重新布局页面内容
 const handleWindowResize = () => {
@@ -192,8 +191,8 @@ const splitContentForTwoColumns = async (html: string) => {
   tempDiv.innerHTML = html;
   const elements = Array.from(tempDiv.children);
   // 减少有效页面高度，确保内容不会被遮挡
-  const pageHeight = window.innerHeight * 0.6;
-  const pageWidth = (window.innerWidth - PAGE_PADDING) / 2;
+  const pageHeight = window.innerHeight - PAGE_PADDING;
+  const pageWidth = window.innerWidth / 2;
   let currentPageContent = "";
   allPages.value = [];
   const measureContainer = document.createElement("div");
@@ -233,8 +232,8 @@ const splitContentForTwoColumns = async (html: string) => {
         // 如果图片高度占据页面高度的50%以上，或者添加图片后超出页面高度，则开始新页面
         const imageHeightRatio = imageHeight / pageHeight;
         if (
-          (currentHeight > pageHeight * 0.4 && imageHeightRatio > 0.5) ||
-          (totalHeight > pageHeight * 0.7 && currentHeight > 0)
+          (imageHeightRatio > 0.5 && currentHeight > pageHeight * 0.5) ||
+          totalHeight > pageHeight * 0.6
         ) {
           allPages.value.push(noScrollStyle + currentPageContent);
           currentPageContent = "";
@@ -353,9 +352,8 @@ const closeWindow = async () => {
         </button>
       </div>
       <div class="page-indicator-inline" v-if="currentContent">
-        {{ currentPage + 1 }} - {{ Math.min(currentPage + 2, totalPages) }} / {{
-          totalPages
-        }}
+        {{ currentPage + 1 }} - {{ Math.min(currentPage + 2, totalPages) }} /
+        {{ totalPages }}
       </div>
       <div class="window-controls">
         <button

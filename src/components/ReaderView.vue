@@ -77,13 +77,13 @@ const goBackToMenu = () => {
 };
 
 const noScrollStyle = `<style>
-  html, body { overflow: hidden!important; margin: 40px; padding: 20px; }
+  html, body { overflow: hidden!important; margin: 20px; padding: 0; }
   body {
     font-family: 'Noto Serif', 'Times New Roman', serif!important;
-    font-size: auto!important;
-    line-height: 1.2!important;
+    font-size: 18px!important;
+    line-height: 1.1!important;
     color: #333!important;
-    padding: 0!important;
+    padding: 40px!important;
     box-sizing: border-box!important;
   }
   p {

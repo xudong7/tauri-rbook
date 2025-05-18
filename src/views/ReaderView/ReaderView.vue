@@ -180,8 +180,7 @@ const splitContentForTwoColumns = async (html: string) => {
   pageContainer.style.position = "relative";
   pageContainer.style.boxSizing = "border-box";
   document.body.appendChild(pageContainer);
-
-  // 拆分包含多个图像的段落
+  // 拆分包含多个图像的段落或标题
   const splitParagraphWithImages = (paragraph: string): string[] => {
     // 如果段落不包含图像或只包含一个图像，则直接返回
     if (
@@ -195,13 +194,17 @@ const splitContentForTwoColumns = async (html: string) => {
     // 创建临时DOM元素来解析段落内容
     const tempPara = document.createElement("div");
     tempPara.innerHTML = paragraph;
+    // 确定元素类型 (p, h1-h6)
+    const firstChild = tempPara.firstChild;
+    const nodeName = firstChild?.nodeName || "";
+    const isHeading = /^H[1-6]$/i.test(nodeName);
+    // 使用原始标签类型或默认为p
+    const tagName = isHeading ? nodeName.toLowerCase() : "p";
 
-    // 处理段落中的文本和图像混合情况
+    // 处理段落或标题中的文本和图像混合情况
     const result: string[] = [];
-    let currentP = document.createElement("p");
-    let hasContent = false;
-
-    // 处理段落中的所有子节点
+    let currentElement = document.createElement(tagName);
+    let hasContent = false; // 处理段落中的所有子节点
     for (const childNode of Array.from(tempPara.firstChild?.childNodes || [])) {
       // 如果是图像节点
       if (
@@ -210,40 +213,39 @@ const splitContentForTwoColumns = async (html: string) => {
         (childNode.nodeName === "IMAGE" &&
           childNode.parentNode?.nodeName !== "SVG")
       ) {
-        // 如果当前p中已有内容，先保存它
+        // 如果当前元素中已有内容，先保存它
         if (hasContent) {
-          result.push(currentP.outerHTML);
-          currentP = document.createElement("p");
+          result.push(currentElement.outerHTML);
+          currentElement = document.createElement(tagName);
           hasContent = false;
         }
 
-        // 创建一个只包含图像的p标签
-        const imgP = document.createElement("p");
-        imgP.appendChild(childNode.cloneNode(true));
-        result.push(imgP.outerHTML);
+        // 创建一个只包含图像的标签，使用原始标签类型
+        const imgContainer = document.createElement(tagName);
+        imgContainer.appendChild(childNode.cloneNode(true));
+        result.push(imgContainer.outerHTML);
       } else {
-        // 将非图像节点添加到当前段落
-        currentP.appendChild(childNode.cloneNode(true));
+        // 将非图像节点添加到当前元素
+        currentElement.appendChild(childNode.cloneNode(true));
         hasContent = true;
       }
     }
 
-    // 如果当前p中还有内容，保存它
+    // 如果当前元素中还有内容，保存它
     if (hasContent) {
-      result.push(currentP.outerHTML);
+      result.push(currentElement.outerHTML);
     }
 
     return result.length > 0 ? result : [paragraph];
   };
-
   // 处理每个元素
   const processElement = async (element: Element) => {
-    // 获取所有段落
-    const paragraphs = element.outerHTML.match(/<p[\s\S]*?<\/p>/g) || [
-      element.outerHTML,
-    ];
+    // 获取所有段落和标题
+    const paragraphs = element.outerHTML.match(
+      /<(p|h[1-6])[\s\S]*?<\/(p|h[1-6])>/g
+    ) || [element.outerHTML];
 
-    // 处理每个段落
+    // 处理每个段落和标题
     for (const paragraph of paragraphs) {
       // 拆分包含多个图像的段落
       const splitParagraphs = splitParagraphWithImages(paragraph);

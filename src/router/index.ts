@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import type { RouteLocationNormalized } from 'vue-router'
 import MenuView from '../views/MenuView/MenuView.vue'
 import ReaderView from '../views/ReaderView/ReaderView.vue'
 import SearchView from '../views/SearchView/SearchView.vue'
@@ -13,7 +14,7 @@ const routes = [
     path: '/reader',
     name: 'Reader',
     component: ReaderView,
-    props: route => ({ initialFilePath: route.query.filePath as string })
+    props: (route: RouteLocationNormalized) => ({ initialFilePath: route.query.filePath as string })
   },
   {
     path: '/search',

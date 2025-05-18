@@ -39,7 +39,7 @@ pnpm run tauri build
 
 - [ ] 目录页跳转功能
 
-- [ ] 多文件上传
+- [x] 多文件上传
 
 - [x] 主页书库页面
 
@@ -51,6 +51,6 @@ pnpm run tauri build
 
 - [ ] 标记位置(书签) -- 返回html时可以返回一个json对象，包含书签位置
 
-- [ ] 多个文件同时上传
+- [x] 多个文件同时上传
 
 - [ ] 搜索功能：[网站1](https://digilibraries.com/) 和 [网站2](https://www.gutenberg.org/) 的epub文件

@@ -165,3 +165,91 @@ pub async fn get_epub_html_with_images(
         images,
     })
 }
+
+// 调用函数，传入多个epub文件路径，处理所有文件并返回最后一个HTML文件路径
+pub async fn get_epub_to_html_files(
+    app_handle: AppHandle,
+    paths: Vec<&str>,
+) -> Result<String, String> {
+    if paths.is_empty() {
+        return Err("No EPUB files provided".to_string());
+    }
+
+    let mut last_html_path = String::new();
+    let mut errors = Vec::new();
+
+    // 处理每个EPUB文件
+    for (index, path) in paths.iter().enumerate() {
+        match get_epub_to_html_file(app_handle.clone(), path).await {
+            Ok(html_path) => {
+                println!(
+                    "Successfully processed {}/{} books: {}",
+                    index + 1,
+                    paths.len(),
+                    path
+                );
+                last_html_path = html_path;
+            }
+            Err(e) => {
+                let error_msg = format!("Error processing file {}: {}", path, e);
+                println!("{}", error_msg);
+                errors.push(error_msg);
+            }
+        }
+    }
+
+    // 如果有任何文件成功处理，返回最后一个成功的HTML路径
+    if !last_html_path.is_empty() {
+        Ok(last_html_path)
+    } else {
+        // 如果所有文件处理都失败，返回错误信息
+        Err(format!(
+            "Failed to process all EPUB files: {}",
+            errors.join("; ")
+        ))
+    }
+}
+
+// 获取多个EPUB文件的HTML内容和相关图片，返回最后一个处理成功的结果
+pub async fn get_epub_html_with_images_multiple(
+    app_handle: AppHandle,
+    paths: Vec<&str>,
+) -> Result<HtmlWithImages, String> {
+    if paths.is_empty() {
+        return Err("No EPUB files provided".to_string());
+    }
+
+    let mut last_result: Option<HtmlWithImages> = None;
+    let mut errors = Vec::new();
+
+    // 处理每个EPUB文件
+    for (index, path) in paths.iter().enumerate() {
+        match get_epub_html_with_images(app_handle.clone(), path).await {
+            Ok(html_with_images) => {
+                println!(
+                    "Successfully processed {}/{} books with images: {}",
+                    index + 1,
+                    paths.len(),
+                    path
+                );
+                last_result = Some(html_with_images);
+            }
+            Err(e) => {
+                let error_msg = format!("Error processing file with images {}: {}", path, e);
+                println!("{}", error_msg);
+                errors.push(error_msg);
+            }
+        }
+    }
+
+    // 如果有任何文件成功处理，返回最后一个成功的结果
+    if let Some(result) = last_result {
+        Ok(result)
+    } else {
+        // 如果所有文件处理都失败，返回错误信息
+        Err(format!(
+            "Failed to process all EPUB files with images: {}",
+            errors.join("; ")
+        ))
+    }
+}

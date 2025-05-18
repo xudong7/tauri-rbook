@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
-import { getAllLocalFiles } from "../../api";
+import { getAllLocalFiles, getEpubToHtmlFiles } from "../../api";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Window } from "@tauri-apps/api/window";
 
@@ -23,7 +23,6 @@ interface MenuItem {
 
 const books = ref<MenuItem[]>([]);
 const loading = ref<boolean>(false);
-const filePath = ref<string>("");
 const appWindow = Window.getCurrent();
 
 // 窗口尺寸相关变量
@@ -59,7 +58,7 @@ const bookItemStyle = computed(() => {
     width: "100%",
     height: "100%",
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "column" as const, // TypeScript needs explicit type for CSS properties
     alignItems: "center",
   };
 });
@@ -164,14 +163,14 @@ const loadLocalBooks = async () => {
   }
 };
 
-// Upload new EPUB file
+// Upload new EPUB files (supports multiple files)
 const uploadEpub = async () => {
   try {
     loading.value = true;
 
-    // Open file dialog
+    // Open file dialog with multiple selection enabled
     const selected = await open({
-      multiple: false,
+      multiple: true,
       filters: [
         {
           name: "EPUB",
@@ -180,18 +179,40 @@ const uploadEpub = async () => {
       ],
     });
 
-    if (!selected || Array.isArray(selected)) {
+    if (!selected) {
       loading.value = false;
       return;
     }
 
-    filePath.value = selected;
+    // Handle multiple files or single file selection
+    const filePaths = Array.isArray(selected) ? selected : [selected];
 
-    openBook(filePath.value);
+    if (filePaths.length === 0) {
+      loading.value = false;
+      return;
+    } // If only one file selected, open it directly
+    if (filePaths.length === 1) {
+      openBook(filePaths[0]);
+    } else if (filePaths.length > 1) {
+      // If multiple files selected, process them and open the last one
+      try {
+        const lastHtmlPath = await getEpubToHtmlFiles(filePaths);
+        if (lastHtmlPath) {
+          // Find the original epub file path that corresponds to this HTML
+          const lastFilePath = filePaths[filePaths.length - 1];
+          openBook(lastFilePath);
+        }
+      } catch (e) {
+        console.error("Error processing multiple files:", e);
+      } finally {
+        // Refresh the book list to include newly added books
+        await loadLocalBooks();
+      }
+    }
 
     loading.value = false;
   } catch (error) {
-    console.error("Error uploading EPUB:", error);
+    console.error("Error uploading EPUB files:", error);
     loading.value = false;
   }
 };
@@ -243,7 +264,7 @@ const closeWindow = async () => {
           class="icon-button"
           @click="uploadEpub"
           :disabled="loading"
-          title="上传电子书"
+          title="上传电子书 (支持多选)"
         >
           <el-icon :size="20" v-if="!loading"><Upload /></el-icon>
           <span v-else class="loading-spinner"></span>
@@ -287,7 +308,7 @@ const closeWindow = async () => {
         <div class="empty-state-buttons">
           <button @click="uploadEpub" class="upload-button">
             <el-icon :size="24"><Upload /></el-icon>
-            上传电子书
+            上传电子书 (支持多选)
           </button>
           <button @click="openSearch" class="upload-button">
             <el-icon :size="24"><Search /></el-icon>

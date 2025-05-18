@@ -6,7 +6,10 @@ mod model;
 mod search;
 mod tray;
 
-use epub::{get_epub_html_with_images, get_epub_to_html_file};
+use epub::{
+    get_epub_html_with_images, get_epub_html_with_images_multiple, get_epub_to_html_file,
+    get_epub_to_html_files,
+};
 use file::init_default_cover;
 use menu::get_all_local_files;
 use model::{HtmlWithImages, MenuItem};
@@ -57,6 +60,26 @@ async fn download_online_book_command(
     download_certain_online_book(app_handle, &book).await
 }
 
+#[tauri::command]
+async fn get_epub_to_html_files_command(
+    app_handle: AppHandle,
+    paths: Vec<String>,
+) -> Result<String, String> {
+    // Convert Vec<String> to Vec<&str> for passing to our implementation
+    let paths_refs: Vec<&str> = paths.iter().map(|s| s.as_str()).collect();
+    get_epub_to_html_files(app_handle, paths_refs).await
+}
+
+#[tauri::command]
+async fn get_epub_html_with_images_multiple_command(
+    app_handle: AppHandle,
+    paths: Vec<String>,
+) -> Result<HtmlWithImages, String> {
+    // Convert Vec<String> to Vec<&str> for passing to our implementation
+    let paths_refs: Vec<&str> = paths.iter().map(|s| s.as_str()).collect();
+    get_epub_html_with_images_multiple(app_handle, paths_refs).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -81,6 +104,8 @@ pub fn run() {
             get_all_local_files_command,
             search_online_books_command,
             download_online_book_command,
+            get_epub_to_html_files_command,
+            get_epub_html_with_images_multiple_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { getAllLocalFiles } from "../../api";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -12,6 +12,8 @@ import {
   Minus,
   FullScreen,
   Close,
+  ArrowLeft,
+  ArrowRight,
 } from "@element-plus/icons-vue";
 
 interface MenuItem {
@@ -24,8 +26,128 @@ const loading = ref<boolean>(false);
 const filePath = ref<string>("");
 const appWindow = Window.getCurrent();
 
-onMounted(async () => {
-  await loadLocalBooks();
+// 窗口尺寸相关变量
+const windowWidth = ref<number>(window.innerWidth);
+const windowHeight = ref<number>(window.innerHeight);
+const resizeTimeout = ref<number | null>(null);
+
+const booksPerRow = 6; // 每行固定6本书
+const rowsPerPage = 3; // 每页固定3行
+const gridGap = 10; // 间距（与CSS一致）
+const padding = 10; // 内边距（与CSS一致）
+
+// 每页显示的书籍数量
+const itemsPerPage = computed(() => booksPerRow * rowsPerPage);
+
+// 分页相关的变量
+const currentPage = ref<number>(1);
+const totalPages = computed(
+  () => Math.ceil(books.value.length / itemsPerPage.value) || 1
+);
+
+// 计算当前页面应该显示的书籍
+const paginatedBooks = computed(() => {
+  const startIndex = (currentPage.value - 1) * itemsPerPage.value;
+  const endIndex = startIndex + itemsPerPage.value;
+  return books.value.slice(startIndex, endIndex);
+});
+
+// 计算书籍元素的样式
+const bookItemStyle = computed(() => {
+  return {
+    // 允许书籍项在网格中占据分配的空间
+    width: "100%",
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  };
+});
+
+// 监听窗口大小变化
+const handleWindowResize = () => {
+  // 防抖处理
+  if (resizeTimeout.value !== null) {
+    clearTimeout(resizeTimeout.value);
+  }
+
+  // 立即更新窗口尺寸以获得更流畅的体验
+  windowWidth.value = window.innerWidth;
+  windowHeight.value = window.innerHeight;
+
+  // 使用防抖处理进一步优化调整和分页处理
+  resizeTimeout.value = window.setTimeout(() => {
+    // 再次确认窗口尺寸是最新的
+    windowWidth.value = window.innerWidth;
+    windowHeight.value = window.innerHeight;
+
+    // 如果当前页超出新的总页数，调整到最后一页
+    if (currentPage.value > totalPages.value && totalPages.value > 0) {
+      currentPage.value = totalPages.value;
+    }
+
+    resizeTimeout.value = null;
+  }, 200); // 减少延迟以获得更快的响应
+};
+
+// 当itemsPerPage变化时，如果当前页面没有内容，则回到前一页
+watch(itemsPerPage, (newValue, oldValue) => {
+  if (newValue !== oldValue && currentPage.value > 1) {
+    const maxPage = Math.ceil(books.value.length / newValue);
+    if (currentPage.value > maxPage) {
+      currentPage.value = maxPage;
+    }
+  }
+});
+
+// 页面导航函数
+const goToPreviousPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+};
+
+const goToNextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+};
+
+const goToPage = (page: number) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+  }
+};
+
+onMounted(() => {
+  loadLocalBooks();
+
+  // 添加窗口大小变化监听
+  window.addEventListener("resize", handleWindowResize);
+
+  // 初始化窗口尺寸
+  windowWidth.value = window.innerWidth;
+  windowHeight.value = window.innerHeight;
+});
+
+// 监听窗口尺寸变化，动态调整布局
+watch(
+  [windowWidth, windowHeight],
+  () => {
+    // 当窗口尺寸变化时，重新计算布局
+    if (currentPage.value > totalPages.value && totalPages.value > 0) {
+      currentPage.value = totalPages.value;
+    }
+  },
+  { immediate: true }
+);
+
+// 组件卸载时移除事件监听
+onUnmounted(() => {
+  window.removeEventListener("resize", handleWindowResize);
+  if (resizeTimeout.value !== null) {
+    clearTimeout(resizeTimeout.value);
+  }
 });
 
 // Load local books using the Rust function
@@ -33,6 +155,8 @@ const loadLocalBooks = async () => {
   try {
     loading.value = true;
     books.value = await getAllLocalFiles();
+    // 重置为第一页
+    currentPage.value = 1;
     loading.value = false;
   } catch (error) {
     console.error("Failed to load local books:", error);
@@ -106,6 +230,12 @@ const closeWindow = async () => {
 
 <template>
   <div class="menu-container">
+    <!-- 重新布局指示器 -->
+    <div class="resize-indicator" v-if="resizeTimeout !== null">
+      <div class="loading-spinner large"></div>
+      <div>正在调整布局...</div>
+    </div>
+
     <!-- Toolbar -->
     <div class="menu-toolbar">
       <div class="left-controls">
@@ -147,8 +277,7 @@ const closeWindow = async () => {
       </div>
     </div>
 
-    <!-- Book Grid -->
-    <div class="book-grid">
+    <div class="main-container">
       <div v-if="loading" class="loading-container">
         <div class="loading-spinner large"></div>
         <div>正在加载书籍...</div>
@@ -167,18 +296,71 @@ const closeWindow = async () => {
         </div>
       </div>
 
-      <div v-else class="book-list">
+      <div v-else class="book-content-area">
         <div
-          v-for="(book, index) in books"
-          :key="index"
-          class="book-item"
-          @click="openBook(book.file_path)"
+          class="book-grid"
+          :style="{
+            'grid-template-columns': `repeat(${booksPerRow}, 1fr)`,
+            'grid-template-rows': `repeat(${rowsPerPage}, minmax(auto, 1fr))`,
+            gap: `${gridGap}px`,
+            padding: `${padding}px`,
+          }"
         >
-          <div class="book-cover">
-            <img
-              :src="`data:image/jpeg;base64,${book.cover}`"
-              alt="Book cover"
-            />
+          <div
+            v-for="(book, index) in paginatedBooks"
+            :key="index"
+            class="book-item"
+            :style="bookItemStyle"
+            @click="openBook(book.file_path)"
+          >
+            <div class="book-cover">
+              <img
+                :src="`data:image/jpeg;base64,${book.cover}`"
+                alt="Book cover"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="pagination-footer" v-if="books.length > 0">
+          <div class="pagination-controls">
+            <button
+              class="pagination-button"
+              @click="goToPreviousPage"
+              :disabled="currentPage === 1"
+              title="上一页"
+            >
+              <el-icon><ArrowLeft /></el-icon>
+            </button>
+
+            <!-- 页码选择器 -->
+            <div class="page-selector">
+              <span class="current-page">
+                {{ currentPage }} / {{ totalPages }}
+              </span>
+              <div class="quick-page-nav" v-if="totalPages > 3">
+                <button
+                  v-for="page in Math.min(5, totalPages)"
+                  :key="page"
+                  class="page-number-button"
+                  :class="{ active: currentPage === page }"
+                  @click="goToPage(page)"
+                >
+                  {{ page }}
+                </button>
+                <span v-if="totalPages > 5">...</span>
+              </div>
+            </div>
+
+            <button
+              class="pagination-button"
+              @click="goToNextPage"
+              :disabled="currentPage === totalPages"
+              title="下一页"
+            >
+              <el-icon><ArrowRight /></el-icon>
+            </button>
           </div>
         </div>
       </div>

@@ -26,7 +26,17 @@ async fn read_epub_cover(epub_path: &str) -> Result<String, String> {
     // 否则从epub中提取封面图片
     let mut doc = EpubDoc::new(epub_path).map_err(|e| e.to_string())?;
     let cover_data = match doc.get_cover() {
-        Some(data) => data,
+        Some(data) => {
+            // 检查封面图片大小，如果小于1KB则认为已损坏，使用默认封面
+            if data.0.len() < 1024 {
+                (
+                    use_default_cover().map_err(|e| format!("Failed to read default cover file: {}", e))?,
+                    "image/png".to_string(),
+                )
+            } else {
+                data
+            }
+        }
         None => (
             use_default_cover().map_err(|e| format!("Failed to read default cover file: {}", e))?,
             "image/png".to_string(),

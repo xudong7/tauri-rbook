@@ -31,13 +31,15 @@ pnpm run tauri build
 
 ### Vue
 
-- [ ] 排版改进
+- [x] 排版改进
 
 - [ ] header美化
 
 - [x] 添加控制按钮
 
 - [ ] 目录页跳转功能
+
+- [ ] 多文件上传
 
 - [x] 主页书库页面
 
@@ -46,5 +48,9 @@ pnpm run tauri build
 - [x] 加载默认文件夹下的epub文件
 
 - [x] 保存epub文件
+
+- [ ] 标记位置(书签) -- 返回html时可以返回一个json对象，包含书签位置
+
+- [ ] 多个文件同时上传
 
 - [ ] 搜索功能：[网站1](https://digilibraries.com/) 和 [网站2](https://www.gutenberg.org/) 的epub文件

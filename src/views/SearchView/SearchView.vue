@@ -145,7 +145,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
 
 // 在组件挂载时监听键盘事件
 onMounted(() => {
-  window.addEventListener("keydown", handleKeyDown);
+  // window.addEventListener("keydown", handleKeyDown);
 });
 </script>
 

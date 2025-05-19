@@ -387,3 +387,8 @@
   backdrop-filter: blur(4px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
+
+/* 设置下拉框样式 */
+.el-dropdown-menu {
+  user-select: none;
+}

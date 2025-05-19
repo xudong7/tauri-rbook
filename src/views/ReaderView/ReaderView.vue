@@ -74,7 +74,7 @@ const goBackToMenu = () => {
   router.push("/");
 };
 
-const noScrollStyle = `<style>
+const GLOBAL_STYLE = `<style>
   html { overflow: hidden!important; margin: 20px; padding: 0; }
   body {
     font-family: 'Noto Serif', 'Times New Roman', serif!important;
@@ -82,7 +82,7 @@ const noScrollStyle = `<style>
     line-height: 1.4!important;
     color: #333!important;
     box-sizing: border-box!important;
-  }    
+  }
   p {
     margin: 1em!important;
     text-indent: 1em!important;
@@ -158,6 +158,214 @@ const processHtmlContent = async () => {
   await splitContentForTwoColumns(html);
 };
 
+// 拆分包含多个图像的段落或标题
+const splitParagraphWithImages = (paragraph: string): string[] => {
+  // 如果段落不包含图像或只包含一个图像，则直接返回
+  if (
+    !paragraph.includes("<img") &&
+    !paragraph.includes("<svg") &&
+    !paragraph.includes("<image")
+  ) {
+    return [paragraph];
+  }
+
+  // 创建临时DOM元素来解析段落内容
+  const tempPara = document.createElement("div");
+  tempPara.innerHTML = paragraph;
+  // 确定元素类型 (p, h1-h6)
+  const firstChild = tempPara.firstChild;
+  const nodeName = firstChild?.nodeName || "";
+  const isHeading = /^H[1-6]$/i.test(nodeName);
+  // 使用原始标签类型或默认为p
+  const tagName = isHeading ? nodeName.toLowerCase() : "p";
+
+  // 处理段落或标题中的文本和图像混合情况
+  const result: string[] = [];
+  let currentElement = document.createElement(tagName);
+  let hasContent = false; // 处理段落中的所有子节点
+  for (const childNode of Array.from(tempPara.firstChild?.childNodes || [])) {
+    // 如果是图像节点
+    if (
+      childNode.nodeName === "IMG" ||
+      childNode.nodeName === "SVG" ||
+      (childNode.nodeName === "IMAGE" &&
+        childNode.parentNode?.nodeName !== "SVG")
+    ) {
+      // 如果当前元素中已有内容，先保存它
+      if (hasContent) {
+        result.push(currentElement.outerHTML);
+        currentElement = document.createElement(tagName);
+        hasContent = false;
+      }
+
+      // 创建一个只包含图像的标签，使用原始标签类型
+      const imgContainer = document.createElement(tagName);
+      imgContainer.appendChild(childNode.cloneNode(true));
+      result.push(imgContainer.outerHTML);
+    } else {
+      // 将非图像节点添加到当前元素
+      currentElement.appendChild(childNode.cloneNode(true));
+      hasContent = true;
+    }
+  }
+
+  // 如果当前元素中还有内容，保存它
+  if (hasContent) {
+    result.push(currentElement.outerHTML);
+  }
+
+  return result.length > 0 ? result : [paragraph];
+};
+
+const resizeImgAndReturnInnerHTML = (
+  paragraph: string,
+  pageWidth: number,
+  pageHeight: number
+) => {
+  // 创建临时容器来获取图片并处理图片尺寸
+  const tempImgContainer = document.createElement("div");
+  tempImgContainer.innerHTML = paragraph; // 设置最大尺寸限制
+  const maxWidth = pageWidth * 0.9;
+  const maxHeight = pageHeight * 0.9; // 为页面留出一些空间
+
+  // 处理img标签图片大小
+  const imgElements = tempImgContainer.querySelectorAll("img");
+  if (imgElements.length > 0) {
+    for (const img of imgElements) {
+      // 设置图片样式，确保其不超出页面
+      img.style.maxWidth = `${maxWidth}px`;
+      img.style.maxHeight = `${maxHeight}px`;
+      img.style.width = "auto"; // 保持纵横比
+      img.style.height = "auto"; // 保持纵横比
+      img.style.display = "block";
+      img.style.margin = "1em auto"; // 居中显示
+    }
+  }
+
+  // 处理SVG中的image标签
+  const svgElements = tempImgContainer.querySelectorAll("svg");
+  if (svgElements.length > 0) {
+    for (const svg of svgElements) {
+      // 获取SVG原始尺寸
+      const svgWidth = parseFloat(svg.getAttribute("width") || "0");
+      const svgHeight = parseFloat(svg.getAttribute("height") || "0");
+
+      if (svgWidth > 0 && svgHeight > 0) {
+        // 计算缩放比例
+        const scale = Math.min(
+          maxWidth / svgWidth,
+          maxHeight / svgHeight,
+          1 // 不放大，只缩小
+        );
+
+        // 设置新尺寸
+        const newWidth = Math.floor(svgWidth * scale);
+        const newHeight = Math.floor(svgHeight * scale);
+
+        // 应用新尺寸
+        svg.setAttribute("width", newWidth.toString());
+        svg.setAttribute("height", newHeight.toString());
+        svg.style.display = "block";
+        svg.style.margin = "1em auto"; // 居中显示
+      }
+
+      // 处理SVG内部的image标签
+      const imageElements = svg.querySelectorAll("image");
+      for (const image of imageElements) {
+        // 获取image标签的原始尺寸
+        const imageWidth = parseFloat(image.getAttribute("width") || "0");
+        const imageHeight = parseFloat(image.getAttribute("height") || "0");
+
+        if (imageWidth > 0 && imageHeight > 0) {
+          // 应用与SVG相同的缩放
+          const scale = Math.min(
+            maxWidth / imageWidth,
+            maxHeight / imageHeight,
+            1 // 不放大，只缩小
+          );
+
+          // 设置新尺寸
+          const newWidth = Math.floor(imageWidth * scale);
+          const newHeight = Math.floor(imageHeight * scale);
+
+          // 应用新尺寸
+          image.setAttribute("width", newWidth.toString());
+          image.setAttribute("height", newHeight.toString());
+        }
+      }
+    }
+  }
+
+  // 返回处理后的HTML内容
+  return tempImgContainer.innerHTML;
+};
+
+// 处理单个元素并添加到页面中
+const processElement = async (
+  element: Element,
+  pageContainer: HTMLDivElement,
+  pageWidth: number,
+  pageHeight: number,
+  currentPageContent: string
+): Promise<{ currentPageContent: string; newPages: string[] }> => {
+  // 获取所有段落和标题
+  const paragraphs = element.outerHTML.match(
+    /<(p|h[1-6])[\s\S]*?<\/(p|h[1-6])>/g
+  ) || [element.outerHTML];
+
+  // 处理后产生的新页面
+  const newPages: string[] = [];
+  let updatedPageContent = currentPageContent;
+
+  // 处理每个段落和标题
+  for (const paragraph of paragraphs) {
+    // 拆分包含多个图像的段落
+    const splitParagraphs = splitParagraphWithImages(paragraph);
+
+    // 处理拆分后的每个段落
+    for (const singleParagraph of splitParagraphs) {
+      // 检查是否包含'img'标签
+      const isImage = singleParagraph.includes("<img");
+      // 检查是否包含'svg'标签
+      const isSvg = singleParagraph.includes("<svg");
+      // 检查是否包含'image'标签
+      const isImageTag = singleParagraph.includes("<image");
+
+      // 定义一个paragraph用于存储当前段落的内容
+      let resultParagraph = singleParagraph;
+
+      // 是否包含图片 进行图片大小处理
+      if (
+        (isImage || isSvg || isImageTag) &&
+        updatedPageContent.trim() !== ""
+      ) {
+        // 替换原始段落为处理过尺寸的段落
+        resultParagraph = resizeImgAndReturnInnerHTML(
+          singleParagraph,
+          pageWidth,
+          pageHeight
+        );
+      }
+
+      // 计算加了GLOBAL_STYLE样式后的页面的高度
+      pageContainer.innerHTML =
+        GLOBAL_STYLE + updatedPageContent + resultParagraph;
+      const currentHeight = pageContainer.clientHeight;
+
+      // 如果当前高度超过页面高度，强制分页
+      if (currentHeight > pageHeight) {
+        newPages.push(GLOBAL_STYLE + updatedPageContent);
+        updatedPageContent = resultParagraph; // 将当前段落放到新页面
+      } else {
+        // 如果当前高度未超过页面高度，继续添加
+        updatedPageContent += resultParagraph;
+      }
+    }
+  }
+  pageContainer.innerHTML = "";
+  return { currentPageContent: updatedPageContent, newPages };
+};
+
 // 分割内容到左右栏
 const splitContentForTwoColumns = async (html: string) => {
   // 存储所有页面的内容
@@ -180,217 +388,24 @@ const splitContentForTwoColumns = async (html: string) => {
   pageContainer.style.position = "relative";
   pageContainer.style.boxSizing = "border-box";
   document.body.appendChild(pageContainer);
-  // 拆分包含多个图像的段落或标题
-  const splitParagraphWithImages = (paragraph: string): string[] => {
-    // 如果段落不包含图像或只包含一个图像，则直接返回
-    if (
-      !paragraph.includes("<img") &&
-      !paragraph.includes("<svg") &&
-      !paragraph.includes("<image")
-    ) {
-      return [paragraph];
-    }
-
-    // 创建临时DOM元素来解析段落内容
-    const tempPara = document.createElement("div");
-    tempPara.innerHTML = paragraph;
-    // 确定元素类型 (p, h1-h6)
-    const firstChild = tempPara.firstChild;
-    const nodeName = firstChild?.nodeName || "";
-    const isHeading = /^H[1-6]$/i.test(nodeName);
-    // 使用原始标签类型或默认为p
-    const tagName = isHeading ? nodeName.toLowerCase() : "p";
-
-    // 处理段落或标题中的文本和图像混合情况
-    const result: string[] = [];
-    let currentElement = document.createElement(tagName);
-    let hasContent = false; // 处理段落中的所有子节点
-    for (const childNode of Array.from(tempPara.firstChild?.childNodes || [])) {
-      // 如果是图像节点
-      if (
-        childNode.nodeName === "IMG" ||
-        childNode.nodeName === "SVG" ||
-        (childNode.nodeName === "IMAGE" &&
-          childNode.parentNode?.nodeName !== "SVG")
-      ) {
-        // 如果当前元素中已有内容，先保存它
-        if (hasContent) {
-          result.push(currentElement.outerHTML);
-          currentElement = document.createElement(tagName);
-          hasContent = false;
-        }
-
-        // 创建一个只包含图像的标签，使用原始标签类型
-        const imgContainer = document.createElement(tagName);
-        imgContainer.appendChild(childNode.cloneNode(true));
-        result.push(imgContainer.outerHTML);
-      } else {
-        // 将非图像节点添加到当前元素
-        currentElement.appendChild(childNode.cloneNode(true));
-        hasContent = true;
-      }
-    }
-
-    // 如果当前元素中还有内容，保存它
-    if (hasContent) {
-      result.push(currentElement.outerHTML);
-    }
-
-    return result.length > 0 ? result : [paragraph];
-  };
-  // 处理每个元素
-  const processElement = async (element: Element) => {
-    // 获取所有段落和标题
-    const paragraphs = element.outerHTML.match(
-      /<(p|h[1-6])[\s\S]*?<\/(p|h[1-6])>/g
-    ) || [element.outerHTML];
-
-    // 处理每个段落和标题
-    for (const paragraph of paragraphs) {
-      // 拆分包含多个图像的段落
-      const splitParagraphs = splitParagraphWithImages(paragraph);
-
-      // 处理拆分后的每个段落
-      for (const singleParagraph of splitParagraphs) {
-        // 检查是否包含'img'标签
-        const isImage = singleParagraph.includes("<img");
-        // 检查是否包含'svg'标签
-        const isSvg = singleParagraph.includes("<svg");
-        // 检查是否包含'image'标签
-        const isImageTag = singleParagraph.includes("<image");
-
-        // 是否包含图片
-        if (
-          (isImage || isSvg || isImageTag) &&
-          currentPageContent.trim() !== ""
-        ) {
-          // 创建临时容器来获取图片并处理图片尺寸
-          const tempImgContainer = document.createElement("div");
-          tempImgContainer.innerHTML = singleParagraph; // 设置最大尺寸限制
-          const maxWidth = pageWidth * 0.9;
-          const maxHeight = pageHeight * 0.9; // 为页面留出一些空间
-
-          // 处理img标签图片大小
-          const imgElements = tempImgContainer.querySelectorAll("img");
-          if (imgElements.length > 0) {
-            for (const img of imgElements) {
-              // 设置图片样式，确保其不超出页面
-              img.style.maxWidth = `${maxWidth}px`;
-              img.style.maxHeight = `${maxHeight}px`;
-              img.style.width = "auto"; // 保持纵横比
-              img.style.height = "auto"; // 保持纵横比
-              img.style.display = "block";
-              img.style.margin = "1em auto"; // 居中显示
-            }
-          }
-
-          // 处理SVG中的image标签
-          const svgElements = tempImgContainer.querySelectorAll("svg");
-          if (svgElements.length > 0) {
-            for (const svg of svgElements) {
-              // 获取SVG原始尺寸
-              const svgWidth = parseFloat(svg.getAttribute("width") || "0");
-              const svgHeight = parseFloat(svg.getAttribute("height") || "0");
-
-              if (svgWidth > 0 && svgHeight > 0) {
-                // 计算缩放比例
-                const scale = Math.min(
-                  maxWidth / svgWidth,
-                  maxHeight / svgHeight,
-                  1 // 不放大，只缩小
-                );
-
-                // 设置新尺寸
-                const newWidth = Math.floor(svgWidth * scale);
-                const newHeight = Math.floor(svgHeight * scale);
-
-                // 应用新尺寸
-                svg.setAttribute("width", newWidth.toString());
-                svg.setAttribute("height", newHeight.toString());
-                svg.style.display = "block";
-                svg.style.margin = "1em auto"; // 居中显示
-              }
-
-              // 处理SVG内部的image标签
-              const imageElements = svg.querySelectorAll("image");
-              for (const image of imageElements) {
-                // 获取image标签的原始尺寸
-                const imageWidth = parseFloat(
-                  image.getAttribute("width") || "0"
-                );
-                const imageHeight = parseFloat(
-                  image.getAttribute("height") || "0"
-                );
-
-                if (imageWidth > 0 && imageHeight > 0) {
-                  // 应用与SVG相同的缩放
-                  const scale = Math.min(
-                    maxWidth / imageWidth,
-                    maxHeight / imageHeight,
-                    1 // 不放大，只缩小
-                  );
-
-                  // 设置新尺寸
-                  const newWidth = Math.floor(imageWidth * scale);
-                  const newHeight = Math.floor(imageHeight * scale);
-
-                  // 应用新尺寸
-                  image.setAttribute("width", newWidth.toString());
-                  image.setAttribute("height", newHeight.toString());
-                }
-              }
-            }
-          }
-          // 替换原始段落为处理过尺寸的段落
-          const processedParagraph = tempImgContainer.innerHTML;
-
-          // 如果当前页面为空，直接添加
-          // if (currentPageContent === "") {
-          //   currentPageContent += processedParagraph;
-          //   continue;
-          // }
-
-          // 计算加了noScrollStyle样式后的页面的高度
-          pageContainer.innerHTML =
-            noScrollStyle + currentPageContent + processedParagraph;
-          const currentHeight = pageContainer.clientHeight;
-
-          // 如果当前高度超过页面高度，强制分页后再添加图片
-          if (currentHeight > pageHeight) {
-            allPages.value.push(noScrollStyle + currentPageContent);
-            currentPageContent = processedParagraph; // 将图片放到新页
-          } else {
-            // 当前高度未超过页面高度，继续添加
-            currentPageContent += processedParagraph;
-          }
-        } else {
-          // 非图片段落
-          // 计算加了noScrollStyle样式后的页面的高度
-          pageContainer.innerHTML =
-            noScrollStyle + currentPageContent + singleParagraph;
-          const currentHeight = pageContainer.clientHeight;
-
-          // 如果当前高度超过页面高度，强制分页
-          if (currentHeight > pageHeight) {
-            allPages.value.push(noScrollStyle + currentPageContent);
-            currentPageContent = singleParagraph; // 将当前段落放到新页面
-          } else {
-            // 如果当前高度未超过页面高度，继续添加
-            currentPageContent += singleParagraph;
-          }
-        }
-      }
-    }
-    pageContainer.innerHTML = "";
-    return true;
-  };
 
   for (const element of elements) {
-    await processElement(element);
+    const result = await processElement(
+      element,
+      pageContainer,
+      pageWidth,
+      pageHeight,
+      currentPageContent
+    );
+
+    // 添加新的页面到总页面集合
+    allPages.value.push(...result.newPages);
+    // 更新当前页面内容
+    currentPageContent = result.currentPageContent;
   }
 
   if (currentPageContent) {
-    allPages.value.push(noScrollStyle + currentPageContent);
+    allPages.value.push(GLOBAL_STYLE + currentPageContent);
   }
   document.body.removeChild(pageContainer);
   totalPages.value = allPages.value.length;
@@ -461,7 +476,7 @@ const closeWindow = async () => {
         </button>
       </div>
       <div class="page-indicator-inline" v-if="currentContent">
-        {{ currentPage + 1 }} - {{ Math.min(currentPage + 2, totalPages) }} /
+        {{ currentPage + 1 }} : {{ Math.min(currentPage + 2, totalPages) }} ·
         {{ totalPages }}
       </div>
       <div class="window-controls">

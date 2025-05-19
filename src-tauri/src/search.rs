@@ -1,17 +1,10 @@
-use crate::file::calculate_md5_hash;
-
-use reqwest::Client;
-use scraper::{Html, Selector};
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::io::Write;
-use std::path::Path;
 use tauri::AppHandle;
 use tauri::Manager;
 
-const BASE_URL: &str = "https://digilibraries.com";
+// const BASE_URL: &str = "https://digilibraries.com";
 const SEARCH_URL: &str = "https://digilibraries.com/search/";
-const DOWNLOAD_URL: &str = "https://digilibraries.com/download/";
+// const DOWNLOAD_URL: &str = "https://digilibraries.com/download/";
 
 // 书籍搜索结果的结构
 #[derive(Debug, Serialize, Deserialize)]

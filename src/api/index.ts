@@ -1,11 +1,29 @@
 import { invoke } from "@tauri-apps/api/core";
 
 /**
+ * 书签信息接口
+ */
+export interface Mark {
+  page: number;   // 页码
+  width: number;  // 创建书签时的窗口宽度
+  height: number; // 创建书签时的窗口高度
+}
+
+/**
+ * 书签集合接口
+ */
+export interface BookMark {
+  book_path: string; // HTML文件路径
+  list: Mark[];      // 书签列表
+}
+
+/**
  * 表示HTML内容及相关图片的接口
  */
 export interface HtmlWithImages {
   html_content: string;
   images: ImageItem[];
+  bookmark?: BookMark; // 可选的书签信息
 }
 
 /**
@@ -147,6 +165,50 @@ export const downloadOnlineBook = async (
     return await invoke<string>("download_online_book_command", { book });
   } catch (error) {
     console.error("Error downloading online book:", error);
+    throw error;
+  }
+};
+
+/**
+ * 保存或删除书签
+ * @param book_path 书籍HTML文件路径
+ * @param page 页码
+ * @param width 窗口宽度
+ * @param height 窗口高度
+ * @param action 操作类型: 默认为0(添加书签), 1(删除书签)
+ * @returns 保存书签的文件路径
+ */
+export const saveBookmark = async (
+  book_path: string,
+  page: number,
+  width: number,
+  height: number,
+  action?: number
+): Promise<string> => {
+  try {
+    return await invoke<string>("save_bookmark_command", {
+      bookPath: book_path,
+      page,
+      width,
+      height,
+      action,
+    });
+  } catch (error) {
+    console.error("Error saving bookmark:", error);
+    throw error;
+  }
+};
+
+/**
+ * 获取书签
+ * @param book_path 书籍HTML文件路径
+ * @returns 书签信息
+ */
+export const getBookmark = async (book_path: string): Promise<BookMark> => {
+  try {
+    return await invoke<BookMark>("get_bookmark_command", { bookPath: book_path });
+  } catch (error) {
+    console.error("Error getting bookmark:", error);
     throw error;
   }
 };

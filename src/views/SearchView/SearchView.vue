@@ -137,11 +137,11 @@ const downloadBook = async (book: BookSearchResult) => {
 };
 
 // 处理回车键搜索
-const handleKeyDown = (event: KeyboardEvent) => {
-  if (event.key === "Enter") {
-    searchBooks();
-  }
-};
+// const handleKeyDown = (event: KeyboardEvent) => {
+//   if (event.key === "Enter") {
+//     searchBooks();
+//   }
+// };
 
 // 在组件挂载时监听键盘事件
 onMounted(() => {

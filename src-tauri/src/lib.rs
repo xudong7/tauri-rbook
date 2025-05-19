@@ -1,6 +1,7 @@
 mod convert;
 mod epub;
 mod file;
+mod mark;
 mod menu;
 mod model;
 mod search;
@@ -10,9 +11,10 @@ use epub::{
     get_epub_html_with_images, get_epub_html_with_images_multiple, get_epub_to_html_file,
     get_epub_to_html_files,
 };
+use mark::{save_bookmark_to_local_storage};
 use file::init_default_cover;
 use menu::get_all_local_files;
-use model::{HtmlWithImages, MenuItem};
+use model::{HtmlWithImages, MenuItem, BookMark};
 use search::{download_certain_online_book, search_online_books_by_keyword, BookSearchResult};
 use tauri::path::BaseDirectory;
 use tauri::AppHandle;
@@ -80,6 +82,36 @@ async fn get_epub_html_with_images_multiple_command(
     get_epub_html_with_images_multiple(app_handle, paths_refs).await
 }
 
+// 保存书签，action=0表示添加，action=1表示移除
+#[tauri::command]
+async fn save_bookmark_command(book_path: &str, page: u32, width: u32, height: u32, action: Option<u32>) -> Result<String, String> {
+    // 尝试加载已有的书签，如果不存在则创建新的
+    let mut bookmark = match mark::load_bookmark_from_local_storage(book_path).await {
+        Ok(bm) => bm,
+        Err(_) => BookMark::new(book_path.to_string()),
+    };
+
+    match action {
+        Some(1) => {
+            // 移除书签
+            bookmark.remove_mark(page);
+        },
+        _ => {
+            // 默认行为是添加或更新书签
+            bookmark.add_mark(page, width, height);
+        }
+    }
+    
+    // 保存到本地
+    save_bookmark_to_local_storage(&bookmark).await
+}
+
+// 获取书签
+#[tauri::command]
+async fn get_bookmark_command(book_path: &str) -> Result<BookMark, String> {
+    mark::load_bookmark_from_local_storage(book_path).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -106,6 +138,8 @@ pub fn run() {
             download_online_book_command,
             get_epub_to_html_files_command,
             get_epub_html_with_images_multiple_command,
+            save_bookmark_command,
+            get_bookmark_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

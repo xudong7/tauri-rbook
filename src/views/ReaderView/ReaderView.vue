@@ -2,7 +2,12 @@
 import { ref, onMounted, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { Window } from "@tauri-apps/api/window";
-import { getEpubHtmlWithImages, HtmlWithImages } from "../../api";
+import {
+  getEpubHtmlWithImages,
+  HtmlWithImages,
+  BookMark,
+  saveBookmark,
+} from "../../api";
 import {
   generateStyle,
   resizeImgAndReturnInnerHTML,
@@ -16,6 +21,7 @@ import {
   Close,
   Setting,
   Check,
+  Star,
 } from "@element-plus/icons-vue";
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from "element-plus";
 
@@ -44,25 +50,26 @@ const currentPage = ref<number>(0);
 const totalPages = ref<number>(0);
 const allPages = ref<string[]>([]);
 
-
+// 添加书签相关的状态
+const hasBookmark = ref<boolean>(false);
+const currentBookmark = ref<BookMark | null>(null);
 
 //  添加设置相关的响应式变量
 const wheelPagingEnabled = ref<boolean>(true); // 是否启用鼠标滚轮翻页
-const dropdownRef = ref();    // 设置下拉菜单的引用
-
+const dropdownRef = ref(); // 设置下拉菜单的引用
 
 // 切换鼠标滚轮翻页状态
-const toggleWheelPaging = (event? : Event) => {     
+const toggleWheelPaging = (event?: Event) => {
   wheelPagingEnabled.value = !wheelPagingEnabled.value;
   if (event) event.stopPropagation();
-}
+};
 // 自动关闭设置下拉菜单
 const closeDropdown = () => {
   //延时0.5s关闭下拉菜单
   setTimeout(() => {
     dropdownRef.value?.handleClose();
   }, 200);
-}
+};
 
 // Function to load a book from a specified path
 
@@ -73,11 +80,33 @@ const loadBookFromPath = async (path: string) => {
     loading.value = true;
     filePath.value = path;
 
-    // 调用后端API获取HTML和图片
+    // 调用后端API获取HTML和图片以及书签
     htmlWithImages.value = await getEpubHtmlWithImages(path);
 
-    // 跳转到第一页
-    currentPage.value = 0;
+    // 加载书签信息
+    if (htmlWithImages.value?.bookmark) {
+      currentBookmark.value = htmlWithImages.value.bookmark;
+      // 根据书签跳转页面
+      if (currentBookmark.value.list.length > 0) {
+        // 获取最近的书签页
+        const lastMark =
+          currentBookmark.value.list[currentBookmark.value.list.length - 1];
+        // TODO:根据当前窗口和保存书签时窗口大小比例，调整页码
+        // 这里使用简单实现，直接用书签页
+        // 使用比例来调整页面位置，简单实现是直接使用书签页
+        currentPage.value = lastMark.page;
+        // 确保页码是偶数，左右页布局的需要
+        if (currentPage.value % 2 !== 0) {
+          currentPage.value = Math.max(0, currentPage.value - 1);
+        }
+      } else {
+        // 如果没有书签，从第一页开始
+        currentPage.value = 0;
+      }
+    } else {
+      // 没有书签信息，从第一页开始
+      currentPage.value = 0;
+    }
 
     // 处理HTML内容和图片
     processHtmlContent();
@@ -144,8 +173,8 @@ const handleWindowResize = () => {
 
 // 监听滚轮事件，翻页
 const onWheel = (e: WheelEvent) => {
-  if(!wheelPagingEnabled.value) return;
-  if(!currentContent.value) return;
+  if (!wheelPagingEnabled.value) return;
+  if (!currentContent.value) return;
   if (e.deltaY > 0) goToNextPage();
   else if (e.deltaY < 0) goToPreviousPage();
 };
@@ -208,7 +237,7 @@ const processElement = async (
       GLOBAL_STYLE,
       pageContainer,
       pageHeight,
-      updatedPageContent,
+      updatedPageContent
     );
 
     // 处理拆分后的每个段落
@@ -320,6 +349,11 @@ const updateVisiblePages = () => {
   // 设置左右页面内容
   leftColumnContent.value = allPages.value[currentPage.value] || "";
   rightColumnContent.value = allPages.value[currentPage.value + 1] || "";
+
+  // 更新书签状态
+  hasBookmark.value = !!currentBookmark.value?.list.find(
+    (mark) => mark.page === currentPage.value
+  );
 };
 
 // 翻页方法
@@ -353,6 +387,65 @@ const maximizeWindow = async () => {
 const closeWindow = async () => {
   await appWindow.close();
 };
+
+// 添加或更新书签
+const toggleBookmark = async () => {
+  if (!htmlWithImages.value || !filePath.value) return;
+
+  try {
+    // 获取HTML文件路径，优先使用bookmark中的路径
+    const html_file_path =
+      htmlWithImages.value?.bookmark?.book_path || filePath.value;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    if (hasBookmark.value) {
+      // 如果当前页已有书签，则移除书签
+      if (currentBookmark.value) {
+        // 先在前端过滤掉当前页的书签
+        currentBookmark.value.list = currentBookmark.value.list.filter(
+          (mark) => mark.page !== currentPage.value
+        );
+        hasBookmark.value = false;
+
+        // 使用action=1表示移除书签
+        await saveBookmark(html_file_path, currentPage.value, width, height, 1);
+      }
+    } else {
+      // 如果当前页没有书签，则添加书签，使用默认action=0
+      await saveBookmark(html_file_path, currentPage.value, width, height);
+      hasBookmark.value = true;
+
+      // 更新本地书签状态
+      if (!currentBookmark.value) {
+        currentBookmark.value = {
+          book_path: html_file_path,
+          list: [],
+        };
+      }
+
+      // 添加或更新当前页的书签
+      const existingMarkIndex = currentBookmark.value.list.findIndex(
+        (m) => m.page === currentPage.value
+      );
+      if (existingMarkIndex >= 0) {
+        currentBookmark.value.list[existingMarkIndex] = {
+          page: currentPage.value,
+          width,
+          height,
+        };
+      } else {
+        currentBookmark.value.list.push({
+          page: currentPage.value,
+          width,
+          height,
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error toggling bookmark:", error);
+  }
+};
 </script>
 
 <template>
@@ -368,25 +461,46 @@ const closeWindow = async () => {
             <el-icon :size="20"><Setting /></el-icon>
           </button>
           <template #dropdown>
-            <el-dropdown-menu slot="dropdown" @mouseleave="closeDropdown"> 
+            <el-dropdown-menu slot="dropdown" @mouseleave="closeDropdown">
               <el-dropdown-item @click="goBackToMenu">选项一</el-dropdown-item>
-              <el-dropdown-item @click="handleWindowResize">重新加载</el-dropdown-item>
+              <el-dropdown-item @click="handleWindowResize"
+                >重新加载</el-dropdown-item
+              >
 
-              <el-dropdown-item 
-              @click="toggleWheelPaging($event)"
-              :style="wheelPagingEnabled ? 'font-weight:bold;color:#409EFF' : ''">
-              启用鼠标滚轮翻页
-              <el-icon v-if="wheelPagingEnabled" :size="16" style="margin-left:8px;"> <Check /> </el-icon>
+              <el-dropdown-item
+                @click="toggleWheelPaging($event)"
+                :style="
+                  wheelPagingEnabled ? 'font-weight:bold;color:#409EFF' : ''
+                "
+              >
+                启用鼠标滚轮翻页
+                <el-icon
+                  v-if="wheelPagingEnabled"
+                  :size="16"
+                  style="margin-left: 8px"
+                >
+                  <Check />
+                </el-icon>
               </el-dropdown-item>
-
             </el-dropdown-menu>
           </template>
         </el-dropdown>
       </div>
-      <div class="page-indicator-inline" v-if="currentContent">
-        Page 
-        {{ currentPage + 1 }} : {{ Math.min(currentPage + 2, totalPages) }}  &nbsp;of&nbsp;
-        {{ totalPages }}
+      <div class="page-controls" v-if="currentContent">
+        <button
+          class="icon-button"
+          @click="toggleBookmark"
+          :class="{ active: hasBookmark }"
+          title="添加/删除书签"
+        >
+          <el-icon :size="20"><Star /></el-icon>
+        </button>
+        <div class="page-indicator-inline">
+          Page
+          {{ currentPage + 1 }} :
+          {{ Math.min(currentPage + 2, totalPages) }} &nbsp;of&nbsp;
+          {{ totalPages }}
+        </div>
       </div>
       <div class="window-controls">
         <button

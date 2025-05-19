@@ -50,6 +50,16 @@
   transform: translateY(-1px);
 }
 
+.icon-button.active {
+  color: #e6a23c;
+  background-color: #fdf6ec;
+}
+
+.icon-button.active:hover {
+  color: #e6a23c;
+  background-color: #faecd8;
+}
+
 .window-control-button {
   background: none;
   border: none;
@@ -69,6 +79,12 @@
 }
 
 .nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-controls {
   display: flex;
   align-items: center;
   gap: 12px;

@@ -1,5 +1,6 @@
 use crate::convert::{download_converted_file, upload_epub_to_fileformat_api};
 use crate::file::{calculate_md5_hash, find_html_file, save_epub_cover};
+use crate::mark::load_bookmark_from_local_storage;
 use crate::model::{HtmlWithImages, ImageItem};
 use base64::{engine::general_purpose, Engine as _};
 use std::fs;
@@ -157,12 +158,14 @@ pub async fn get_epub_html_with_images(
                 }
             }
         }
-    }
+    }    // 尝试加载书签信息
+    let bookmark = load_bookmark_from_local_storage(&html_file_path).await.ok();
 
-    // 返回HTML内容和图片列表
+    // 返回HTML内容、图片列表和书签信息
     Ok(HtmlWithImages {
         html_content,
         images,
+        bookmark,
     })
 }
 

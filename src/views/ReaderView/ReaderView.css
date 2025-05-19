@@ -30,6 +30,7 @@
 .window-controls {
   display: flex;
   gap: 8px;
+  -webkit-app-region: no-drag; /* 按钮区域不可拖动 */
 }
 
 .icon-button {
@@ -54,16 +55,12 @@
   border: none;
   cursor: pointer;
   padding: 8px;
-  border-radius: 50%;
+  border-radius: 4px;
   color: #606266;
-  -webkit-app-region: no-drag; /* 按钮区域不可拖动 */
-  transition: all 0.2s ease;
-  margin-left: 4px;
 }
 
 .window-control-button:hover {
   background-color: #f5f7fa;
-  transform: translateY(-1px);
 }
 
 .close-button:hover {

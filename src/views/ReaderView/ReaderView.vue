@@ -4,12 +4,16 @@ import { useRouter } from "vue-router";
 import { Window } from "@tauri-apps/api/window";
 import { getEpubHtmlWithImages, HtmlWithImages } from "../../api";
 import {
+  generateStyle,
+  resizeImgAndReturnInnerHTML,
+  splitParagraphWithImages,
+} from "../../utils/ReaderViewUtil";
+import {
   ArrowLeft,
   ArrowRight,
   Minus,
   FullScreen,
   Close,
-  Search,
   Setting,
   Check,
 } from "@element-plus/icons-vue";
@@ -41,6 +45,7 @@ const totalPages = ref<number>(0);
 const allPages = ref<string[]>([]);
 
 
+
 //  添加设置相关的响应式变量
 const wheelPagingEnabled = ref<boolean>(true); // 是否启用鼠标滚轮翻页
 const dropdownRef = ref();    // 设置下拉菜单的引用
@@ -60,6 +65,9 @@ const closeDropdown = () => {
 }
 
 // Function to load a book from a specified path
+
+// 加载电子书
+
 const loadBookFromPath = async (path: string) => {
   try {
     loading.value = true;
@@ -81,7 +89,7 @@ const loadBookFromPath = async (path: string) => {
   }
 };
 
-// Watch for initialFilePath changes to load book
+// 监听初始文件路径的变化
 watch(
   () => props.initialFilePath,
   (newPath) => {
@@ -92,36 +100,17 @@ watch(
   { immediate: true }
 );
 
-// Go back to menu
+// 返回书架
 const goBackToMenu = () => {
   router.push("/");
 };
 
-// 设置菜单选项的处理函数，未实现
+// 根据窗口大小生成全局样式
+const updateGlobalStyle = () => {
+  GLOBAL_STYLE = generateStyle();
+};
 
-
-const GLOBAL_STYLE = `<style>
-  html { overflow: hidden!important; margin: 20px; padding: 0; }
-  body {
-    font-family: 'Noto Serif', 'Times New Roman', serif!important;
-    font-size: 18px!important;
-    line-height: 1.4!important;
-    color: #333!important;
-    box-sizing: border-box!important;
-  }
-  p {
-    margin: 1em!important;
-    text-indent: 1em!important;
-  }
-  p.pre {
-    margin: 0!important;
-  }
-  a {
-    pointer-events: none!important;
-    text-decoration: none!important;
-  }
-</style>`;
-
+let GLOBAL_STYLE = generateStyle();
 const PAGE_PADDING = 20; // px
 
 // 监听窗口大小变化，以重新布局页面内容
@@ -141,6 +130,7 @@ const handleWindowResize = () => {
       Math.abs(currentHeight - lastWindowSize.value.height) > 50
     ) {
       lastWindowSize.value = { width: currentWidth, height: currentHeight };
+      updateGlobalStyle();
 
       // 如果当前有内容，则重新分割页面
       if (htmlWithImages.value) {
@@ -152,7 +142,7 @@ const handleWindowResize = () => {
   }, 300);
 };
 
-// 处理滚轮事件，翻页
+// 监听滚轮事件，翻页
 const onWheel = (e: WheelEvent) => {
   if(!wheelPagingEnabled.value) return;
   if(!currentContent.value) return;
@@ -169,6 +159,7 @@ onMounted(() => {
   window.addEventListener("resize", handleWindowResize);
 });
 
+// 组件卸载时清除事件监听
 onUnmounted(() => {
   window.removeEventListener("resize", handleWindowResize);
   if (resizeTimeout.value !== null) {
@@ -192,148 +183,6 @@ const processHtmlContent = async () => {
   await splitContentForTwoColumns(html);
 };
 
-// 拆分包含多个图像的段落或标题
-const splitParagraphWithImages = (paragraph: string): string[] => {
-  // 如果段落不包含图像或只包含一个图像，则直接返回
-  if (
-    !paragraph.includes("<img") &&
-    !paragraph.includes("<svg") &&
-    !paragraph.includes("<image")
-  ) {
-    return [paragraph];
-  }
-
-  // 创建临时DOM元素来解析段落内容
-  const tempPara = document.createElement("div");
-  tempPara.innerHTML = paragraph;
-  // 确定元素类型 (p, h1-h6)
-  const firstChild = tempPara.firstChild;
-  const nodeName = firstChild?.nodeName || "";
-  const isHeading = /^H[1-6]$/i.test(nodeName);
-  // 使用原始标签类型或默认为p
-  const tagName = isHeading ? nodeName.toLowerCase() : "p";
-
-  // 处理段落或标题中的文本和图像混合情况
-  const result: string[] = [];
-  let currentElement = document.createElement(tagName);
-  let hasContent = false; // 处理段落中的所有子节点
-  for (const childNode of Array.from(tempPara.firstChild?.childNodes || [])) {
-    // 如果是图像节点
-    if (
-      childNode.nodeName === "IMG" ||
-      childNode.nodeName === "SVG" ||
-      (childNode.nodeName === "IMAGE" &&
-        childNode.parentNode?.nodeName !== "SVG")
-    ) {
-      // 如果当前元素中已有内容，先保存它
-      if (hasContent) {
-        result.push(currentElement.outerHTML);
-        currentElement = document.createElement(tagName);
-        hasContent = false;
-      }
-
-      // 创建一个只包含图像的标签，使用原始标签类型
-      const imgContainer = document.createElement(tagName);
-      imgContainer.appendChild(childNode.cloneNode(true));
-      result.push(imgContainer.outerHTML);
-    } else {
-      // 将非图像节点添加到当前元素
-      currentElement.appendChild(childNode.cloneNode(true));
-      hasContent = true;
-    }
-  }
-
-  // 如果当前元素中还有内容，保存它
-  if (hasContent) {
-    result.push(currentElement.outerHTML);
-  }
-
-  return result.length > 0 ? result : [paragraph];
-};
-
-const resizeImgAndReturnInnerHTML = (
-  paragraph: string,
-  pageWidth: number,
-  pageHeight: number
-) => {
-  // 创建临时容器来获取图片并处理图片尺寸
-  const tempImgContainer = document.createElement("div");
-  tempImgContainer.innerHTML = paragraph; // 设置最大尺寸限制
-  const maxWidth = pageWidth * 0.9;
-  const maxHeight = pageHeight * 0.9; // 为页面留出一些空间
-
-  // 处理img标签图片大小
-  const imgElements = tempImgContainer.querySelectorAll("img");
-  if (imgElements.length > 0) {
-    for (const img of imgElements) {
-      // 设置图片样式，确保其不超出页面
-      img.style.maxWidth = `${maxWidth}px`;
-      img.style.maxHeight = `${maxHeight}px`;
-      img.style.width = "auto"; // 保持纵横比
-      img.style.height = "auto"; // 保持纵横比
-      img.style.display = "block";
-      img.style.margin = "1em auto"; // 居中显示
-    }
-  }
-
-  // 处理SVG中的image标签
-  const svgElements = tempImgContainer.querySelectorAll("svg");
-  if (svgElements.length > 0) {
-    for (const svg of svgElements) {
-      // 获取SVG原始尺寸
-      const svgWidth = parseFloat(svg.getAttribute("width") || "0");
-      const svgHeight = parseFloat(svg.getAttribute("height") || "0");
-
-      if (svgWidth > 0 && svgHeight > 0) {
-        // 计算缩放比例
-        const scale = Math.min(
-          maxWidth / svgWidth,
-          maxHeight / svgHeight,
-          1 // 不放大，只缩小
-        );
-
-        // 设置新尺寸
-        const newWidth = Math.floor(svgWidth * scale);
-        const newHeight = Math.floor(svgHeight * scale);
-
-        // 应用新尺寸
-        svg.setAttribute("width", newWidth.toString());
-        svg.setAttribute("height", newHeight.toString());
-        svg.style.display = "block";
-        svg.style.margin = "1em auto"; // 居中显示
-      }
-
-      // 处理SVG内部的image标签
-      const imageElements = svg.querySelectorAll("image");
-      for (const image of imageElements) {
-        // 获取image标签的原始尺寸
-        const imageWidth = parseFloat(image.getAttribute("width") || "0");
-        const imageHeight = parseFloat(image.getAttribute("height") || "0");
-
-        if (imageWidth > 0 && imageHeight > 0) {
-          // 应用与SVG相同的缩放
-          const scale = Math.min(
-            maxWidth / imageWidth,
-            maxHeight / imageHeight,
-            1 // 不放大，只缩小
-          );
-
-          // 设置新尺寸
-          const newWidth = Math.floor(imageWidth * scale);
-          const newHeight = Math.floor(imageHeight * scale);
-
-          // 应用新尺寸
-          image.setAttribute("width", newWidth.toString());
-          image.setAttribute("height", newHeight.toString());
-        }
-      }
-    }
-  }
-
-  // 返回处理后的HTML内容
-  return tempImgContainer.innerHTML;
-};
-
 // 处理单个元素并添加到页面中
 const processElement = async (
   element: Element,
@@ -353,8 +202,14 @@ const processElement = async (
 
   // 处理每个段落和标题
   for (const paragraph of paragraphs) {
-    // 拆分包含多个图像的段落
-    const splitParagraphs = splitParagraphWithImages(paragraph);
+    // 拆分包含多个图像或多个span的段落
+    const splitParagraphs = splitParagraphWithImages(
+      paragraph,
+      GLOBAL_STYLE,
+      pageContainer,
+      pageHeight,
+      updatedPageContent,
+    );
 
     // 处理拆分后的每个段落
     for (const singleParagraph of splitParagraphs) {
@@ -482,7 +337,7 @@ const goToPreviousPage = () => {
   }
 };
 
-// Add window control functions
+// 窗口控制方法
 const minimizeWindow = async () => {
   await appWindow.minimize();
 };
@@ -569,10 +424,14 @@ const closeWindow = async () => {
       </div>
 
       <div class="two-column-layout">
-
         <!-- 专门用于捕获onWheel事件的绝对定位透明div -->
         <div
-          style="position:absolute;inset:0;z-index:10;background:transparent;"
+          style="
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            background: transparent;
+          "
           @wheel="onWheel"
         ></div>
 

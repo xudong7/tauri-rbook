@@ -9,7 +9,10 @@ import {
   Minus,
   FullScreen,
   Close,
+  Search,
+  Setting,
 } from "@element-plus/icons-vue";
+import { ElDropdown, ElDropdownItem, ElDropdownMenu } from "element-plus";
 
 const router = useRouter();
 
@@ -74,6 +77,9 @@ const goBackToMenu = () => {
   router.push("/");
 };
 
+// 设置菜单选项的处理函数，未实现
+
+
 const GLOBAL_STYLE = `<style>
   html { overflow: hidden!important; margin: 20px; padding: 0; }
   body {
@@ -126,6 +132,21 @@ const handleWindowResize = () => {
   }, 300);
 };
 
+const onWheel = (e: WheelEvent) => {
+  // console.log("wheel event", e.deltaY, currentContent.value);
+  if(!currentContent.value) {
+    return;
+  }
+  if (e.deltaY > 0) {
+    // console.log("goToNextPage");
+    goToNextPage();
+  }
+  else if (e.deltaY < 0) {
+    // console.log("goToPreviousPage");
+    goToPreviousPage();
+  }
+};
+
 // 组件挂载和卸载时添加/移除窗口大小变化监听
 onMounted(() => {
   lastWindowSize.value = {
@@ -133,10 +154,12 @@ onMounted(() => {
     height: window.innerHeight,
   };
   window.addEventListener("resize", handleWindowResize);
+  window.addEventListener("wheel", onWheel);
 });
 
 onUnmounted(() => {
   window.removeEventListener("resize", handleWindowResize);
+  window.removeEventListener("wheel", onWheel);
   if (resizeTimeout.value !== null) {
     clearTimeout(resizeTimeout.value);
   }
@@ -474,6 +497,18 @@ const closeWindow = async () => {
         <button class="icon-button" @click="goBackToMenu" title="返回书架">
           <el-icon :size="20"><ArrowLeft /></el-icon>
         </button>
+        <el-dropdown trigger="click">
+          <button class="icon-button" title="设置">
+            <el-icon :size="20"><Setting /></el-icon>
+          </button>
+          <template #dropdown>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item @click="goBackToMenu">选项一</el-dropdown-item>
+              <el-dropdown-item @click="goBackToMenu">选项二</el-dropdown-item>
+              <el-dropdown-item @click="handleWindowResize">重新加载</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
       <div class="page-indicator-inline" v-if="currentContent">
         {{ currentPage + 1 }} : {{ Math.min(currentPage + 2, totalPages) }} ·
@@ -515,6 +550,13 @@ const closeWindow = async () => {
       </div>
 
       <div class="two-column-layout">
+
+        <!-- 专门用于捕获onWheel事件的绝对定位透明div -->
+        <div
+          style="position:absolute;inset:0;z-index:10;background:transparent;"
+          @wheel="onWheel"
+        ></div>
+
         <button
           class="page-button-side prev-button-side"
           @click="goToPreviousPage"

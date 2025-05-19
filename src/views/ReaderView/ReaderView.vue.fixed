@@ -3,7 +3,6 @@ import { ref, onMounted, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { Window } from "@tauri-apps/api/window";
 import { getEpubHtmlWithImages, HtmlWithImages } from "../../api";
-import { generateStyle } from "../../utils/ReaderViewUtil";
 import {
   ArrowLeft,
   ArrowRight,
@@ -72,17 +71,35 @@ watch(
   { immediate: true }
 );
 
-// 返回书架
+// Go back to menu
 const goBackToMenu = () => {
   router.push("/");
 };
 
-// 根据窗口大小生成全局样式
-const updateGlobalStyle = () => {
-  GLOBAL_STYLE = generateStyle();
-};
+// 设置菜单选项的处理函数，未实现
 
-let GLOBAL_STYLE = generateStyle();
+const GLOBAL_STYLE = `<style>
+  html { overflow: hidden!important; margin: 20px; padding: 0; }
+  body {
+    font-family: 'Noto Serif', 'Times New Roman', serif!important;
+    font-size: 18px!important;
+    line-height: 1.4!important;
+    color: #333!important;
+    box-sizing: border-box!important;
+  }
+  p {
+    margin: 1em!important;
+    text-indent: 1em!important;
+  }
+  p.pre {
+    margin: 0!important;
+  }
+  a {
+    pointer-events: none!important;
+    text-decoration: none!important;
+  }
+</style>`;
+
 const PAGE_PADDING = 20; // px
 
 // 监听窗口大小变化，以重新布局页面内容
@@ -102,7 +119,6 @@ const handleWindowResize = () => {
       Math.abs(currentHeight - lastWindowSize.value.height) > 50
     ) {
       lastWindowSize.value = { width: currentWidth, height: currentHeight };
-      updateGlobalStyle();
 
       // 如果当前有内容，则重新分割页面
       if (htmlWithImages.value) {

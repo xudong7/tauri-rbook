@@ -3,13 +3,13 @@ import { ref, onMounted, onUnmounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { Window } from "@tauri-apps/api/window";
 import { getEpubHtmlWithImages, HtmlWithImages } from "../../api";
-import { generateStyle } from "../../utils/ReaderViewUtil";
 import {
   ArrowLeft,
   ArrowRight,
   Minus,
   FullScreen,
   Close,
+  Search,
   Setting,
 } from "@element-plus/icons-vue";
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from "element-plus";
@@ -72,17 +72,35 @@ watch(
   { immediate: true }
 );
 
-// 返回书架
+// Go back to menu
 const goBackToMenu = () => {
   router.push("/");
 };
 
-// 根据窗口大小生成全局样式
-const updateGlobalStyle = () => {
-  GLOBAL_STYLE = generateStyle();
-};
+// 设置菜单选项的处理函数，未实现
 
-let GLOBAL_STYLE = generateStyle();
+const GLOBAL_STYLE = `<style>
+  html { overflow: hidden!important; margin: 20px; padding: 0; }
+  body {
+    font-family: 'Noto Serif', 'Times New Roman', serif!important;
+    font-size: 18px!important;
+    line-height: 1.4!important;
+    color: #333!important;
+    box-sizing: border-box!important;
+  }
+  p {
+    margin: 1em!important;
+    text-indent: 1em!important;
+  }
+  p.pre {
+    margin: 0!important;
+  }
+  a {
+    pointer-events: none!important;
+    text-decoration: none!important;
+  }
+</style>`;
+
 const PAGE_PADDING = 20; // px
 
 // 监听窗口大小变化，以重新布局页面内容
@@ -102,7 +120,6 @@ const handleWindowResize = () => {
       Math.abs(currentHeight - lastWindowSize.value.height) > 50
     ) {
       lastWindowSize.value = { width: currentWidth, height: currentHeight };
-      updateGlobalStyle();
 
       // 如果当前有内容，则重新分割页面
       if (htmlWithImages.value) {
@@ -160,197 +177,6 @@ const processHtmlContent = async () => {
   await splitContentForTwoColumns(html);
 };
 
-// 拆分大型span中的文本
-const splitLargeSpanText = (
-  spanNode: Node,
-  tagName: string,
-  pageContainer: HTMLDivElement,
-  pageHeight: number,
-  currentPageContent: string
-): { elements: HTMLElement[]; firstPageContent: string } => {
-  // 只处理SPAN节点和文本节点
-  if (
-    spanNode.nodeName !== "SPAN" &&
-    spanNode.nodeName !== "#text" &&
-    spanNode.nodeName !== "TEXT"
-  ) {
-    const wrapper = document.createElement(tagName);
-    wrapper.appendChild(spanNode.cloneNode(true));
-    return { elements: [wrapper], firstPageContent: currentPageContent };
-  }
-
-  // 获取节点的文本内容
-  let text = spanNode.textContent || "";
-
-  // 如果文本很短，不需要分割
-  if (text.length < 100) {
-    const wrapper = document.createElement(tagName);
-    wrapper.appendChild(spanNode.cloneNode(true));
-    return { elements: [wrapper], firstPageContent: currentPageContent };
-  }
-
-  // 用于存储分割后的元素
-  const elements: HTMLElement[] = [];
-  let remainingText = text;
-  let span: HTMLElement;
-  let testElement: HTMLElement = document.createElement("div");
-  let segmentLength = 50; // 初始分段长度
-  let updatedPageContent = currentPageContent;
-  let isFirstSegment = true;
-  let currentTestLength = 0;
-
-  // 循环拆分文本，直到所有文本都被处理
-  while (remainingText.length > 0) {
-    // 创建一个新的段落和span元素
-    const newElement = document.createElement(tagName);
-
-    if (spanNode.nodeName === "#text" || spanNode.nodeName === "TEXT") {
-      // 如果是文本节点，直接添加文本
-      let testLength = Math.min(segmentLength, remainingText.length);
-
-      // 尝试增加文本长度，直到页面溢出
-      while (testLength < remainingText.length) {
-        const testText = remainingText.substring(0, testLength);
-        newElement.textContent = testText;
-
-        testElement.innerHTML =
-          GLOBAL_STYLE + updatedPageContent + newElement.outerHTML;
-        pageContainer.innerHTML = testElement.innerHTML;
-
-        if (pageContainer.clientHeight > pageHeight) {
-          // 如果溢出，回退到上一个长度
-          if (testLength > segmentLength) {
-            testLength =
-              testLength -
-              Math.max(20, Math.floor((testLength - segmentLength) / 2));
-          } else {
-            // 即使最小分段也溢出，则取最小值
-            testLength = Math.max(10, testLength - 10);
-          }
-          break;
-        }
-
-        // 增加测试长度
-        testLength = Math.min(testLength + 50, remainingText.length);
-
-        // 如果已经是全部文本，结束循环
-        if (testLength >= remainingText.length) {
-          break;
-        }
-      }
-      // 保存当前测试长度
-      currentTestLength = testLength;
-
-      // 确保在单词边界处切割（避免截断单词）
-      let finalLength = testLength;
-      if (testLength < remainingText.length) {
-        // 向前查找最近的空格
-        const lastSpaceIndex = remainingText
-          .substring(0, testLength)
-          .lastIndexOf(" ");
-        if (lastSpaceIndex > 0) {
-          finalLength = lastSpaceIndex + 1; // +1 to include the space
-        }
-      }
-
-      // 取出当前可以放下的文本
-      const currentSegment = remainingText.substring(0, finalLength);
-      remainingText = remainingText.substring(finalLength);
-
-      newElement.textContent = currentSegment;
-    } else {
-      // 如果是span节点，创建一个新的span
-      span = document.createElement("span");
-
-      // 获取原始span的所有属性并复制
-      if (spanNode instanceof Element) {
-        Array.from(spanNode.attributes).forEach((attr) => {
-          span.setAttribute(attr.name, attr.value);
-        });
-      }
-
-      let testLength = Math.min(segmentLength, remainingText.length);
-
-      // 尝试增加文本长度，直到页面溢出
-      while (testLength < remainingText.length) {
-        const testText = remainingText.substring(0, testLength);
-        span.textContent = testText;
-        newElement.innerHTML = ""; // 清空之前的内容
-        newElement.appendChild(span.cloneNode(true));
-
-        testElement.innerHTML =
-          GLOBAL_STYLE + updatedPageContent + newElement.outerHTML;
-        pageContainer.innerHTML = testElement.innerHTML;
-
-        if (pageContainer.clientHeight > pageHeight) {
-          // 如果溢出，回退到上一个长度
-          if (testLength > segmentLength) {
-            testLength =
-              testLength -
-              Math.max(20, Math.floor((testLength - segmentLength) / 2));
-          } else {
-            // 即使最小分段也溢出，则取最小值
-            testLength = Math.max(10, testLength - 10);
-          }
-          break;
-        }
-
-        // 增加测试长度
-        testLength = Math.min(testLength + 50, remainingText.length);
-
-        // 如果已经是全部文本，结束循环
-        if (testLength >= remainingText.length) {
-          break;
-        }
-      }
-      // 保存当前测试长度
-      currentTestLength = testLength;
-
-      // 确保在单词边界处切割（避免截断单词）
-      let finalLength = testLength;
-      if (testLength < remainingText.length) {
-        // 向前查找最近的空格
-        const lastSpaceIndex = remainingText
-          .substring(0, testLength)
-          .lastIndexOf(" ");
-        if (lastSpaceIndex > 0) {
-          finalLength = lastSpaceIndex + 1; // +1 to include the space
-        }
-      }
-
-      // 取出当前可以放下的文本
-      const currentSegment = remainingText.substring(0, finalLength);
-      remainingText = remainingText.substring(finalLength);
-
-      // 重新创建span以确保干净
-      span = document.createElement("span");
-      if (spanNode instanceof Element) {
-        Array.from(spanNode.attributes).forEach((attr) => {
-          span.setAttribute(attr.name, attr.value);
-        });
-      }
-      span.textContent = currentSegment;
-      newElement.innerHTML = ""; // 确保元素是空的
-      newElement.appendChild(span);
-    }
-
-    elements.push(newElement);
-
-    // 更新当前页面内容，只有第一段需要保留原来页面的内容
-    if (isFirstSegment) {
-      updatedPageContent += newElement.outerHTML;
-      isFirstSegment = false;
-    } else {
-      updatedPageContent = "";
-    }
-
-    // 动态调整分段长度
-    segmentLength = currentTestLength;
-  }
-
-  return { elements, firstPageContent: updatedPageContent };
-};
-
 // 拆分包含多个图像或多个span的段落或标题
 const splitParagraphWithImages = (
   paragraph: string,
@@ -374,9 +200,9 @@ const splitParagraphWithImages = (
   // 确定元素类型 (p, h1-h6)
   const firstChild = tempPara.firstChild;
   const nodeName = firstChild?.nodeName || "";
-  const isPossiblyHeading = /^H[1-6]$/i.test(nodeName);
+  const isHeading = /^H[1-6]$/i.test(nodeName);
   // 使用原始标签类型或默认为p
-  const tagName = isPossiblyHeading ? nodeName.toLowerCase() : "p";
+  const tagName = isHeading ? nodeName.toLowerCase() : "p";
 
   // 如果需要处理有多个span的段落
   if (pageContainer && pageHeight && currentPageContent !== undefined) {
@@ -422,9 +248,7 @@ const splitParagraphWithImages = (
             currentElement = document.createElement(tagName);
             currentPageContentCopy += result[result.length - 1];
           }
-        }
-
-        // 创建一个只包含图像的标签
+        }        // 创建一个只包含图像的标签
         const imgContainer = document.createElement(tagName);
         imgContainer.appendChild(childNode.cloneNode(true));
         result.push(imgContainer.outerHTML);
@@ -434,20 +258,18 @@ const splitParagraphWithImages = (
         const tempElement = document.createElement(tagName);
         const clone = childNode.cloneNode(true);
         tempElement.appendChild(clone);
-
+        
         // 测试添加此节点后是否会导致页面溢出
         const testElement = document.createElement("div");
         testElement.innerHTML =
-          GLOBAL_STYLE +
-          currentPageContentCopy +
-          currentElement.outerHTML +
-          tempElement.outerHTML;
+          GLOBAL_STYLE + currentPageContentCopy + currentElement.outerHTML + tempElement.outerHTML;
         pageContainer.innerHTML = testElement.innerHTML;
         const testHeight = pageContainer.clientHeight;
-
+        
         // 测试该节点单独在一个新页面是否会溢出
         const testNewPageElement = document.createElement("div");
-        testNewPageElement.innerHTML = GLOBAL_STYLE + tempElement.outerHTML;
+        testNewPageElement.innerHTML =
+          GLOBAL_STYLE + tempElement.outerHTML;
         pageContainer.innerHTML = testNewPageElement.innerHTML;
         const testNewPageHeight = pageContainer.clientHeight;
 
@@ -457,24 +279,23 @@ const splitParagraphWithImages = (
           if (currentElement.hasChildNodes()) {
             result.push(currentElement.outerHTML);
           }
-
+          
           // 如果节点本身也很大，即使单独放在一页也会溢出
           if (testNewPageHeight > pageHeight) {
             // 需要分割span内文字
-            const splitResult = splitLargeSpanText(
-              clone,
-              tagName,
-              pageContainer,
+            const { elements, firstPageContent } = splitLargeSpanText(
+              clone, 
+              tagName, 
+              pageContainer, 
               pageHeight,
               ""
             );
-            const elements = splitResult.elements;
-
+            
             // 将分割后的元素添加到结果中
             for (let j = 0; j < elements.length; j++) {
               result.push(elements[j].outerHTML);
             }
-
+            
             // 重置当前元素
             currentElement = document.createElement(tagName);
             currentPageContentCopy = "";
@@ -487,7 +308,7 @@ const splitParagraphWithImages = (
         } else {
           // 如果不会溢出，正常添加
           currentElement.appendChild(clone);
-
+          
           // 继续检查是否需要分页
           if (i < childNodes.length - 1) {
             // 不是最后一个节点才需要检查
@@ -642,6 +463,168 @@ const resizeImgAndReturnInnerHTML = (
   return tempImgContainer.innerHTML;
 };
 
+// 拆分大型span中的文本
+const splitLargeSpanText = (
+  spanNode: Node,
+  tagName: string,
+  pageContainer: HTMLDivElement,
+  pageHeight: number,
+  currentPageContent: string
+): { elements: HTMLElement[]; firstPageContent: string } => {
+  // 只处理SPAN节点和文本节点
+  if (
+    spanNode.nodeName !== "SPAN" &&
+    spanNode.nodeName !== "#text" &&
+    spanNode.nodeName !== "TEXT"
+  ) {
+    const wrapper = document.createElement(tagName);
+    wrapper.appendChild(spanNode.cloneNode(true));
+    return { elements: [wrapper], firstPageContent: currentPageContent };
+  }
+  // 获取节点的文本内容
+  let text = spanNode.textContent || "";
+
+  // 如果文本很短，不需要分割
+  if (text.length < 100) {
+    const wrapper = document.createElement(tagName);
+    wrapper.appendChild(spanNode.cloneNode(true));
+    return { elements: [wrapper], firstPageContent: currentPageContent };
+  }
+
+  // 用于存储分割后的元素
+  const elements: HTMLElement[] = [];
+  let remainingText = text;
+  let span: HTMLElement;
+  let testElement: HTMLElement = document.createElement("div");
+  let segmentLength = 50; // 初始分段长度
+  let firstPageContent = currentPageContent;
+  let isFirstSegment = true;
+  let currentTestLength = 0;
+
+  // 循环拆分文本，直到所有文本都被处理
+  while (remainingText.length > 0) {
+    // 创建一个新的段落和span元素
+    const newElement = document.createElement(tagName);
+    
+    if (spanNode.nodeName === "#text" || spanNode.nodeName === "TEXT") {
+      // 如果是文本节点，直接添加文本
+      let testLength = Math.min(segmentLength, remainingText.length);
+      
+      // 尝试增加文本长度，直到页面溢出
+      while (testLength < remainingText.length) {
+        const testText = remainingText.substring(0, testLength);
+        newElement.textContent = testText;
+        
+        testElement.innerHTML = GLOBAL_STYLE + firstPageContent + newElement.outerHTML;
+        pageContainer.innerHTML = testElement.innerHTML;
+        
+        if (pageContainer.clientHeight > pageHeight) {
+          // 如果溢出，回退到上一个长度
+          if (testLength > segmentLength) {
+            testLength = testLength - Math.max(20, Math.floor((testLength - segmentLength) / 2));
+          } else {
+            // 即使最小分段也溢出，则取最小值
+            testLength = Math.max(10, testLength - 10);
+          }
+          break;
+        }
+        
+        // 增加测试长度
+        testLength = Math.min(testLength + 50, remainingText.length);
+        
+        // 如果已经是全部文本，结束循环
+        if (testLength >= remainingText.length) {
+          break;
+        }
+      }
+      
+      // 保存当前测试长度
+      currentTestLength = testLength;
+      
+      // 取出当前可以放下的文本
+      const currentSegment = remainingText.substring(0, testLength);
+      remainingText = remainingText.substring(testLength);
+      
+      newElement.textContent = currentSegment;
+    } else {
+      // 如果是span节点，创建一个新的span
+      span = document.createElement("span");
+      
+      // 获取原始span的所有属性并复制
+      if (spanNode instanceof Element) {
+        Array.from(spanNode.attributes).forEach(attr => {
+          span.setAttribute(attr.name, attr.value);
+        });
+      }
+      
+      let testLength = Math.min(segmentLength, remainingText.length);
+      
+      // 尝试增加文本长度，直到页面溢出
+      while (testLength < remainingText.length) {
+        const testText = remainingText.substring(0, testLength);
+        span.textContent = testText;
+        newElement.innerHTML = ""; // 清空之前的内容
+        newElement.appendChild(span.cloneNode(true));
+        
+        testElement.innerHTML = GLOBAL_STYLE + firstPageContent + newElement.outerHTML;
+        pageContainer.innerHTML = testElement.innerHTML;
+        
+        if (pageContainer.clientHeight > pageHeight) {
+          // 如果溢出，回退到上一个长度
+          if (testLength > segmentLength) {
+            testLength = testLength - Math.max(20, Math.floor((testLength - segmentLength) / 2));
+          } else {
+            // 即使最小分段也溢出，则取最小值
+            testLength = Math.max(10, testLength - 10);
+          }
+          break;
+        }
+        
+        // 增加测试长度
+        testLength = Math.min(testLength + 50, remainingText.length);
+        
+        // 如果已经是全部文本，结束循环
+        if (testLength >= remainingText.length) {
+          break;
+        }
+      }
+      
+      // 保存当前测试长度
+      currentTestLength = testLength;
+      
+      // 取出当前可以放下的文本
+      const currentSegment = remainingText.substring(0, testLength);
+      remainingText = remainingText.substring(testLength);
+      
+      // 重新创建span以确保干净
+      span = document.createElement("span");
+      if (spanNode instanceof Element) {
+        Array.from(spanNode.attributes).forEach(attr => {
+          span.setAttribute(attr.name, attr.value);
+        });
+      }
+      span.textContent = currentSegment;
+      newElement.innerHTML = ""; // 确保元素是空的
+      newElement.appendChild(span);
+    }
+    
+    elements.push(newElement);
+    
+    // 更新当前页面内容，只有第一段需要保留原来页面的内容
+    if (isFirstSegment) {
+      firstPageContent += newElement.outerHTML;
+      isFirstSegment = false;
+    } else {
+      firstPageContent = "";
+    }
+    
+    // 动态调整分段长度
+    segmentLength = currentTestLength;
+  }
+  
+  return { elements, firstPageContent };
+};
+
 // 处理单个元素并添加到页面中
 const processElement = async (
   element: Element,
@@ -657,9 +640,7 @@ const processElement = async (
 
   // 处理后产生的新页面
   const newPages: string[] = [];
-  let updatedPageContent = currentPageContent;
-
-  // 处理每个段落和标题
+  let updatedPageContent = currentPageContent;  // 处理每个段落和标题
   for (const paragraph of paragraphs) {
     // 拆分包含多个图像或多个span的段落
     const splitParagraphs = splitParagraphWithImages(

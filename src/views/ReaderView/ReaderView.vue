@@ -154,12 +154,10 @@ onMounted(() => {
     height: window.innerHeight,
   };
   window.addEventListener("resize", handleWindowResize);
-  window.addEventListener("wheel", onWheel);
 });
 
 onUnmounted(() => {
   window.removeEventListener("resize", handleWindowResize);
-  window.removeEventListener("wheel", onWheel);
   if (resizeTimeout.value !== null) {
     clearTimeout(resizeTimeout.value);
   }

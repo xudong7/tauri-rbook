@@ -1,23 +1,29 @@
+
 .menu-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f5f5f5;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   overflow: hidden;
-  max-height: 100vh; /* 确保不超出视口高度 */
+  max-height: 100vh;
+  transition: all 0.3s ease;
 }
 
 .menu-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 16px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e0e0e0;
-  height: 48px;
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(224, 224, 224, 0.3);
+  height: 52px;
   z-index: 100;
   flex-shrink: 0;
   -webkit-app-region: drag;
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+  border-radius: 0 0 16px 16px;
+  transition: all 0.3s ease;
 }
 
 .left-controls {
@@ -29,7 +35,7 @@
 
 .window-controls {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   -webkit-app-region: no-drag;
 }
 
@@ -37,13 +43,24 @@
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  color: #606266;
+  padding: 10px;
+  border-radius: 12px;
+  color: #6b7280;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
 .icon-button:hover {
-  background-color: #f5f7fa;
+  background-color: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.icon-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
 }
 
 .window-control-button {
@@ -51,17 +68,25 @@
   border: none;
   cursor: pointer;
   padding: 8px;
-  border-radius: 4px;
-  color: #606266;
+  border-radius: 50%;
+  color: #9ca3af;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .window-control-button:hover {
-  background-color: #f5f7fa;
+  background-color: rgba(156, 163, 175, 0.15);
+  color: #4b5563;
+  transform: scale(1.1);
 }
 
 .close-button:hover {
-  background-color: #f56c6c;
-  color: white;
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
 }
 
 .main-container {
@@ -69,9 +94,11 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  height: calc(100vh - 48px); /* 减去工具栏高度 */
-  min-height: 600px; /* 确保至少有足够的高度容纳两行书籍 */
-  max-height: calc(100vh - 48px); /* 限制最大高度 */
+  height: calc(100vh - 52px);
+  min-height: 600px;
+  max-height: calc(100vh - 52px);
+  padding: 0 16px;
+  transition: all 0.3s ease;
 }
 
 .book-content-area {
@@ -79,21 +106,29 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  justify-content: space-between; /* 确保网格区域和分页控件分布在顶部和底部 */
-  max-height: calc(100vh - 48px); /* 防止内容超出视口高度 */
+  justify-content: space-between;
+  max-height: calc(100vh - 52px);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  margin: 16px 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
 .book-grid {
   flex: 1;
-  overflow: hidden; /* 移除滚动条 */
+  overflow: hidden;
   display: grid;
-  /* 栅格列和行由JavaScript动态生成 */
-  margin: 0 auto; /* Center the grid */
+  margin: 24px auto;
   width: 100%;
-  max-width: 1600px; /* Prevent too wide layout on large screens */
-  align-content: center; /* Center grid rows vertically */
-  justify-content: center; /* Center grid columns horizontally */
+  max-width: 1600px;
+  align-content: center;
+  justify-content: center;
   box-sizing: border-box;
+  padding: 20px;
+  gap: 24px;
+  transition: all 0.3s ease;
 }
 
 .loading-container {
@@ -103,18 +138,30 @@
   justify-content: center;
   height: 100%;
   flex: 1;
-  color: #909399;
-  overflow: hidden; /* 防止出现滚动条 */
+  color: #6b7280;
+  overflow: hidden;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .loading-spinner {
   display: inline-block;
   width: 20px;
   height: 20px;
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #3498db;
+  border: 2px solid rgba(99, 102, 241, 0.2);
+  border-top: 2px solid #6366f1;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 1s linear infinite, pulse 2s ease-in-out infinite;
 }
 
 .loading-spinner.large {
@@ -124,6 +171,15 @@
   margin-bottom: 16px;
 }
 
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -131,47 +187,73 @@
   justify-content: center;
   flex: 1;
   height: 100%;
-  color: #909399;
-  overflow: hidden; /* 防止出现滚动条 */
+  color: #6b7280;
+  overflow: hidden;
+  animation: fadeIn 0.5s ease;
 }
 
 .upload-button {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 16px;
-  padding: 10px 20px;
-  background-color: #409eff;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 16px;
   cursor: pointer;
   font-size: 14px;
-  transition: background-color 0.2s;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+  position: relative;
+  overflow: hidden;
 }
 
 .upload-button:hover {
-  background-color: #66b1ff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+  background: linear-gradient(135deg, #5b5bf6 0%, #7c3aed 100%);
+}
+
+.upload-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
 }
 
 .book-item {
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.3s;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
-  height: 100%; /* 填充整个单元格 */
-  max-height: 100%; /* 确保不会超出网格单元格 */
-  overflow: hidden; /* 防止内容溢出 */
-  padding: 10px; /* Increased padding for better spacing */
-  border-radius: 10px; /* Rounded corners for the whole item */
-  background-color: transparent;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  animation: bookSlideIn 0.6s ease forwards;
+  animation-delay: calc(var(--item-index, 0) * 0.1s);
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+@keyframes bookSlideIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .book-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  background-color: rgba(240, 240, 240, 0.3);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(99, 102, 241, 0.3);
 }
 
 .book-cover {
@@ -179,121 +261,173 @@
   width: auto;
   height: 100%;
   max-width: 100%;
-  background-color: #f0f0f0;
-  border-radius: 8px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  aspect-ratio: 2/3; /* Standard book cover aspect ratio */
-  margin: 0 auto; /* Center the book cover in its container */
+  border: 1px solid rgba(226, 232, 240, 0.5);
+  aspect-ratio: 2/3;
+  margin: 0 auto 12px auto;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.book-cover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.4) 0%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    rgba(0, 0, 0, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.book-item:hover .book-cover::before {
+  opacity: 1;
 }
 
 .book-cover img {
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Better for preserving book cover details */
+  object-fit: cover;
   object-position: center;
-  transition: transform 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   max-height: 100%;
-  background-color: #f9f9f9; /* Light background for covers with transparency */
+  background-color: #f1f5f9;
+  border-radius: 12px;
 }
 
 .book-item:hover .book-cover img {
-  transform: scale(1.05);
+  transform: scale(1.08);
+  filter: brightness(1.1) contrast(1.05);
 }
 
 .book-item:hover {
-  color: #409eff;
+  color: #6366f1;
 }
 
 /* 分页控件样式 */
 .pagination-footer {
-  height: 80px; /* 固定高度 */
+  height: 88px;
   width: 100%;
-  border-top: 1px solid #e0e0e0;
-  background-color: #f9f9f9;
+  border-top: 1px solid rgba(224, 224, 224, 0.3);
+  background: rgba(249, 250, 251, 0.95);
+  backdrop-filter: blur(10px);
   display: flex;
   justify-content: center;
   align-items: center;
   flex-shrink: 0;
-  overflow: hidden; /* 防止内容溢出 */
+  overflow: hidden;
+  border-radius: 20px 20px 0 0;
+  transition: all 0.3s ease;
 }
 
 .pagination-controls {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 12px 0;
+  padding: 16px 0;
+  gap: 8px;
 }
 
 .pagination-button {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid #dcdfe6;
-  background-color: white;
-  border-radius: 4px;
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(220, 223, 230, 0.6);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #6b7280;
+  font-weight: 500;
 }
 
 .pagination-button:hover:not(:disabled) {
-  color: #409eff;
-  border-color: #c6e2ff;
-  background-color: #ecf5ff;
+  color: #6366f1;
+  border-color: rgba(99, 102, 241, 0.3);
+  background: rgba(99, 102, 241, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.pagination-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
 }
 
 .pagination-button:disabled {
   cursor: not-allowed;
-  color: #c0c4cc;
-  background-color: #f7f7f7;
+  color: #d1d5db;
+  background: rgba(247, 247, 247, 0.7);
+  border-color: rgba(220, 223, 230, 0.3);
+  opacity: 0.6;
 }
 
 .page-selector {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: 0 16px;
+  margin: 0 20px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
 }
 
 .current-page {
-  font-size: 14px;
-  color: #606266;
-  margin-bottom: 4px;
+  font-size: 15px;
+  color: #4b5563;
+  margin-bottom: 6px;
+  font-weight: 600;
 }
 
 .quick-page-nav {
   display: flex;
-  gap: 4px;
-  margin-top: 4px;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 .page-number-button {
-  width: 26px;
-  height: 26px;
-  border: 1px solid #dcdfe6;
-  background-color: white;
-  border-radius: 4px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(220, 223, 230, 0.6);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 10px;
   font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   padding: 0;
+  color: #6b7280;
 }
 
 .page-number-button:hover {
-  color: #409eff;
-  border-color: #c6e2ff;
+  color: #6366f1;
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.1);
+  transform: scale(1.1);
 }
 
 .page-number-button.active {
   color: white;
-  background-color: #409eff;
-  border-color: #409eff;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-color: #6366f1;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  transform: scale(1.05);
 }
 
 /* 重新布局指示器 */
@@ -303,15 +437,22 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 100;
   font-size: 18px;
-  color: #606266;
-  gap: 20px;
+  color: #4b5563;
+  gap: 24px;
+  animation: fadeIn 0.3s ease;
+}
+
+.resize-indicator .loading-spinner {
+  border-color: rgba(99, 102, 241, 0.2);
+  border-top-color: #6366f1;
 }
 
 @keyframes spin {
@@ -320,5 +461,79 @@
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.3);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.5);
+}
+
+/* 添加微交互动画 */
+.book-item {
+  position: relative;
+}
+
+.book-item::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 20px;
+  pointer-events: none;
+}
+
+.book-item:hover::after {
+  opacity: 1;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .menu-toolbar {
+    padding: 8px 16px;
+    border-radius: 0 0 12px 12px;
+  }
+  
+  .main-container {
+    padding: 0 8px;
+  }
+  
+  .book-content-area {
+    margin: 8px 0;
+    border-radius: 16px;
+  }
+  
+  .book-grid {
+    padding: 16px;
+    gap: 16px;
+  }
+  
+  .book-item {
+    padding: 12px;
+    border-radius: 16px;
+  }
+  
+  .book-cover {
+    border-radius: 12px;
   }
 }

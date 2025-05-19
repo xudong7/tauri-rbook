@@ -15,6 +15,7 @@ import {
   FullScreen,
   Close,
   Setting,
+  Check,
 } from "@element-plus/icons-vue";
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from "element-plus";
 
@@ -43,7 +44,30 @@ const currentPage = ref<number>(0);
 const totalPages = ref<number>(0);
 const allPages = ref<string[]>([]);
 
+
+
+//  添加设置相关的响应式变量
+const wheelPagingEnabled = ref<boolean>(true); // 是否启用鼠标滚轮翻页
+const dropdownRef = ref();    // 设置下拉菜单的引用
+
+
+// 切换鼠标滚轮翻页状态
+const toggleWheelPaging = (event? : Event) => {     
+  wheelPagingEnabled.value = !wheelPagingEnabled.value;
+  if (event) event.stopPropagation();
+}
+// 自动关闭设置下拉菜单
+const closeDropdown = () => {
+  //延时0.5s关闭下拉菜单
+  setTimeout(() => {
+    dropdownRef.value?.handleClose();
+  }, 200);
+}
+
+// Function to load a book from a specified path
+
 // 加载电子书
+
 const loadBookFromPath = async (path: string) => {
   try {
     loading.value = true;
@@ -120,17 +144,10 @@ const handleWindowResize = () => {
 
 // 监听滚轮事件，翻页
 const onWheel = (e: WheelEvent) => {
-  // console.log("wheel event", e.deltaY, currentContent.value);
-  if (!currentContent.value) {
-    return;
-  }
-  if (e.deltaY > 0) {
-    // console.log("goToNextPage");
-    goToNextPage();
-  } else if (e.deltaY < 0) {
-    // console.log("goToPreviousPage");
-    goToPreviousPage();
-  }
+  if(!wheelPagingEnabled.value) return;
+  if(!currentContent.value) return;
+  if (e.deltaY > 0) goToNextPage();
+  else if (e.deltaY < 0) goToPreviousPage();
 };
 
 // 组件挂载和卸载时添加/移除窗口大小变化监听
@@ -346,23 +363,29 @@ const closeWindow = async () => {
         <button class="icon-button" @click="goBackToMenu" title="返回书架">
           <el-icon :size="20"><ArrowLeft /></el-icon>
         </button>
-        <el-dropdown trigger="click">
+        <el-dropdown trigger="click" :hide-on-click="false" ref="dropdownRef">
           <button class="icon-button" title="设置">
             <el-icon :size="20"><Setting /></el-icon>
           </button>
           <template #dropdown>
-            <el-dropdown-menu slot="dropdown">
+            <el-dropdown-menu slot="dropdown" @mouseleave="closeDropdown"> 
               <el-dropdown-item @click="goBackToMenu">选项一</el-dropdown-item>
-              <el-dropdown-item @click="goBackToMenu">选项二</el-dropdown-item>
-              <el-dropdown-item @click="handleWindowResize"
-                >重新加载</el-dropdown-item
-              >
+              <el-dropdown-item @click="handleWindowResize">重新加载</el-dropdown-item>
+
+              <el-dropdown-item 
+              @click="toggleWheelPaging($event)"
+              :style="wheelPagingEnabled ? 'font-weight:bold;color:#409EFF' : ''">
+              启用鼠标滚轮翻页
+              <el-icon v-if="wheelPagingEnabled" :size="16" style="margin-left:8px;"> <Check /> </el-icon>
+              </el-dropdown-item>
+
             </el-dropdown-menu>
           </template>
         </el-dropdown>
       </div>
       <div class="page-indicator-inline" v-if="currentContent">
-        {{ currentPage + 1 }} : {{ Math.min(currentPage + 2, totalPages) }} ·
+        Page 
+        {{ currentPage + 1 }} : {{ Math.min(currentPage + 2, totalPages) }}  &nbsp;of&nbsp;
         {{ totalPages }}
       </div>
       <div class="window-controls">

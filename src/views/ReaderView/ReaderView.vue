@@ -14,6 +14,7 @@ import {
   resizeImgAndReturnInnerHTML,
   splitParagraphWithImages,
 } from "../../utils/ReaderViewUtil";
+import { createSettingsWindow } from "../../utils/CreateWindow";
 import {
   ArrowLeft,
   ArrowRight,
@@ -59,6 +60,15 @@ let WINDOW_HEIGHT = window.innerHeight;
 let PAGE_WIDTH = WINDOW_WIDTH / 2; // 页面宽度
 let PAGE_HEIGHT = WINDOW_HEIGHT * 0.9; // 页面高度
 const PAGE_PADDING = 20; // px
+
+// 点击设置按钮时，打开设置窗口
+const openSettingWindow = async () => {
+  try {
+    createSettingsWindow();
+  } catch (error) {
+    console.error("打开设置窗口失败:", error);
+  }
+};
 
 // 加载电子书
 const loadBookFromPath = async (path: string) => {
@@ -472,7 +482,7 @@ onUnmounted(() => {
           <el-icon :size="20"><ArrowLeft /></el-icon>
         </button>
         <el-dropdown trigger="click" :hide-on-click="false" ref="dropdownRef">
-          <button class="icon-button" title="设置">
+          <button class="icon-button" @click="openSettingWindow" title="设置">
             <el-icon :size="20"><Setting /></el-icon>
           </button>
           <template #dropdown>

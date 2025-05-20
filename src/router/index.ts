@@ -3,6 +3,7 @@ import type { RouteLocationNormalized } from 'vue-router'
 import MenuView from '../views/MenuView/MenuView.vue'
 import ReaderView from '../views/ReaderView/ReaderView.vue'
 import SearchView from '../views/SearchView/SearchView.vue'
+import SettingsView from '../views/SettingsView/SettingsView.vue'
 
 const routes = [
   {
@@ -20,6 +21,11 @@ const routes = [
     path: '/search',
     name: 'Search',
     component: SearchView
+  },
+  {
+    path: '/settings',
+    name: 'Settings',
+    component: SettingsView
   }
 ]
 

@@ -24,6 +24,7 @@ import {
   Setting,
   Check,
   Collection,
+  Operation,
 } from "@element-plus/icons-vue";
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from "element-plus";
 
@@ -53,8 +54,27 @@ const currentBookmark = ref<BookMark | null>(null);
 //  添加设置相关的响应式变量
 const wheelPagingEnabled = ref<boolean>(true); // 是否启用鼠标滚轮翻页
 const dropdownRef = ref(); // 设置下拉菜单的引用
+
+
+const fontFamily = ref("Noto Serif");
+const fontSize = ref(18);
+
+// 可选字体和字号
+const fontFamilyOptions = [
+  { label: "Noto Serif", value: "Noto Serif" },
+  { label: "宋体", value: "SimSun" },
+  { label: "仿宋", value: "FangSong"},
+  { label: "楷体", value: "KaiTi" },
+  { label: "微软雅黑", value: "Microsoft YaHei" },
+  { label: "Times New Roman", value: "Times New Roman" },
+  { label: "Arial", value: "Arial" },
+];
+const fontSizeOptions = [14, 16, 18, 20, 22, 24, 28, 32];
+
+
+
 // 全局样式
-let GLOBAL_STYLE = generateStyle();
+let GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
 let WINDOW_WIDTH = window.innerWidth;
 let WINDOW_HEIGHT = window.innerHeight;
 let PAGE_WIDTH = WINDOW_WIDTH / 2; // 页面宽度
@@ -108,6 +128,49 @@ const loadBookFromPath = async (path: string) => {
     loading.value = false;
   }
 };
+
+
+// 监听初始文件路径的变化
+watch(
+  () => props.initialFilePath,
+  (newPath) => {
+    if (newPath) {
+      loadBookFromPath(newPath);
+    }
+  },
+  { immediate: true }
+);
+
+
+// 根据窗口大小生成全局样式
+const updateGlobalStyle = () => {
+  GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
+};
+
+
+watch([fontFamily, fontSize], () => {
+  updateGlobalStyle();
+  if (htmlWithImages.value) processHtmlContent();
+});
+
+
+// 组件挂载和卸载时添加/移除窗口大小变化监听
+onMounted(() => {
+  lastWindowSize.value = {
+    width: window.innerWidth,
+    height: window.innerHeight,
+  };
+  window.addEventListener("resize", handleWindowResize);
+});
+
+// 组件卸载时清除事件监听
+onUnmounted(() => {
+  window.removeEventListener("resize", handleWindowResize);
+  if (resizeTimeout.value !== null) {
+    clearTimeout(resizeTimeout.value);
+  }
+});
+
 
 // 处理HTML内容和图片
 const processHtmlContent = async () => {
@@ -494,10 +557,7 @@ onUnmounted(() => {
 
               <el-dropdown-item
                 @click="toggleWheelPaging($event)"
-                :style="
-                  wheelPagingEnabled ? 'font-weight:bold;color:#409EFF' : ''
-                "
-              >
+                :style="wheelPagingEnabled ? 'font-weight:bold;color:#409EFF' : ''">
                 启用鼠标滚轮翻页
                 <el-icon
                   v-if="wheelPagingEnabled"
@@ -510,6 +570,55 @@ onUnmounted(() => {
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+        <el-dropdown trigger="click" :hide-on-click="false">
+          <button class="icon-button" title = "页面布局">
+            <el-icon :size="20"><Operation /></el-icon>
+          </button>
+          <template #dropdown>
+            <el-dropdown-menu slot="dropdown" style="min-width: 140px">
+              <el-dropdown-item>
+                <div class="dropdown-item-content">
+                  <label for="font-family">字体 </label>
+                  <el-select
+                    v-model="fontFamily"
+                    id="font-family"
+                    size="small"
+                    @change="updateGlobalStyle"
+                  >
+                    <el-option
+                      v-for="option in fontFamilyOptions"
+                      :key="option.value"
+                      :label="option.label"
+                      :value="option.value"
+                    />
+                  </el-select>
+                </div>
+              </el-dropdown-item>
+              <el-dropdown-item>
+                <div class="dropdown-item-content">
+                  <label for="font-size">字号 </label>
+                  <el-select
+                    v-model="fontSize"
+                    id="font-size"
+                    size="small"
+                    @change="updateGlobalStyle"
+                  >
+                    <el-option
+                      v-for="size in fontSizeOptions"
+                      :key="size"
+                      :label="size + 'px'"
+                      :value="size"
+                    />
+                  </el-select>
+                </div>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+          <el-dropdown-menu slot="dropdown">
+            
+          </el-dropdown-menu>
+        </el-dropdown>
+
         <button
           class="icon-button"
           @click="toggleBookmark"

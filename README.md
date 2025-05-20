@@ -47,6 +47,8 @@ pnpm run tauri build
 
 - [ ] 书签样式美化
 
+- [ ] 主页按阅读时间/首字母排序
+
 ### Rust
 
 - [x] 加载默认文件夹下的epub文件

@@ -21,7 +21,7 @@ import {
   Close,
   Setting,
   Check,
-  Star,
+  Collection,
 } from "@element-plus/icons-vue";
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from "element-plus";
 
@@ -485,16 +485,16 @@ const toggleBookmark = async () => {
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-      </div>
-      <div class="page-controls" v-if="currentContent">
         <button
           class="icon-button"
           @click="toggleBookmark"
           :class="{ active: hasBookmark }"
           title="添加/删除书签"
         >
-          <el-icon :size="20"><Star /></el-icon>
+          <el-icon :size="20"><Collection /></el-icon>
         </button>
+      </div>
+      <div class="page-controls" v-if="currentContent">
         <div class="page-indicator-inline">
           Page
           {{ currentPage + 1 }} :

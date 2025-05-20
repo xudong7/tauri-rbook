@@ -22,6 +22,7 @@ import {
   Setting,
   Check,
   Collection,
+  Operation,
 } from "@element-plus/icons-vue";
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from "element-plus";
 
@@ -57,6 +58,21 @@ const currentBookmark = ref<BookMark | null>(null);
 //  添加设置相关的响应式变量
 const wheelPagingEnabled = ref<boolean>(true); // 是否启用鼠标滚轮翻页
 const dropdownRef = ref(); // 设置下拉菜单的引用
+
+const fontFamily = ref("Noto Serif");
+const fontSize = ref(18);
+
+// 可选字体和字号
+const fontFamilyOptions = [
+  { label: "Noto Serif", value: "Noto Serif" },
+  { label: "宋体", value: "SimSun" },
+  { label: "仿宋", value: "FangSong"},
+  { label: "楷体", value: "KaiTi" },
+  { label: "微软雅黑", value: "Microsoft YaHei" },
+  { label: "Times New Roman", value: "Times New Roman" },
+  { label: "Arial", value: "Arial" },
+];
+const fontSizeOptions = [14, 16, 18, 20, 22, 24, 28, 32];
 
 // 切换鼠标滚轮翻页状态
 const toggleWheelPaging = (event?: Event) => {
@@ -136,11 +152,17 @@ const goBackToMenu = () => {
 
 // 根据窗口大小生成全局样式
 const updateGlobalStyle = () => {
-  GLOBAL_STYLE = generateStyle();
+  GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
 };
 
-let GLOBAL_STYLE = generateStyle();
+let GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
 const PAGE_PADDING = 20; // px
+
+watch([fontFamily, fontSize], () => {
+  updateGlobalStyle();
+  if (htmlWithImages.value) processHtmlContent();
+});
+
 
 // 监听窗口大小变化，以重新布局页面内容
 const handleWindowResize = () => {
@@ -469,10 +491,7 @@ const toggleBookmark = async () => {
 
               <el-dropdown-item
                 @click="toggleWheelPaging($event)"
-                :style="
-                  wheelPagingEnabled ? 'font-weight:bold;color:#409EFF' : ''
-                "
-              >
+                :style="wheelPagingEnabled ? 'font-weight:bold;color:#409EFF' : ''">
                 启用鼠标滚轮翻页
                 <el-icon
                   v-if="wheelPagingEnabled"
@@ -485,6 +504,55 @@ const toggleBookmark = async () => {
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+        <el-dropdown trigger="click" :hide-on-click="false">
+          <button class="icon-button" title = "页面布局">
+            <el-icon :size="20"><Operation /></el-icon>
+          </button>
+          <template #dropdown>
+            <el-dropdown-menu slot="dropdown" style="min-width: 140px">
+              <el-dropdown-item>
+                <div class="dropdown-item-content">
+                  <label for="font-family">字体 </label>
+                  <el-select
+                    v-model="fontFamily"
+                    id="font-family"
+                    size="small"
+                    @change="updateGlobalStyle"
+                  >
+                    <el-option
+                      v-for="option in fontFamilyOptions"
+                      :key="option.value"
+                      :label="option.label"
+                      :value="option.value"
+                    />
+                  </el-select>
+                </div>
+              </el-dropdown-item>
+              <el-dropdown-item>
+                <div class="dropdown-item-content">
+                  <label for="font-size">字号 </label>
+                  <el-select
+                    v-model="fontSize"
+                    id="font-size"
+                    size="small"
+                    @change="updateGlobalStyle"
+                  >
+                    <el-option
+                      v-for="size in fontSizeOptions"
+                      :key="size"
+                      :label="size + 'px'"
+                      :value="size"
+                    />
+                  </el-select>
+                </div>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+          <el-dropdown-menu slot="dropdown">
+            
+          </el-dropdown-menu>
+        </el-dropdown>
+
         <button
           class="icon-button"
           @click="toggleBookmark"

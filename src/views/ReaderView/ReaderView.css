@@ -2,24 +2,51 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #f7f7f7;
   overflow: hidden;
 }
+
 
 .reader-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 8px 16px;
-  background-color: rgba(255, 255, 255, 0.95);
-  border-bottom: 1px solid rgba(224, 224, 224, 0.5);
+  background-color: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(224, 224, 224, 0.3);
   height: 48px;
   z-index: 100;
   flex-shrink: 0;
   -webkit-app-region: drag;
   backdrop-filter: blur(8px);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: opacity 0.3s ease;
+  opacity: 0;
+  position: relative;
 }
+
+/* 工具栏区域本身始终存在，但内容默认透明 */
+.reader-toolbar > * {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* 只有当鼠标悬停在工具栏上时，才显示工具栏中的内容 */
+.reader-toolbar:hover > * {
+  opacity: 1;
+}
+
+/* 当鼠标移到顶部区域时只显示工具栏框架，但内容仍然隐藏 */
+.reader-container:hover .reader-toolbar {
+  opacity: 1;
+}
+
+/* 当工具栏被设置为可见时，同时显示工具栏及其内容 */
+.reader-container.toolbar-visible .reader-toolbar,
+.reader-container.toolbar-visible .reader-toolbar > * {
+  opacity: 1;
+}
+
 
 .left-controls {
   display: flex;
@@ -33,6 +60,7 @@
   -webkit-app-region: no-drag; /* 按钮区域不可拖动 */
 }
 
+/* 简化按钮样式，不抢内容焦点 */
 .icon-button {
   background: none;
   border: none;
@@ -40,8 +68,9 @@
   padding: 8px;
   border-radius: 50%;
   color: #606266;
-  -webkit-app-region: no-drag; /* 按钮区域不可拖动 */
+  -webkit-app-region: no-drag;
   transition: all 0.2s ease;
+  opacity: 0.7;
 }
 
 .icon-button:hover {
@@ -67,10 +96,12 @@
   padding: 8px;
   border-radius: 4px;
   color: #606266;
+  opacity: 0.7;
 }
 
 .window-control-button:hover {
   background-color: #f5f7fa;
+  opacity: 1;
 }
 
 .close-button:hover {
@@ -98,6 +129,7 @@
   cursor: pointer;
   color: #606266;
   -webkit-app-region: no-drag; /* 按钮区域不可拖动 */
+  opacity: 0.8;
 }
 
 .page-button-inline:hover:not(:disabled) {
@@ -107,7 +139,7 @@
 
 .page-button-inline:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.3;
 }
 
 .page-indicator-inline {
@@ -120,11 +152,11 @@
   overflow: hidden;
   position: relative;
   /* padding: 20px; */
-  background-color: #f0f0f0;
+  background-color: #f7f7f7;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: linear-gradient(to bottom, #e8e8e8, #f5f5f5);
+  background-image: linear-gradient(to bottom, #e8e8e8, #f7f7f7);
 }
 
 .two-column-layout {
@@ -142,7 +174,7 @@
 .column {
   flex: none;
   width: 50%;
-  background-color: #ffffff;
+  background-color: #fbfbf7;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   border-radius: 2px;
   overflow: hidden;
@@ -150,12 +182,13 @@
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
-  background-image: linear-gradient(to bottom, #fffdf9, #ffffff);
+  background-image: linear-gradient(to bottom, #fffdf9, #fbfbf7);
 }
 
+/* 淡化悬浮效果 */
 .column:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+  transform: none;
+  box-shadow: none;
 }
 
 .html-iframe {
@@ -258,7 +291,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  background-color: #f5f5f5;
+  background-color: #fbfbf7;
   color: #909399;
   font-size: 18px;
   font-weight: 500;
@@ -326,8 +359,8 @@
   top: 50%;
   transform: translateY(-50%);
   z-index: 10;
-  background-color: rgba(255, 255, 255, 0.9);
-  border: none;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 249, 250, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   width: 48px;
   height: 48px;
@@ -335,23 +368,51 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s ease;
-  opacity: 0.7;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  opacity: 0;
+  backdrop-filter: blur(20px) saturate(180%);
+  color: #495057;
+  font-size: 20px;
+}
+
+.page-button-side::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.1) 0%, rgba(64, 158, 255, 0.05) 100%);
+  transform: translate(-50%, -50%);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  z-index: -1;
+}
+
+.page-button-side:hover::before {
+  width: 100%;
+  height: 100%;
 }
 
 .page-button-side:hover {
-  opacity: 1;
-  background-color: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  opacity: 1 !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 249, 250, 0.98) 100%);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+  transform: translateY(-50%) scale(1.1);
+  color: #409eff;
+}
+
+.page-button-side:active {
   transform: translateY(-50%) scale(1.05);
+  transition-duration: 0.1s;
 }
 
 .page-button-side:disabled {
-  opacity: 0;
+  opacity: 0 !important;
   cursor: not-allowed;
   box-shadow: none;
-  transform: translateY(-50%) scale(0.9);
+  transform: translateY(-50%) scale(0.8);
   pointer-events: none;
 }
 
@@ -385,7 +446,7 @@
 }
 
 .two-column-layout .page-button-side:not(:hover):not(:disabled) {
-  opacity: 0.5;
+  opacity: 0.1;
 }
 
 /* 页码指示器样式 */
@@ -402,6 +463,12 @@
   z-index: 10;
   backdrop-filter: blur(4px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+   opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.two-column-layout:hover .page-indicator {
+  opacity: 0.8;
 }
 
 /* 设置下拉框样式 */

@@ -6,6 +6,7 @@ import {
   getEpubHtmlWithImages,
   HtmlWithImages,
   BookMark,
+  Mark,
   saveBookmark,
 } from "../../api";
 import {
@@ -27,12 +28,9 @@ import {
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from "element-plus";
 
 const router = useRouter();
-
-// Props
 const props = defineProps<{
   initialFilePath?: string;
 }>();
-
 const currentContent = ref<string>("");
 const leftColumnContent = ref<string>("");
 const rightColumnContent = ref<string>("");
@@ -45,19 +43,17 @@ const lastWindowSize = ref<{ width: number; height: number }>({
   height: 0,
 });
 const resizeTimeout = ref<number | null>(null);
-
 // 添加分页相关的响应式变量
 const currentPage = ref<number>(0);
 const totalPages = ref<number>(0);
 const allPages = ref<string[]>([]);
-
 // 添加书签相关的状态
 const hasBookmark = ref<boolean>(false);
 const currentBookmark = ref<BookMark | null>(null);
-
 //  添加设置相关的响应式变量
 const wheelPagingEnabled = ref<boolean>(true); // 是否启用鼠标滚轮翻页
 const dropdownRef = ref(); // 设置下拉菜单的引用
+
 
 const fontFamily = ref("Noto Serif");
 const fontSize = ref(18);
@@ -89,8 +85,16 @@ const closeDropdown = () => {
 
 // Function to load a book from a specified path
 
-// 加载电子书
+// 全局样式
+let GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
+let WINDOW_WIDTH = window.innerWidth;
+let WINDOW_HEIGHT = window.innerHeight;
+let PAGE_WIDTH = WINDOW_WIDTH / 2; // 页面宽度
+let PAGE_HEIGHT = WINDOW_HEIGHT * 0.9; // 页面高度
+const PAGE_PADDING = 20; // px
 
+
+// 加载电子书
 const loadBookFromPath = async (path: string) => {
   try {
     loading.value = true;
@@ -99,29 +103,24 @@ const loadBookFromPath = async (path: string) => {
     // 调用后端API获取HTML和图片以及书签
     htmlWithImages.value = await getEpubHtmlWithImages(path);
 
-    // 加载书签信息
-    if (htmlWithImages.value?.bookmark) {
-      currentBookmark.value = htmlWithImages.value.bookmark;
-      // 根据书签跳转页面
-      if (currentBookmark.value.list.length > 0) {
-        // 获取最近的书签页
-        const lastMark =
-          currentBookmark.value.list[currentBookmark.value.list.length - 1];
-        // TODO:根据当前窗口和保存书签时窗口大小比例，调整页码
-        // 这里使用简单实现，直接用书签页
-        // 使用比例来调整页面位置，简单实现是直接使用书签页
-        currentPage.value = lastMark.page;
-        // 确保页码是偶数，左右页布局的需要
-        if (currentPage.value % 2 !== 0) {
-          currentPage.value = Math.max(0, currentPage.value - 1);
-        }
-      } else {
-        // 如果没有书签，从第一页开始
-        currentPage.value = 0;
-      }
-    } else {
-      // 没有书签信息，从第一页开始
+    // 处理书签信息
+    if (
+      !htmlWithImages.value?.bookmark ||
+      htmlWithImages.value?.bookmark?.list.length <= 0
+    ) {
+      // 如果没有书签信息，直接从第一页开始
       currentPage.value = 0;
+    } else {
+      currentBookmark.value = htmlWithImages.value.bookmark;
+      // TODO：现在是获取最新添加的书签，后续应该默认为0，之后可以选择书签进行跳转
+      const lastMark =
+        currentBookmark.value.list[currentBookmark.value.list.length - 1];
+      // TODO：现在是直接根据页码跳转到书签页，后续可以考虑根据书签的宽高来判断是否需要重新布局
+      currentPage.value = lastMark.page;
+      // 确保页码是偶数，左右页布局的需要
+      if (currentPage.value % 2 !== 0) {
+        currentPage.value = Math.max(0, currentPage.value - 1);
+      }
     }
 
     // 处理HTML内容和图片
@@ -133,6 +132,7 @@ const loadBookFromPath = async (path: string) => {
     loading.value = false;
   }
 };
+
 
 // 监听初始文件路径的变化
 watch(
@@ -218,6 +218,7 @@ onUnmounted(() => {
   }
 });
 
+
 // 处理HTML内容和图片
 const processHtmlContent = async () => {
   if (!htmlWithImages.value) return;
@@ -238,8 +239,6 @@ const processHtmlContent = async () => {
 const processElement = async (
   element: Element,
   pageContainer: HTMLDivElement,
-  pageWidth: number,
-  pageHeight: number,
   currentPageContent: string
 ): Promise<{ currentPageContent: string; newPages: string[] }> => {
   // 获取所有段落和标题
@@ -258,32 +257,27 @@ const processElement = async (
       paragraph,
       GLOBAL_STYLE,
       pageContainer,
-      pageHeight,
+      PAGE_HEIGHT,
       updatedPageContent
     );
 
     // 处理拆分后的每个段落
     for (const singleParagraph of splitParagraphs) {
-      // 检查是否包含'img'标签
-      const isImage = singleParagraph.includes("<img");
-      // 检查是否包含'svg'标签
-      const isSvg = singleParagraph.includes("<svg");
-      // 检查是否包含'image'标签
-      const isImageTag = singleParagraph.includes("<image");
-
       // 定义一个paragraph用于存储当前段落的内容
       let resultParagraph = singleParagraph;
 
       // 是否包含图片 进行图片大小处理
       if (
-        (isImage || isSvg || isImageTag) &&
+        (resultParagraph.includes("<img") ||
+          resultParagraph.includes("<svg") ||
+          resultParagraph.includes("<image")) &&
         updatedPageContent.trim() !== ""
       ) {
-        // 替换原始段落为处理过尺寸的段落
+        // 处理图片大小
         resultParagraph = resizeImgAndReturnInnerHTML(
           singleParagraph,
-          pageWidth,
-          pageHeight
+          PAGE_WIDTH,
+          PAGE_HEIGHT
         );
       }
 
@@ -293,7 +287,7 @@ const processElement = async (
       const currentHeight = pageContainer.clientHeight;
 
       // 如果当前高度超过页面高度，强制分页
-      if (currentHeight > pageHeight) {
+      if (currentHeight > PAGE_HEIGHT) {
         newPages.push(GLOBAL_STYLE + updatedPageContent);
         updatedPageContent = resultParagraph; // 将当前段落放到新页面
       } else {
@@ -306,35 +300,35 @@ const processElement = async (
   return { currentPageContent: updatedPageContent, newPages };
 };
 
+// 生成用于计算页面高度的容器
+const generatePageContainer = () => {
+  const pageContainer = document.createElement("div");
+  pageContainer.style.width = `${PAGE_WIDTH}px`;
+  pageContainer.style.padding = `${PAGE_PADDING}px`;
+  pageContainer.style.overflow = "hidden";
+  pageContainer.style.position = "relative";
+  pageContainer.style.boxSizing = "border-box";
+  return pageContainer;
+};
+
 // 分割内容到左右栏
 const splitContentForTwoColumns = async (html: string) => {
   // 存储所有页面的内容
   const tempDiv = document.createElement("div");
   tempDiv.innerHTML = html;
   const elements = Array.from(tempDiv.children);
-
-  // 得到页面宽度和高度
-  const pageHeight = window.innerHeight * 0.9;
-  const pageWidth = window.innerWidth / 2;
+  // 创建一个容器用于计算页面高度
+  const pageContainer = generatePageContainer();
+  document.body.appendChild(pageContainer);
 
   // 初始化当前页面的内容
   let currentPageContent = "";
   allPages.value = [];
 
-  const pageContainer = document.createElement("div");
-  pageContainer.style.width = `${pageWidth}px`;
-  pageContainer.style.padding = `${PAGE_PADDING}px`;
-  pageContainer.style.overflow = "hidden";
-  pageContainer.style.position = "relative";
-  pageContainer.style.boxSizing = "border-box";
-  document.body.appendChild(pageContainer);
-
   for (const element of elements) {
     const result = await processElement(
       element,
       pageContainer,
-      pageWidth,
-      pageHeight,
       currentPageContent
     );
 
@@ -378,6 +372,134 @@ const updateVisiblePages = () => {
   );
 };
 
+// 添加或更新书签
+const toggleBookmark = async () => {
+  if (!htmlWithImages.value || !filePath.value) return;
+
+  try {
+    // 获取HTML文件路径和窗口尺寸
+    const html_file_path =
+      htmlWithImages.value?.bookmark?.book_path || filePath.value;
+    const dimensions = { width: WINDOW_WIDTH, height: WINDOW_HEIGHT };
+
+    if (hasBookmark.value) {
+      await removeBookmark(html_file_path, dimensions);
+    } else {
+      await addBookmark(html_file_path, dimensions);
+    }
+  } catch (error) {
+    console.error("Error toggling bookmark:", error);
+  }
+};
+
+// 移除书签
+const removeBookmark = async (
+  bookPath: string,
+  dimensions: { width: number; height: number }
+) => {
+  if (!currentBookmark.value) return;
+
+  // 先在前端过滤掉当前页的书签
+  currentBookmark.value.list = currentBookmark.value.list.filter(
+    (mark) => mark.page !== currentPage.value
+  );
+  hasBookmark.value = false;
+
+  // 使用action=1表示移除书签
+  await saveBookmark(
+    bookPath,
+    currentPage.value,
+    dimensions.width,
+    dimensions.height,
+    1
+  );
+};
+
+// 添加书签
+const addBookmark = async (
+  bookPath: string,
+  dimensions: { width: number; height: number }
+) => {
+  // 先保存到后端
+  await saveBookmark(
+    bookPath,
+    currentPage.value,
+    dimensions.width,
+    dimensions.height
+  );
+  hasBookmark.value = true;
+
+  // 更新本地书签状态
+  if (!currentBookmark.value) {
+    currentBookmark.value = {
+      book_path: bookPath,
+      list: [],
+    };
+  }
+
+  // 创建书签对象
+  const mark: Mark = {
+    page: currentPage.value,
+    width: dimensions.width,
+    height: dimensions.height,
+  };
+
+  // 添加或更新当前页的书签
+  const existingMarkIndex = currentBookmark.value.list.findIndex(
+    (m) => m.page === currentPage.value
+  );
+
+  if (existingMarkIndex >= 0) {
+    currentBookmark.value.list[existingMarkIndex] = mark;
+  } else {
+    currentBookmark.value.list.push(mark);
+  }
+};
+
+const updateGlobalState = (width: number, height: number) => {
+  // 更新全局变量
+  WINDOW_WIDTH = width;
+  WINDOW_HEIGHT = height;
+  PAGE_WIDTH = WINDOW_WIDTH / 2; // 页面宽度
+  PAGE_HEIGHT = WINDOW_HEIGHT * 0.9; // 页面高度
+  GLOBAL_STYLE = generateStyle();
+};
+
+// 监听窗口大小变化，以重新布局页面内容
+const handleWindowResize = () => {
+  // 使用防抖，避免频繁重新计算
+  if (resizeTimeout.value !== null) {
+    clearTimeout(resizeTimeout.value);
+  }
+
+  resizeTimeout.value = window.setTimeout(() => {
+    const currentWidth = window.innerWidth;
+    const currentHeight = window.innerHeight;
+
+    // 如果窗口大小变化超过一定阈值，则重新计算页面布局
+    if (
+      Math.abs(currentWidth - lastWindowSize.value.width) > 50 ||
+      Math.abs(currentHeight - lastWindowSize.value.height) > 50
+    ) {
+      lastWindowSize.value = { width: currentWidth, height: currentHeight };
+      // 更新全局变量和样式
+      updateGlobalState(currentWidth, currentHeight);
+
+      // 如果当前有内容，则重新分割页面
+      if (htmlWithImages.value) {
+        processHtmlContent();
+      }
+    }
+
+    resizeTimeout.value = null;
+  }, 300);
+};
+
+// 返回书架
+const goBackToMenu = () => {
+  router.push("/");
+};
+
 // 翻页方法
 const goToNextPage = () => {
   if (currentPage.value + 2 < totalPages.value) {
@@ -391,6 +513,28 @@ const goToPreviousPage = () => {
     currentPage.value -= 2;
     updateVisiblePages();
   }
+};
+
+// 切换鼠标滚轮翻页状态
+const toggleWheelPaging = (event?: Event) => {
+  wheelPagingEnabled.value = !wheelPagingEnabled.value;
+  if (event) event.stopPropagation();
+};
+
+// 监听滚轮事件，翻页
+const onWheel = (e: WheelEvent) => {
+  if (!wheelPagingEnabled.value) return;
+  if (!currentContent.value) return;
+  if (e.deltaY > 0) goToNextPage();
+  else if (e.deltaY < 0) goToPreviousPage();
+};
+
+// 自动关闭设置下拉菜单
+const closeDropdown = () => {
+  //延时0.5s关闭下拉菜单
+  setTimeout(() => {
+    dropdownRef.value?.handleClose();
+  }, 200);
 };
 
 // 窗口控制方法
@@ -410,64 +554,33 @@ const closeWindow = async () => {
   await appWindow.close();
 };
 
-// 添加或更新书签
-const toggleBookmark = async () => {
-  if (!htmlWithImages.value || !filePath.value) return;
-
-  try {
-    // 获取HTML文件路径，优先使用bookmark中的路径
-    const html_file_path =
-      htmlWithImages.value?.bookmark?.book_path || filePath.value;
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
-    if (hasBookmark.value) {
-      // 如果当前页已有书签，则移除书签
-      if (currentBookmark.value) {
-        // 先在前端过滤掉当前页的书签
-        currentBookmark.value.list = currentBookmark.value.list.filter(
-          (mark) => mark.page !== currentPage.value
-        );
-        hasBookmark.value = false;
-
-        // 使用action=1表示移除书签
-        await saveBookmark(html_file_path, currentPage.value, width, height, 1);
-      }
-    } else {
-      // 如果当前页没有书签，则添加书签，使用默认action=0
-      await saveBookmark(html_file_path, currentPage.value, width, height);
-      hasBookmark.value = true;
-
-      // 更新本地书签状态
-      if (!currentBookmark.value) {
-        currentBookmark.value = {
-          book_path: html_file_path,
-          list: [],
-        };
-      }
-
-      // 添加或更新当前页的书签
-      const existingMarkIndex = currentBookmark.value.list.findIndex(
-        (m) => m.page === currentPage.value
-      );
-      if (existingMarkIndex >= 0) {
-        currentBookmark.value.list[existingMarkIndex] = {
-          page: currentPage.value,
-          width,
-          height,
-        };
-      } else {
-        currentBookmark.value.list.push({
-          page: currentPage.value,
-          width,
-          height,
-        });
-      }
+// 监听初始文件路径的变化
+watch(
+  () => props.initialFilePath,
+  (newPath) => {
+    if (newPath) {
+      loadBookFromPath(newPath);
     }
-  } catch (error) {
-    console.error("Error toggling bookmark:", error);
+  },
+  { immediate: true }
+);
+
+// 组件挂载和卸载时添加/移除窗口大小变化监听
+onMounted(() => {
+  lastWindowSize.value = {
+    width: WINDOW_WIDTH,
+    height: WINDOW_HEIGHT,
+  };
+  window.addEventListener("resize", handleWindowResize);
+});
+
+// 组件卸载时清除事件监听
+onUnmounted(() => {
+  window.removeEventListener("resize", handleWindowResize);
+  if (resizeTimeout.value !== null) {
+    clearTimeout(resizeTimeout.value);
   }
-};
+});
 </script>
 
 <template>

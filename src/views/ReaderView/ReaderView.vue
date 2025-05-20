@@ -23,6 +23,7 @@ import {
   Setting,
   Check,
   Collection,
+  Operation,
 } from "@element-plus/icons-vue";
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from "element-plus";
 
@@ -52,13 +53,46 @@ const currentBookmark = ref<BookMark | null>(null);
 //  添加设置相关的响应式变量
 const wheelPagingEnabled = ref<boolean>(true); // 是否启用鼠标滚轮翻页
 const dropdownRef = ref(); // 设置下拉菜单的引用
+
+
+const fontFamily = ref("Noto Serif");
+const fontSize = ref(18);
+
+// 可选字体和字号
+const fontFamilyOptions = [
+  { label: "Noto Serif", value: "Noto Serif" },
+  { label: "宋体", value: "SimSun" },
+  { label: "仿宋", value: "FangSong"},
+  { label: "楷体", value: "KaiTi" },
+  { label: "微软雅黑", value: "Microsoft YaHei" },
+  { label: "Times New Roman", value: "Times New Roman" },
+  { label: "Arial", value: "Arial" },
+];
+const fontSizeOptions = [14, 16, 18, 20, 22, 24, 28, 32];
+
+// 切换鼠标滚轮翻页状态
+const toggleWheelPaging = (event?: Event) => {
+  wheelPagingEnabled.value = !wheelPagingEnabled.value;
+  if (event) event.stopPropagation();
+};
+// 自动关闭设置下拉菜单
+const closeDropdown = () => {
+  //延时0.5s关闭下拉菜单
+  setTimeout(() => {
+    dropdownRef.value?.handleClose();
+  }, 200);
+};
+
+// Function to load a book from a specified path
+
 // 全局样式
-let GLOBAL_STYLE = generateStyle();
+let GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
 let WINDOW_WIDTH = window.innerWidth;
 let WINDOW_HEIGHT = window.innerHeight;
 let PAGE_WIDTH = WINDOW_WIDTH / 2; // 页面宽度
 let PAGE_HEIGHT = WINDOW_HEIGHT * 0.9; // 页面高度
 const PAGE_PADDING = 20; // px
+
 
 // 加载电子书
 const loadBookFromPath = async (path: string) => {
@@ -98,6 +132,92 @@ const loadBookFromPath = async (path: string) => {
     loading.value = false;
   }
 };
+
+
+// 监听初始文件路径的变化
+watch(
+  () => props.initialFilePath,
+  (newPath) => {
+    if (newPath) {
+      loadBookFromPath(newPath);
+    }
+  },
+  { immediate: true }
+);
+
+// 返回书架
+const goBackToMenu = () => {
+  router.push("/");
+};
+
+// 根据窗口大小生成全局样式
+const updateGlobalStyle = () => {
+  GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
+};
+
+let GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
+const PAGE_PADDING = 20; // px
+
+watch([fontFamily, fontSize], () => {
+  updateGlobalStyle();
+  if (htmlWithImages.value) processHtmlContent();
+});
+
+
+// 监听窗口大小变化，以重新布局页面内容
+const handleWindowResize = () => {
+  // 使用防抖，避免频繁重新计算
+  if (resizeTimeout.value !== null) {
+    clearTimeout(resizeTimeout.value);
+  }
+
+  resizeTimeout.value = window.setTimeout(() => {
+    const currentWidth = window.innerWidth;
+    const currentHeight = window.innerHeight;
+
+    // 如果窗口大小变化超过一定阈值，则重新计算页面布局
+    if (
+      Math.abs(currentWidth - lastWindowSize.value.width) > 50 ||
+      Math.abs(currentHeight - lastWindowSize.value.height) > 50
+    ) {
+      lastWindowSize.value = { width: currentWidth, height: currentHeight };
+      updateGlobalStyle();
+
+      // 如果当前有内容，则重新分割页面
+      if (htmlWithImages.value) {
+        processHtmlContent();
+      }
+    }
+
+    resizeTimeout.value = null;
+  }, 300);
+};
+
+// 监听滚轮事件，翻页
+const onWheel = (e: WheelEvent) => {
+  if (!wheelPagingEnabled.value) return;
+  if (!currentContent.value) return;
+  if (e.deltaY > 0) goToNextPage();
+  else if (e.deltaY < 0) goToPreviousPage();
+};
+
+// 组件挂载和卸载时添加/移除窗口大小变化监听
+onMounted(() => {
+  lastWindowSize.value = {
+    width: window.innerWidth,
+    height: window.innerHeight,
+  };
+  window.addEventListener("resize", handleWindowResize);
+});
+
+// 组件卸载时清除事件监听
+onUnmounted(() => {
+  window.removeEventListener("resize", handleWindowResize);
+  if (resizeTimeout.value !== null) {
+    clearTimeout(resizeTimeout.value);
+  }
+});
+
 
 // 处理HTML内容和图片
 const processHtmlContent = async () => {
@@ -484,10 +604,7 @@ onUnmounted(() => {
 
               <el-dropdown-item
                 @click="toggleWheelPaging($event)"
-                :style="
-                  wheelPagingEnabled ? 'font-weight:bold;color:#409EFF' : ''
-                "
-              >
+                :style="wheelPagingEnabled ? 'font-weight:bold;color:#409EFF' : ''">
                 启用鼠标滚轮翻页
                 <el-icon
                   v-if="wheelPagingEnabled"
@@ -500,6 +617,55 @@ onUnmounted(() => {
             </el-dropdown-menu>
           </template>
         </el-dropdown>
+        <el-dropdown trigger="click" :hide-on-click="false">
+          <button class="icon-button" title = "页面布局">
+            <el-icon :size="20"><Operation /></el-icon>
+          </button>
+          <template #dropdown>
+            <el-dropdown-menu slot="dropdown" style="min-width: 140px">
+              <el-dropdown-item>
+                <div class="dropdown-item-content">
+                  <label for="font-family">字体 </label>
+                  <el-select
+                    v-model="fontFamily"
+                    id="font-family"
+                    size="small"
+                    @change="updateGlobalStyle"
+                  >
+                    <el-option
+                      v-for="option in fontFamilyOptions"
+                      :key="option.value"
+                      :label="option.label"
+                      :value="option.value"
+                    />
+                  </el-select>
+                </div>
+              </el-dropdown-item>
+              <el-dropdown-item>
+                <div class="dropdown-item-content">
+                  <label for="font-size">字号 </label>
+                  <el-select
+                    v-model="fontSize"
+                    id="font-size"
+                    size="small"
+                    @change="updateGlobalStyle"
+                  >
+                    <el-option
+                      v-for="size in fontSizeOptions"
+                      :key="size"
+                      :label="size + 'px'"
+                      :value="size"
+                    />
+                  </el-select>
+                </div>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+          <el-dropdown-menu slot="dropdown">
+            
+          </el-dropdown-menu>
+        </el-dropdown>
+
         <button
           class="icon-button"
           @click="toggleBookmark"

@@ -70,20 +70,7 @@ const fontFamilyOptions = [
 ];
 const fontSizeOptions = [14, 16, 18, 20, 22, 24, 28, 32];
 
-// 切换鼠标滚轮翻页状态
-const toggleWheelPaging = (event?: Event) => {
-  wheelPagingEnabled.value = !wheelPagingEnabled.value;
-  if (event) event.stopPropagation();
-};
-// 自动关闭设置下拉菜单
-const closeDropdown = () => {
-  //延时0.5s关闭下拉菜单
-  setTimeout(() => {
-    dropdownRef.value?.handleClose();
-  }, 200);
-};
 
-// Function to load a book from a specified path
 
 // 全局样式
 let GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
@@ -145,61 +132,18 @@ watch(
   { immediate: true }
 );
 
-// 返回书架
-const goBackToMenu = () => {
-  router.push("/");
-};
 
 // 根据窗口大小生成全局样式
 const updateGlobalStyle = () => {
   GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
 };
 
-let GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
-const PAGE_PADDING = 20; // px
 
 watch([fontFamily, fontSize], () => {
   updateGlobalStyle();
   if (htmlWithImages.value) processHtmlContent();
 });
 
-
-// 监听窗口大小变化，以重新布局页面内容
-const handleWindowResize = () => {
-  // 使用防抖，避免频繁重新计算
-  if (resizeTimeout.value !== null) {
-    clearTimeout(resizeTimeout.value);
-  }
-
-  resizeTimeout.value = window.setTimeout(() => {
-    const currentWidth = window.innerWidth;
-    const currentHeight = window.innerHeight;
-
-    // 如果窗口大小变化超过一定阈值，则重新计算页面布局
-    if (
-      Math.abs(currentWidth - lastWindowSize.value.width) > 50 ||
-      Math.abs(currentHeight - lastWindowSize.value.height) > 50
-    ) {
-      lastWindowSize.value = { width: currentWidth, height: currentHeight };
-      updateGlobalStyle();
-
-      // 如果当前有内容，则重新分割页面
-      if (htmlWithImages.value) {
-        processHtmlContent();
-      }
-    }
-
-    resizeTimeout.value = null;
-  }, 300);
-};
-
-// 监听滚轮事件，翻页
-const onWheel = (e: WheelEvent) => {
-  if (!wheelPagingEnabled.value) return;
-  if (!currentContent.value) return;
-  if (e.deltaY > 0) goToNextPage();
-  else if (e.deltaY < 0) goToPreviousPage();
-};
 
 // 组件挂载和卸载时添加/移除窗口大小变化监听
 onMounted(() => {

@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { getAllLocalFiles, getEpubToHtmlFiles } from "../../api";
+import { createSettingsWindow } from "../../utils/CreateWindow";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Window } from "@tauri-apps/api/window";
 
@@ -12,6 +13,7 @@ import {
   Minus,
   FullScreen,
   Close,
+  Setting,
   ArrowLeft,
   ArrowRight,
 } from "@element-plus/icons-vue";
@@ -50,6 +52,15 @@ const paginatedBooks = computed(() => {
   const endIndex = startIndex + itemsPerPage.value;
   return books.value.slice(startIndex, endIndex);
 });
+
+// 点击设置按钮时，打开设置窗口
+const openSettingWindow = async () => {
+  try {
+    createSettingsWindow();
+  } catch (error) {
+    console.error("打开设置窗口失败:", error);
+  }
+};
 
 // 计算书籍元素的样式
 const bookItemStyle = computed(() => {
@@ -271,6 +282,9 @@ const closeWindow = async () => {
         </button>
         <button class="icon-button" @click="openSearch" title="搜索电子书">
           <el-icon :size="20"><Search /></el-icon>
+        </button>
+        <button class="icon-button" @click="openSettingWindow" title="设置">
+          <el-icon :size="20"><Setting /></el-icon>
         </button>
       </div>
       <div class="window-controls">

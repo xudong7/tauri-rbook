@@ -13,16 +13,17 @@ import {
   generateStyle,
   resizeImgAndReturnInnerHTML,
   splitParagraphWithImages,
+  loadStyleFromLocal,
+  saveStyleToLocal,
 } from "../../utils/ReaderViewUtil";
-import { createSettingsWindow } from "../../utils/CreateWindow";
 import {
   ArrowLeft,
   ArrowRight,
   Minus,
   FullScreen,
   Close,
-  Setting,
   Check,
+  Setting,
   Collection,
   Operation,
 } from "@element-plus/icons-vue";
@@ -81,15 +82,6 @@ let PAGE_WIDTH = WINDOW_WIDTH / 2; // 页面宽度
 let PAGE_HEIGHT = WINDOW_HEIGHT * 0.9; // 页面高度
 const PAGE_PADDING = 20; // px
 
-// 点击设置按钮时，打开设置窗口
-const openSettingWindow = async () => {
-  try {
-    createSettingsWindow();
-  } catch (error) {
-    console.error("打开设置窗口失败:", error);
-  }
-};
-
 // 加载电子书
 const loadBookFromPath = async (path: string) => {
   try {
@@ -145,6 +137,8 @@ watch(
 // 根据窗口大小生成全局样式
 const updateGlobalStyle = () => {
   GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
+  // 将样式保存到本地
+  saveStyleToLocal(fontFamily.value, fontSize.value);
 };
 
 
@@ -519,7 +513,20 @@ watch(
 );
 
 // 组件挂载和卸载时添加/移除窗口大小变化监听
-onMounted(() => {
+onMounted(async () => {
+  // 从本地加载样式
+  try {
+    const style = await loadStyleFromLocal();
+    fontFamily.value = style.font_family;
+    fontSize.value = style.font_size;
+    // 应用加载的样式
+    GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
+  } catch (error) {
+    console.error("Error loading style from local storage:", error);
+    // 使用默认样式
+    GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
+  }
+
   lastWindowSize.value = {
     width: WINDOW_WIDTH,
     height: WINDOW_HEIGHT,
@@ -545,7 +552,7 @@ onUnmounted(() => {
           <el-icon :size="20"><ArrowLeft /></el-icon>
         </button>
         <el-dropdown trigger="click" :hide-on-click="false" ref="dropdownRef">
-          <button class="icon-button" @click="openSettingWindow" title="设置">
+          <button class="icon-button" title="设置">
             <el-icon :size="20"><Setting /></el-icon>
           </button>
           <template #dropdown>

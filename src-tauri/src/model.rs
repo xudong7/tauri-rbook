@@ -71,3 +71,21 @@ impl BookMark {
         self.list.retain(|m| m.page != page);
     }
 }
+
+// 阅读器样式结构
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReaderStyle {
+    pub font_family: String,
+    pub font_size: u32,
+    pub line_height: f32,
+}
+
+impl Default for ReaderStyle {
+    fn default() -> Self {
+        ReaderStyle {
+            font_family: "Noto Serif".to_string(),
+            font_size: 18,
+            line_height: 1.4,
+        }
+    }
+}

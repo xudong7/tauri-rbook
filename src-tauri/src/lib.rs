@@ -5,17 +5,19 @@ mod mark;
 mod menu;
 mod model;
 mod search;
+mod style;
 mod tray;
 
 use epub::{
     get_epub_html_with_images, get_epub_html_with_images_multiple, get_epub_to_html_file,
     get_epub_to_html_files,
 };
-use mark::{save_bookmark_to_local_storage};
 use file::init_default_cover;
+use mark::save_bookmark_to_local_storage;
 use menu::get_all_local_files;
-use model::{HtmlWithImages, MenuItem, BookMark};
+use model::{BookMark, HtmlWithImages, MenuItem, ReaderStyle};
 use search::{download_certain_online_book, search_online_books_by_keyword, BookSearchResult};
+use style::{load_style_from_local_storage, save_style_to_local_storage};
 use tauri::path::BaseDirectory;
 use tauri::AppHandle;
 use tauri::Manager;
@@ -84,7 +86,13 @@ async fn get_epub_html_with_images_multiple_command(
 
 // 保存书签，action=0表示添加，action=1表示移除
 #[tauri::command]
-async fn save_bookmark_command(book_path: &str, page: u32, width: u32, height: u32, action: Option<u32>) -> Result<String, String> {
+async fn save_bookmark_command(
+    book_path: &str,
+    page: u32,
+    width: u32,
+    height: u32,
+    action: Option<u32>,
+) -> Result<String, String> {
     // 尝试加载已有的书签，如果不存在则创建新的
     let mut bookmark = match mark::load_bookmark_from_local_storage(book_path).await {
         Ok(bm) => bm,
@@ -95,13 +103,13 @@ async fn save_bookmark_command(book_path: &str, page: u32, width: u32, height: u
         Some(1) => {
             // 移除书签
             bookmark.remove_mark(page);
-        },
+        }
         _ => {
             // 默认行为是添加或更新书签
             bookmark.add_mark(page, width, height);
         }
     }
-    
+
     // 保存到本地
     save_bookmark_to_local_storage(&bookmark).await
 }
@@ -110,6 +118,29 @@ async fn save_bookmark_command(book_path: &str, page: u32, width: u32, height: u
 #[tauri::command]
 async fn get_bookmark_command(book_path: &str) -> Result<BookMark, String> {
     mark::load_bookmark_from_local_storage(book_path).await
+}
+
+// 保存阅读器样式
+#[tauri::command]
+async fn save_reader_style_command(
+    app_handle: AppHandle,
+    font_family: String,
+    font_size: u32,
+    line_height: f32,
+) -> Result<String, String> {
+    let style = ReaderStyle {
+        font_family,
+        font_size,
+        line_height,
+    };
+
+    save_style_to_local_storage(&app_handle, &style).await
+}
+
+// 获取阅读器样式
+#[tauri::command]
+async fn get_reader_style_command(app_handle: AppHandle) -> Result<ReaderStyle, String> {
+    load_style_from_local_storage(&app_handle).await
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -140,6 +171,8 @@ pub fn run() {
             get_epub_html_with_images_multiple_command,
             save_bookmark_command,
             get_bookmark_command,
+            save_reader_style_command,
+            get_reader_style_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

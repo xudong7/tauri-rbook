@@ -1,12 +1,64 @@
 // views/ReaderView/ReaderView.vue的工具函数
-// 根据窗口大小生成样式
-export const generateStyle = (fontFamily = "Noto Serif", fontSize=18, lineHeight=1.4) => {
-  if (window.innerWidth <= 960) {
-    fontSize = Math.min(16, fontSize);
-    lineHeight = 1.2;
-  }
+import { saveReaderStyle, getReaderStyle, ReaderStyle } from "../api/style";
 
-  return `<style>
+// 默认样式配置
+let defaultStyle: ReaderStyle = {
+  font_family: "Noto Serif",
+  font_size: 18,
+  line_height: 1.4,
+};
+
+// 默认图片缩放比例
+let imageRatio = 0.9;
+
+// 当前样式对象
+let currentStyle: ReaderStyle = { ...defaultStyle };
+
+// 在应用启动时从本地加载样式
+export const loadStyleFromLocal = async (): Promise<ReaderStyle> => {
+  try {
+    const style = await getReaderStyle();
+    currentStyle = style;
+    return style;
+  } catch (error) {
+    console.error("Error loading style from local:", error);
+    return defaultStyle;
+  }
+};
+
+// 保存样式到本地
+export const saveStyleToLocal = async (
+  fontFamily: string = currentStyle.font_family,
+  fontSize: number = currentStyle.font_size,
+  lineHeight: number = currentStyle.line_height
+): Promise<void> => {
+  try {
+    // 更新当前样式
+    currentStyle = {
+      font_family: fontFamily,
+      font_size: fontSize,
+      line_height: lineHeight,
+    };
+
+    // 保存到本地
+    await saveReaderStyle(fontFamily, fontSize, lineHeight);
+  } catch (error) {
+    console.error("Error saving style to local:", error);
+  }
+};
+
+// 根据窗口大小生成样式
+export const generateStyle = (
+  fontFamily = "Noto Serif",
+  fontSize = 18,
+  lineHeight = 1.4
+) => {
+  // if (window.innerWidth <= 960) {
+  //   fontSize = Math.min(16, fontSize);
+  //   lineHeight = 1.2;
+  // }
+
+  const globalStyle = `<style>
   html { overflow: hidden!important; margin: 20px; padding: 0; }
   body {
     font-family: '${fontFamily}', 'Times New Roman', serif!important;
@@ -27,19 +79,37 @@ export const generateStyle = (fontFamily = "Noto Serif", fontSize=18, lineHeight
     text-decoration: none!important;
   }
 </style>`;
+  // 如果提供了新的参数并与当前值不同，保存到本地
+  if (
+    fontFamily !== currentStyle.font_family ||
+    fontSize !== currentStyle.font_size ||
+    lineHeight !== currentStyle.line_height
+  ) {
+    // 更新当前样式，但不立即保存（saveStyleToLocal 函数会在合适的时机调用）
+    currentStyle = {
+      font_family: fontFamily,
+      font_size: fontSize,
+      line_height: lineHeight,
+    };
+  }
+
+  return globalStyle;
 };
 
 // 处理图片大小并返回处理后的HTML
 export const resizeImgAndReturnInnerHTML = (
   paragraph: string,
   pageWidth: number,
-  pageHeight: number
+  pageHeight: number,
+  ratio?: number,
 ) => {
   // 创建临时容器来获取图片并处理图片尺寸
   const tempImgContainer = document.createElement("div");
   tempImgContainer.innerHTML = paragraph; // 设置最大尺寸限制
-  const maxWidth = pageWidth * 0.9;
-  const maxHeight = pageHeight * 0.9; // 为页面留出一些空间
+  let scaleRatio = ratio || imageRatio; // 默认比例为0.9
+  if (pageWidth <= 480) scaleRatio = 0.8; // 小屏幕时使用更小的比例
+  const maxWidth = pageWidth * scaleRatio;
+  const maxHeight = pageHeight * scaleRatio; // 为页面留出一些空间
 
   // 处理img标签图片大小
   const imgElements = tempImgContainer.querySelectorAll("img");
@@ -119,7 +189,7 @@ export const splitParagraphWithImages = (
   style: string,
   pageContainer?: HTMLDivElement,
   pageHeight?: number,
-  currentPageContent?: string,
+  currentPageContent?: string
 ): string[] => {
   // 如果段落不包含图像，且不需要处理span，则直接返回
   if (
@@ -514,4 +584,3 @@ const splitLargeSpanText = (
 
   return { elements, firstPageContent: updatedPageContent };
 };
-

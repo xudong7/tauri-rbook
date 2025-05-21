@@ -238,7 +238,6 @@ const uploadEpub = async () => {
 
 // Open a book in ReaderView
 const openBook = (filePath: string) => {
-  console.log("Opening book with path:", filePath);
   // Use router to navigate to reader with file path
   router.push({
     path: "/reader",

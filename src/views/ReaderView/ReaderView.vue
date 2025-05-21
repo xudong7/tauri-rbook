@@ -65,33 +65,18 @@ const backToMenu = () => {
 
 const loadEpub = async (filePath: string) => {
   try {
-    console.log("Loading EPUB from path:", filePath);
     loading.value = true;
     error.value = null;
 
     // Read the epub file
-    console.log("Reading file content...");
-    try {
-      // 尝试直接使用路径读取文件
-      const fileContent = await readFile(filePath);
-      console.log("File content read successfully, size:", fileContent.byteLength);
-      
-      // Create a new book
-      console.log("Creating book object...");
-      const arrayBuffer = new Uint8Array(fileContent).buffer;
-      book.value = ePub(arrayBuffer);
-      console.log("Book object created");
-      
-      // Wait for the book to be open
-      console.log("Waiting for book to be ready...");
-      await book.value.ready;
-      console.log("Book is ready");
-    } catch (readError) {
-      console.error("Error reading file:", readError);
-      error.value = `无法读取文件: ${readError}`;
-      loading.value = false;
-      return;
-    }
+    const fileContent = await readFile(filePath);
+
+    // Create a new book
+    const arrayBuffer = new Uint8Array(fileContent).buffer;
+    book.value = ePub(arrayBuffer);
+
+    // Wait for the book to be open
+    await book.value.ready;
 
     // Get the total number of pages (sections)
     const spine = book.value.spine;
@@ -146,8 +131,6 @@ const handleKeyboardNavigation = (e: KeyboardEvent) => {
 // Lifecycle hooks
 onMounted(async () => {
   const filePath = props.initialFilePath;
-  console.log("ReaderView mounted with filePath:", filePath);
-  
   if (filePath) {
     await loadEpub(filePath);
   } else {

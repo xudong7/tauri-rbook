@@ -1,26 +1,24 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
-import { getAllLocalFiles, getEpubToHtmlFiles } from "../../api";
-import { createSettingsWindow } from "../../utils/CreateWindow";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Window } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/core";
+import { readFile } from "@tauri-apps/plugin-fs";
 
 const router = useRouter();
 import {
   Upload,
-  Search,
   Minus,
   FullScreen,
   Close,
-  Setting,
   ArrowLeft,
   ArrowRight,
 } from "@element-plus/icons-vue";
 
 interface MenuItem {
-  cover: string; // base64 encoded cover image
-  file_path: string; // file path to the EPUB
+  cover: string; // path to cover image
+  path: string; // file path to the .epub file
 }
 
 const books = ref<MenuItem[]>([]);
@@ -52,15 +50,6 @@ const paginatedBooks = computed(() => {
   const endIndex = startIndex + itemsPerPage.value;
   return books.value.slice(startIndex, endIndex);
 });
-
-// 点击设置按钮时，打开设置窗口
-const openSettingWindow = async () => {
-  try {
-    createSettingsWindow();
-  } catch (error) {
-    console.error("打开设置窗口失败:", error);
-  }
-};
 
 // 计算书籍元素的样式
 const bookItemStyle = computed(() => {
@@ -164,7 +153,39 @@ onUnmounted(() => {
 const loadLocalBooks = async () => {
   try {
     loading.value = true;
-    books.value = await getAllLocalFiles();
+    // Use the load_all_local_epub_files_command from the Rust backend
+    const bookResults = await invoke<{ cover: string; path: string }[]>(
+      "load_all_local_epub_files_command"
+    );
+
+    // Process each book to load the cover image
+    const processedBooks = [];
+    for (const book of bookResults) {
+      try {
+        // Read the cover image file and convert it to base64
+        const coverData = await readFile(book.cover);
+        const base64Cover = btoa(
+          new Uint8Array(coverData).reduce(
+            (data, byte) => data + String.fromCharCode(byte),
+            ""
+          )
+        );
+
+        processedBooks.push({
+          cover: base64Cover,
+          path: book.path,
+        });
+      } catch (err) {
+        // If there's an error reading the cover, use a placeholder
+        console.error(`Failed to load cover for ${book.path}:`, err);
+        processedBooks.push({
+          cover: "", // Empty string or you could use a default cover base64
+          path: book.path,
+        });
+      }
+    }
+
+    books.value = processedBooks;
     // 重置为第一页
     currentPage.value = 1;
     loading.value = false;
@@ -198,28 +219,15 @@ const uploadEpub = async () => {
     // Handle multiple files or single file selection
     const filePaths = Array.isArray(selected) ? selected : [selected];
 
-    if (filePaths.length === 0) {
-      loading.value = false;
-      return;
-    } // If only one file selected, open it directly
-    if (filePaths.length === 1) {
-      openBook(filePaths[0]);
-    } else if (filePaths.length > 1) {
-      // If multiple files selected, process them and open the last one
-      try {
-        const lastHtmlPath = await getEpubToHtmlFiles(filePaths);
-        if (lastHtmlPath) {
-          // Find the original epub file path that corresponds to this HTML
-          const lastFilePath = filePaths[filePaths.length - 1];
-          openBook(lastFilePath);
-        }
-      } catch (e) {
-        console.error("Error processing multiple files:", e);
-      } finally {
-        // Refresh the book list to include newly added books
-        await loadLocalBooks();
-      }
+    // Process each selected file
+    for (const filePath of filePaths) {
+      await invoke("save_file_and_return_local_path_command", {
+        originPath: filePath,
+      });
     }
+
+    // Reload books after upload
+    await loadLocalBooks();
 
     loading.value = false;
   } catch (error) {
@@ -230,16 +238,12 @@ const uploadEpub = async () => {
 
 // Open a book in ReaderView
 const openBook = (filePath: string) => {
+  console.log("Opening book with path:", filePath);
   // Use router to navigate to reader with file path
   router.push({
     path: "/reader",
     query: { filePath },
   });
-};
-
-// Open search view
-const openSearch = () => {
-  router.push("/search");
 };
 
 // Window control functions
@@ -280,12 +284,6 @@ const closeWindow = async () => {
           <el-icon :size="20" v-if="!loading"><Upload /></el-icon>
           <span v-else class="loading-spinner"></span>
         </button>
-        <button class="icon-button" @click="openSearch" title="搜索电子书">
-          <el-icon :size="20"><Search /></el-icon>
-        </button>
-        <button class="icon-button" @click="openSettingWindow" title="设置">
-          <el-icon :size="20"><Setting /></el-icon>
-        </button>
       </div>
       <div class="window-controls">
         <button
@@ -324,10 +322,6 @@ const closeWindow = async () => {
             <el-icon :size="24"><Upload /></el-icon>
             上传电子书 (支持多选)
           </button>
-          <button @click="openSearch" class="upload-button">
-            <el-icon :size="24"><Search /></el-icon>
-            搜索电子书
-          </button>
         </div>
       </div>
 
@@ -346,7 +340,7 @@ const closeWindow = async () => {
             :key="index"
             class="book-item"
             :style="bookItemStyle"
-            @click="openBook(book.file_path)"
+            @click="openBook(book.path)"
           >
             <div class="book-cover">
               <img

@@ -1,13 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-
-/**
- * 阅读器样式接口
- */
-export interface ReaderStyle {
-  font_family: string; // 字体
-  font_size: number; // 字体大小
-  line_height: number; // 行高
-}
+import { ReaderStyle } from "./types";
 
 /**
  * 保存阅读器样式到本地

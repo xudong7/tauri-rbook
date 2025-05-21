@@ -1,5 +1,6 @@
 // views/ReaderView/ReaderView.vue的工具函数
-import { saveReaderStyle, getReaderStyle, ReaderStyle } from "../api/style";
+import { saveReaderStyle, getReaderStyle } from "../api/style";
+import { ReaderStyle } from "../api/types";
 
 // 默认样式配置
 let defaultStyle: ReaderStyle = {

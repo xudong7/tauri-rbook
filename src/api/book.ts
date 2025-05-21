@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { HtmlWithImages, MenuItem } from "../types/type";
+import { HtmlWithImages, MenuItem } from "./types";
 
 /**
  * 提交EPUB文件路径，获取转换后的HTML文件路径

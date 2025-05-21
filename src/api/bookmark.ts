@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { BookMark } from "../types/type";
+import { BookMark } from "./types";
 /**
  * 保存或删除书签
  * @param book_path 书籍HTML文件路径

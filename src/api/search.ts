@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { BookSearchResult } from "../types/type";
+import { BookSearchResult } from "./types";
 
 /**
  * 搜索在线书籍

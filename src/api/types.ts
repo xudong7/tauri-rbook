@@ -2,8 +2,8 @@
  * 书签信息接口
  */
 export interface Mark {
-  page: number; // 页码
-  width: number; // 创建书签时的窗口宽度
+  page: number;   // 页码
+  width: number;  // 创建书签时的窗口宽度
   height: number; // 创建书签时的窗口高度
 }
 
@@ -12,16 +12,7 @@ export interface Mark {
  */
 export interface BookMark {
   book_path: string; // HTML文件路径
-  list: Mark[]; // 书签列表
-}
-
-/**
- * 表示HTML内容及相关图片的接口
- */
-export interface HtmlWithImages {
-  html_content: string;
-  images: ImageItem[];
-  bookmark?: BookMark; // 可选的书签信息
+  list: Mark[];      // 书签列表
 }
 
 /**
@@ -31,6 +22,15 @@ export interface ImageItem {
   path: string; // 图片在HTML中的相对路径
   content: string; // base64编码的图片内容
   mime_type: string; // 图片的MIME类型
+}
+
+/**
+ * 表示HTML内容及相关图片的接口
+ */
+export interface HtmlWithImages {
+  html_content: string;
+  images: ImageItem[];
+  bookmark?: BookMark; // 可选的书签信息
 }
 
 /**

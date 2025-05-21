@@ -1,6 +1,6 @@
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
-export async function createSettingsWindow(options = {}) {
+export async function createSettingsWindow(_options = {}) {
   try {
     const windowOptions = {
       width: 800,

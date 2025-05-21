@@ -56,7 +56,6 @@ const currentBookmark = ref<BookMark | null>(null);
 const wheelPagingEnabled = ref<boolean>(true); // 是否启用鼠标滚轮翻页
 const dropdownRef = ref(); // 设置下拉菜单的引用
 
-
 const fontFamily = ref("Noto Serif");
 const fontSize = ref(18);
 
@@ -64,15 +63,13 @@ const fontSize = ref(18);
 const fontFamilyOptions = [
   { label: "Noto Serif", value: "Noto Serif" },
   { label: "宋体", value: "SimSun" },
-  { label: "仿宋", value: "FangSong"},
+  { label: "仿宋", value: "FangSong" },
   { label: "楷体", value: "KaiTi" },
   { label: "微软雅黑", value: "Microsoft YaHei" },
   { label: "Times New Roman", value: "Times New Roman" },
   { label: "Arial", value: "Arial" },
 ];
 const fontSizeOptions = [14, 16, 18, 20, 22, 24, 28, 32];
-
-
 
 // 全局样式
 let GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
@@ -121,7 +118,6 @@ const loadBookFromPath = async (path: string) => {
   }
 };
 
-
 // 监听初始文件路径的变化
 watch(
   () => props.initialFilePath,
@@ -133,7 +129,6 @@ watch(
   { immediate: true }
 );
 
-
 // 根据窗口大小生成全局样式
 const updateGlobalStyle = () => {
   GLOBAL_STYLE = generateStyle(fontFamily.value, fontSize.value);
@@ -141,12 +136,10 @@ const updateGlobalStyle = () => {
   saveStyleToLocal(fontFamily.value, fontSize.value);
 };
 
-
 watch([fontFamily, fontSize], () => {
   updateGlobalStyle();
   if (htmlWithImages.value) processHtmlContent();
 });
-
 
 // 组件挂载和卸载时添加/移除窗口大小变化监听
 onMounted(() => {
@@ -164,7 +157,6 @@ onUnmounted(() => {
     clearTimeout(resizeTimeout.value);
   }
 });
-
 
 // 处理HTML内容和图片
 const processHtmlContent = async () => {
@@ -564,7 +556,10 @@ onUnmounted(() => {
 
               <el-dropdown-item
                 @click="toggleWheelPaging($event)"
-                :style="wheelPagingEnabled ? 'font-weight:bold;color:#409EFF' : ''">
+                :style="
+                  wheelPagingEnabled ? 'font-weight:bold;color:#409EFF' : ''
+                "
+              >
                 启用鼠标滚轮翻页
                 <el-icon
                   v-if="wheelPagingEnabled"
@@ -578,7 +573,7 @@ onUnmounted(() => {
           </template>
         </el-dropdown>
         <el-dropdown trigger="click" :hide-on-click="false">
-          <button class="icon-button" title = "页面布局">
+          <button class="icon-button" title="页面布局">
             <el-icon :size="20"><Operation /></el-icon>
           </button>
           <template #dropdown>
@@ -621,9 +616,7 @@ onUnmounted(() => {
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
-          <el-dropdown-menu slot="dropdown">
-            
-          </el-dropdown-menu>
+          <el-dropdown-menu slot="dropdown"> </el-dropdown-menu>
         </el-dropdown>
 
         <button

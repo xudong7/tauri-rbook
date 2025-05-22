@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from "vue";
+import { ref, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import { Window } from "@tauri-apps/api/window";
 import {
@@ -26,6 +26,8 @@ import {
   Setting,
   Collection,
   Operation,
+  CaretRight,
+  Expand,
 } from "@element-plus/icons-vue";
 import { ElDropdown, ElDropdownItem, ElDropdownMenu } from "element-plus";
 
@@ -52,10 +54,13 @@ const allPages = ref<string[]>([]);
 // 添加书签相关的状态
 const hasBookmark = ref<boolean>(false);
 const currentBookmark = ref<BookMark | null>(null);
+const jumpPage = ref(""); // 跳转页码
 //  添加设置相关的响应式变量
 const wheelPagingEnabled = ref<boolean>(true); // 是否启用鼠标滚轮翻页
 const dropdownRef = ref(); // 设置下拉菜单的引用
 const uiHideEnabled = ref<boolean>(false); // 是否隐藏工具栏UI
+const showJumpInput = ref<boolean>(false); // 是否显示跳转输入框
+const jumpInputRef = ref();
 
 const fontFamily = ref("Noto Serif");
 const fontSize = ref(18);
@@ -483,6 +488,27 @@ const closeDropdown = () => {
   }, 200);
 };
 
+// 跳转到指定页
+const handleJump = (setPage?:number) => {
+  const page = setPage? setPage:parseInt(jumpPage.value, 10);
+  if (!isNaN(page) && page > 0 && page <= totalPages.value) {
+    // 保证currentPage是偶数
+    currentPage.value = page%2===0 ? page - 1 : page;
+    updateVisiblePages();
+  }
+  showJumpInput.value = false;
+  jumpPage.value = "";
+};
+
+const showJumpInputBox = () => {
+  showJumpInput.value = true;
+  nextTick(() => {
+    jumpInputRef.value?.focus && jumpInputRef.value.focus();
+    // 或 jumpInputRef.value?.$el?.querySelector('input')?.focus();
+  });
+};
+
+
 // 窗口控制方法
 const minimizeWindow = async () => {
   await appWindow.minimize();
@@ -572,10 +598,6 @@ onUnmounted(() => {
                 </el-icon>
               </el-dropdown-item>
 
-              <el-dropdown-item @click="handleWindowResize"
-                >重新加载</el-dropdown-item
-              >
-
               <el-dropdown-item
                 @click="toggleWheelPaging($event)"
                 :style="
@@ -649,6 +671,31 @@ onUnmounted(() => {
         >
           <el-icon :size="20"><Collection /></el-icon>
         </button>
+
+    <div style="display:inline-flex;align-items:center;position:relative;">
+      <button
+        class="icon-button"
+        title="跳转至"
+        @click="showJumpInputBox"
+        style="margin-right: 5px"
+      >
+        <el-icon :size="20"><Expand /></el-icon>
+      </button>
+      <transition name="fade-slide-right">
+        <el-input
+          v-show="showJumpInput"
+          ref="jumpInputRef"
+          v-model="jumpPage"
+          size="small"
+          style="width: 80px;"
+          @keyup.enter="handleJump()"
+          @blur="showJumpInput = false"    
+          placeholder="页码"
+          autofocus
+        />
+      </transition>
+    </div>
+        
       </div>
       <div class="page-controls" v-if="currentContent">
         <div class="page-indicator-inline">

@@ -475,3 +475,19 @@
 .el-dropdown-menu {
   user-select: none;
 }
+
+/* 跳转页数框显示效果 */
+.fade-slide-right-enter-active,
+.fade-slide-right-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
+.fade-slide-right-enter-from,
+.fade-slide-right-leave-to {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+.fade-slide-right-enter-to,
+.fade-slide-right-leave-from {
+  opacity: 1;
+  transform: translateX(0);
+}

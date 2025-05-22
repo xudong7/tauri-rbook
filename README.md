@@ -1,3 +1,15 @@
+## br-gamma
+
+这个分支是通过后端传递epub文件路径以及内容到前端，前端使用epubjs来渲染epub文件。
+与`br-beta`分支不同的是，这个分支不依赖外部api，而是实实在在通过本地进行epub文件的渲染。
+`br-beta`分支是通过后端调用外部api将epub文件转换为html文件，然后前端渲染html文件，这个方法在网络不稳定的情况下可能会导致加载失败，同时对于造成了本地文件存储的浪费。
+
+### 提升
+
+- 解析epub文件的速度更快
+- 支持目录跳转
+- 不依赖外部api
+
 ## 如何运行
 
 首先，你需要有以下环境：
@@ -41,9 +53,9 @@ pnpm run tauri build
 
 - [x] 主页书库页面
 
-- [ ] 目录页跳转功能
+- [x] 目录页跳转功能
 
-- [ ] 设置窗口
+- [x] 设置窗口
 
 - [ ] 书签样式美化
 
@@ -55,9 +67,9 @@ pnpm run tauri build
 
 - [x] 保存epub文件
 
-- [x] 标记位置(书签) -- 返回html时可以返回一个json对象，包含书签位置
-
 - [x] 多个文件同时上传
+
+- [ ] 标记位置(书签) -- 返回html时可以返回一个json对象，包含书签位置
 
 - [ ] 搜索功能：[网站1](https://digilibraries.com/) 和 [网站2](https://www.gutenberg.org/) 的epub文件
 
@@ -78,76 +90,3 @@ pnpm run tauri build
 
 - 前端：Vue3 + Vite + TypeScript
 - 后端：Rust + Tauri
-
-### 前端说明
-
-前端结构图：
-
-```mermaid
-graph TD;
-    A[MenuView]
-    A --> B[ReaderView]
-    A --> C[SearchView]
-```
-
-- `MenuView`：菜单视图
-  1. `Upload`: 上传文件
-  2. `Search`: 搜索文件(未实现)
-- `ReaderView`：阅读器视图
-  1. `Content`: 书籍内容
-  2. `Next` 和 `Prev`: 上一页 和 下一页 翻页按钮
-- `SearchView`：搜索视图（未实现）
-  1. `Search`: 搜索框
-  2. `Result`: 搜索结果列表
-  3. `Download`: 下载按钮
-
-#### 上传文件
-
-使用`@tauri/api/plugin-dialog`插件实现文件上传功能。使用`open`方法打开文件选择对话框，选择epub文件后，将文件路径传递给后端进行处理。
-使用`@tauri/api/core`实现与后端的通信。使用`invoke`方法调用后端的`get_epub_to_html_files_command`函数，传递文件路径参数。后端处理完成后，将下载与解析后的html文件路径返回给前端。前端进行处理后，在`ReaderView`中显示书籍内容。
-
-#### 书籍内容
-
-将html文件内容渲染到`ReaderView`中。经过观察，基本内容都被封在`<p>`和`<h>`标签中。使用`iframe`标签加载html文件后，但是最难的部分是分页的问题，如何才能保证元素能完整显示而不会被遮挡呢？最终做法是使用一个容器来塞入元素，然后和页面的高度进行比较，是否需要进行分页处理。
-对于图片的处理，则是将图片进行等比例缩小，保证图片不会超出页面的范围。使用`max-width: 100%`和`max-height: 100%`来限制图片的大小。
-
-新的问题：
-当`<p>`标签中含有多个`<span>`或其他标签时，可能会有内容被阻挡的问题，因为之前的做法没有考虑到这种情况。解决方法是对节点标签内的所有子节点进行遍历，对每个子节点进行分页判断。
-当`<p>`标签中的某些`<span>`标签的内容过长时，可能会导致分页不准确，因为如果内容过长，尽管分页后在新的页面如果内容过长，还是会被新页面阻挡，因此分页后需要对新页面的内容进行判断，如果内容过长，则需要对内容进行文本分割处理，分割符为空格与标点符号等等，保证分割不会破坏单词的完整性。
-
-### 后端说明
-
-后端结构图：
-
-```mermaid
-graph TD;
-    A[main.rs]
-    A --> B[lib.rs]
-    B --> C[epub.rs]
-    B --> D[file.rs]
-    B --> E[convert.rs]
-    B --> F[menu.rs]
-    B --> G[model.rs]
-    B --> H[search.rs]
-```
-
-- `main.rs`：主函数
-- `lib.rs`：Tauri的入口文件，定义了Tauri的命令和事件
-- `epub.rs`：epub文件的处理
-- `file.rs`：文件的处理
-- `convert.rs`：epub文件的转换
-- `menu.rs`：菜单的处理
-- `model.rs`：数据模型
-- `search.rs`：搜索的处理（未实现）
-
-后期需要进行重构，使用`mod.rs`来进行模块划分。
-
-#### epub文件的处理
-
-`epub`
-`md5`
-`reqwest`
-`zip`
-`serde`
-
-#### 文件保存和加载

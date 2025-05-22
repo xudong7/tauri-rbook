@@ -5,6 +5,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { Window } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { readFile } from "@tauri-apps/plugin-fs";
+import { createSettingsWindow } from "../../utils/settingsWindow"; // Adjust the import path as necessary
 
 const router = useRouter();
 import {
@@ -12,6 +13,7 @@ import {
   Minus,
   FullScreen,
   Close,
+  Setting,
   ArrowLeft,
   ArrowRight,
 } from "@element-plus/icons-vue";
@@ -62,6 +64,15 @@ const bookItemStyle = computed(() => {
     alignItems: "center",
   };
 });
+
+// 点击设置按钮时，打开设置窗口
+const openSettingWindow = async () => {
+  try {
+    createSettingsWindow();
+  } catch (error) {
+    console.error("打开设置窗口失败:", error);
+  }
+};
 
 // 监听窗口大小变化
 const handleWindowResize = () => {
@@ -152,7 +163,7 @@ onUnmounted(() => {
 // Convert ArrayBuffer to base64 string
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
-  let binary = '';
+  let binary = "";
   for (let i = 0; i < bytes.byteLength; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
@@ -287,6 +298,11 @@ const closeWindow = async () => {
         >
           <el-icon :size="20" v-if="!loading"><Upload /></el-icon>
           <span v-else class="loading-spinner"></span>
+        </button>
+        <button class="icon-button" @click="openSettingWindow" title="设置">
+          <el-icon :size="20">
+            <Setting />
+          </el-icon>
         </button>
       </div>
       <div class="window-controls">

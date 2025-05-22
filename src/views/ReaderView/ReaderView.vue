@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Minus,
-  Setting,
   FullScreen,
   Expand,
   Close,
@@ -561,15 +560,10 @@ onBeforeUnmount(() => {
     <div class="reader-toolbar">
       <div class="left-controls">
         <button @click="backToMenu" class="icon-button">
-          <el-icon :size="16"><ArrowLeft /></el-icon>
-        </button>
-        <button class="icon-button">
-          <el-icon :size="16">
-            <Setting />
-          </el-icon>
+          <el-icon :size="20"><ArrowLeft /></el-icon>
         </button>
         <button class="icon-button" @click="toggleToc">
-          <el-icon :size="16">
+          <el-icon :size="20">
             <Expand />
           </el-icon>
         </button>
@@ -581,17 +575,17 @@ onBeforeUnmount(() => {
 
       <div class="window-controls">
         <button class="icon-button" @click="minimizeWindow" title="Minimize">
-          <el-icon :size="16"><Minus /></el-icon>
+          <el-icon :size="20"><Minus /></el-icon>
         </button>
         <button class="icon-button" @click="maximizeWindow" title="Maximize">
-          <el-icon :size="16"><FullScreen /></el-icon>
+          <el-icon :size="20"><FullScreen /></el-icon>
         </button>
         <button
           class="icon-button close-button"
           @click="closeWindow"
           title="Close"
         >
-          <el-icon :size="16"><Close /></el-icon>
+          <el-icon :size="20"><Close /></el-icon>
         </button>
       </div>
     </div>
@@ -613,7 +607,7 @@ onBeforeUnmount(() => {
         :disabled="currentPage <= 0"
         title="上一页"
       >
-        <el-icon :size="16">
+        <el-icon :size="20">
           <ArrowLeft />
         </el-icon>
       </button>
@@ -624,7 +618,7 @@ onBeforeUnmount(() => {
         :disabled="currentPage + 1 >= totalPages"
         title="下一页"
       >
-        <el-icon :size="16">
+        <el-icon :size="20">
           <ArrowRight />
         </el-icon>
       </button>
@@ -635,7 +629,7 @@ onBeforeUnmount(() => {
       <div class="toc-header">
         <span class="toc-title">目录</span>
         <button class="close-toc" @click="toggleToc">
-          <el-icon :size="16"><Close /></el-icon>
+          <el-icon :size="20"><Close /></el-icon>
         </button>
       </div>
       <div class="toc-content">

@@ -1,0 +1,58 @@
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #f5f5f5;
+  color: #333;
+  font-family: "Microsoft YaHei", sans-serif;
+  overflow: hidden;
+  max-height: 100vh;
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: #ffffff;
+  color: #303133;
+  -webkit-app-region: drag; /* 让标题栏可拖动 */
+  border-bottom: 1px solid #e0e0e0;
+  height: 48px;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.window-controls {
+  display: flex;
+  -webkit-app-region: no-drag; /* 控制按钮不可拖动 */
+}
+
+.window-control-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  color: #606266;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  transition: all 0.2s ease;
+}
+
+.window-control-button:hover {
+  background-color: #f5f7fa;
+}
+
+.close-button:hover {
+  background-color: #f56c6c;
+  color: white;
+}

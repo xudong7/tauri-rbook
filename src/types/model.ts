@@ -5,6 +5,11 @@ export interface BookMetadata {
   publisher: string;
 }
 
+export interface MenuItem {
+  cover: string; // path to cover image
+  path: string; // file path to the .epub file
+}
+
 export interface TocItem {
   label: string;
   href: string;
@@ -16,4 +21,16 @@ export interface ReaderStyle {
   font_family: string;
   font_size: number;
   line_height: number;
+}
+
+export interface BookMark {
+  book_path: string;
+  list: Mark[];
+}
+
+export interface Mark {
+  page: number;
+  width: number;
+  height: number;
+  cfi?: string; // EPUB Content Fragment Identifier for precise location
 }

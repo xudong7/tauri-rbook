@@ -6,10 +6,9 @@ pub struct EpubFile {
     pub path: String,
 }
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BookMark {
-    pub book_path: String, // Path to the html
+    pub book_path: String, // Path to the epub
     pub list: Vec<Mark>,   // List of marks
 }
 
@@ -18,6 +17,7 @@ pub struct Mark {
     pub page: u32,   // Page number
     pub width: u32,  // width of window when mark was created
     pub height: u32, // height of window when mark was created
+    pub cfi: String, // EPUB Content Fragment Identifier for precise location
 }
 
 impl BookMark {
@@ -26,23 +26,26 @@ impl BookMark {
             book_path,
             list: Vec::new(),
         }
-    }
-
-    // 添加书签，如果页面已存在书签则更新
-    pub fn add_mark(&mut self, page: u32, width: u32, height: u32) {
+    } // 添加书签，如果页面已存在书签则更新
+    pub fn add_mark(&mut self, page: u32, width: u32, height: u32, cfi: String) {
         // 检查是否已有该页面的书签
         if let Some(existing_mark) = self.list.iter_mut().find(|m| m.page == page) {
-            // 更新已有书签的宽高
             existing_mark.width = width;
             existing_mark.height = height;
+            existing_mark.cfi = cfi;
         } else {
             // 添加新书签
-            self.list.push(Mark { page, width, height });
+            self.list.push(Mark {
+                page,
+                width,
+                height,
+                cfi,
+            });
         }
     }
 
     // 移除指定页面的书签
-    pub fn remove_mark(&mut self, page: u32) {    
+    pub fn remove_mark(&mut self, page: u32) {
         // 移除匹配页码的书签
         self.list.retain(|m| m.page != page);
     }

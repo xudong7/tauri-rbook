@@ -5,7 +5,13 @@ import { invoke } from "@tauri-apps/api/core";
 import { Window } from "@tauri-apps/api/window";
 import ePub from "epubjs";
 import { createSettingsWindow } from "../../utils/settingsWindow";
-import type { ReaderStyle, BookMetadata, TocItem } from "../../types/model";
+import type {
+  ReaderStyle,
+  BookMetadata,
+  TocItem,
+  BookMark,
+  Mark,
+} from "../../types/model";
 import {
   ArrowLeft,
   ArrowRight,
@@ -14,6 +20,8 @@ import {
   Expand,
   Close,
   Setting,
+  Star,
+  StarFilled,
 } from "@element-plus/icons-vue";
 
 // MenuView传来的epub文件路径
@@ -36,6 +44,9 @@ const currentPage = ref(1);
 const totalPages = ref(0);
 const showToc = ref(false); // 控制是否显示目录
 const tableOfContents = ref<TocItem[]>([]); // 存储书籍目录
+const showBookmarks = ref(false); // 控制是否显示书签面板
+const bookmarks = ref<BookMark>({ book_path: "", list: [] }); // 存储书签列表
+const currentBookPath = ref<string>(""); // 当前书籍路径
 
 // 阅读器样式设置
 const readerStyle = ref<ReaderStyle>({
@@ -85,6 +96,9 @@ const loadEpub = async (filePath: string) => {
 
     // 设置渲染器和事件监听
     if (!setupRendition()) return;
+
+    // 加载书签
+    await loadBookmarks(filePath);
 
     loading.value = false;
   } catch (err) {
@@ -154,7 +168,18 @@ const setupEventListeners = () => {
   rendition.value.on("relocated", (location: any) => {
     // 更新当前页面信息
     if (location && location.start) {
-      currentPage.value = location.start.displayed.page;
+      // 保存当前spine位置作为页面索引
+      const newPage = location.start.index || 0;
+      currentPage.value = newPage;
+
+      // 记录详细的位置信息，包括CFI
+      console.log("页面变更:", {
+        page: currentPage.value,
+        locationInfo: location.start,
+        cfi: location.start.cfi,
+        href: location.start.href,
+        percentage: location.start.percentage,
+      });
     }
   });
 };
@@ -478,6 +503,185 @@ const updateTotalPages = async () => {
 };
 
 //------------------------------------------------
+// 书签相关函数
+//------------------------------------------------
+
+/**
+ * 加载书签
+ */
+const loadBookmarks = async (filePath: string) => {
+  try {
+    currentBookPath.value = filePath;
+    const result = await invoke<BookMark>("get_bookmark_command", {
+      bookPath: filePath,
+    });
+
+    if (result) {
+      bookmarks.value = result;
+      console.log("已加载书签:", result);
+    }
+  } catch (error) {
+    console.error("加载书签失败:", error);
+  }
+};
+
+/**
+ * 添加或删除书签
+ * @param action 0:添加, 1:删除
+ * @param bookmarkPage 指定的书签页码，如果不提供则使用当前页
+ * @param bookmarkCfi 指定的CFI，如果不提供则使用当前位置的CFI
+ */
+const updateBookmark = async (
+  action: number = 0,
+  bookmarkPage?: number,
+  bookmarkCfi?: string
+) => {
+  if (!rendition.value || !currentBookPath.value) return;
+
+  try {
+    // 获取页码，优先使用参数提供的页码，否则使用当前页
+    const page = bookmarkPage !== undefined ? bookmarkPage : currentPage.value;
+
+    // 获取CFI (Content Fragment Identifier)，用于精确定位
+    let cfi = bookmarkCfi;
+    if (!cfi && action === 0) {
+      // 如果没有指定CFI且是添加书签，获取当前位置的CFI
+      const location = rendition.value.currentLocation();
+      if (location && location.start) {
+        cfi = location.start.cfi;
+        console.log(`获取当前位置CFI: ${cfi}`);
+      }
+    }
+
+    // 记录操作的页码信息
+    console.log(
+      `操作书签: action=${action}, page=${page}, currentPage=${currentPage.value}, cfi=${cfi}`
+    );
+
+    // 获取窗口尺寸
+    const windowSize = await appWindow.innerSize();
+    const width = windowSize.width;
+    const height = windowSize.height;
+
+    // 调用后端保存书签
+    await invoke<string>("save_bookmark_command", {
+      bookPath: currentBookPath.value,
+      page,
+      width,
+      height,
+      cfi,
+      action,
+    });
+
+    // 重新加载书签
+    await loadBookmarks(currentBookPath.value);
+
+    // 显示成功消息
+    console.log(action === 1 ? "书签删除成功" : "书签添加成功");
+  } catch (error) {
+    console.error("操作书签失败:", error);
+  }
+};
+
+/**
+ * 跳转到书签页
+ */
+const navigateToBookmark = (mark: Mark) => {
+  if (!rendition.value || !book.value) return;
+
+  try {
+    console.log("跳转到书签页:", mark);
+
+    // 优先使用CFI进行精确导航
+    if (mark.cfi) {
+      console.log(`使用CFI精确跳转: ${mark.cfi}`);
+      rendition.value
+        .display(mark.cfi)
+        .then(() => {
+          console.log("成功使用CFI跳转到精确位置");
+          // 关闭书签面板
+          showBookmarks.value = false;
+        })
+        .catch((err: Error) => {
+          console.error("使用CFI跳转失败，尝试使用页码跳转:", err);
+          // 如果CFI导航失败，回退到基于页面索引的导航
+          navigateByPageIndex(mark.page);
+        });
+    } else {
+      // 如果没有CFI，使用页码导航
+      console.log("无CFI信息，使用页码导航");
+      navigateByPageIndex(mark.page);
+    }
+  } catch (error) {
+    console.error("跳转到书签失败:", error);
+  }
+};
+
+/**
+ * 使用页码索引进行导航（作为后备方案）
+ */
+const navigateByPageIndex = (page: number) => {
+  if (!rendition.value || !book.value) return;
+
+  // 页面索引处理 (确保页面索引在合理范围内)
+  const pageIndex = Math.min(
+    Math.max(0, page),
+    book.value.spine.items.length - 1
+  );
+  console.log(
+    "调整后的页面索引:",
+    pageIndex,
+    "总章节数:",
+    book.value.spine.items.length
+  );
+
+  // 跳转到指定页码对应的章节
+  const spineItem = book.value.spine.items[pageIndex];
+  if (spineItem) {
+    console.log("找到对应章节:", spineItem);
+    rendition.value
+      .display(spineItem.href)
+      .then(() => {
+        console.log("成功跳转到书签章节");
+        // 关闭书签面板
+        showBookmarks.value = false;
+      })
+      .catch((err: Error) => {
+        console.error("章节跳转错误:", err);
+      });
+  } else {
+    console.error("未找到对应页码的章节:", pageIndex);
+  }
+};
+
+/**
+ * 切换书签面板显示
+ */
+const toggleBookmarks = () => {
+  showBookmarks.value = !showBookmarks.value;
+  if (showToc.value && showBookmarks.value) {
+    showToc.value = false; // 如果目录是打开的，则关闭目录
+  }
+};
+
+/**
+ * 检查当前页是否已有书签
+ */
+const hasBookmarkOnCurrentPage = (): boolean => {
+  return bookmarks.value.list.some((mark) => mark.page === currentPage.value);
+};
+
+/**
+ * 切换当前页的书签状态
+ */
+const toggleCurrentPageBookmark = async () => {
+  if (hasBookmarkOnCurrentPage()) {
+    await updateBookmark(1); // 删除书签
+  } else {
+    await updateBookmark(0); // 添加书签
+  }
+};
+//------------------------------------------------
 // UI 交互相关函数
 //------------------------------------------------
 
@@ -623,6 +827,11 @@ const applyReaderStyle = () => {
             <Expand />
           </el-icon>
         </button>
+        <button class="icon-button" @click="toggleBookmarks">
+          <el-icon :size="20">
+            <Star />
+          </el-icon>
+        </button>
       </div>
       <div class="book-info" v-if="bookMetadata.title">
         <div class="book-title">{{ bookMetadata.title }}</div>
@@ -727,6 +936,63 @@ const applyReaderStyle = () => {
             </div>
           </div>
         </div>
+      </div>
+    </div>
+    <!-- 书签面板 -->
+    <div class="bookmark-panel" v-if="showBookmarks">
+      <div class="bookmark-header">
+        <span class="bookmark-title">书签</span>
+        <button class="close-bookmark" @click="toggleBookmarks">
+          <el-icon :size="20"><Close /></el-icon>
+        </button>
+      </div>
+      <div class="bookmark-content">
+        <div v-if="bookmarks.list.length === 0" class="no-bookmarks">
+          暂无书签，点击下方按钮添加书签
+        </div>
+        <div v-else>
+          <div
+            v-for="(mark, index) in bookmarks.list"
+            :key="index"
+            class="bookmark-item"
+          >
+            <div class="bookmark-info">
+              <span class="bookmark-page">第 {{ mark.page + 1 }} 页</span>
+            </div>
+            <div class="bookmark-actions">
+              <button
+                class="goto-bookmark"
+                @click="navigateToBookmark(mark)"
+                title="跳转到书签"
+              >
+                <el-icon :size="16"><ArrowRight /></el-icon>
+              </button>
+              <button
+                class="remove-bookmark"
+                @click="updateBookmark(1, mark.page)"
+                title="删除书签"
+              >
+                <el-icon :size="16"><Close /></el-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bookmark-footer">
+        <button
+          class="bookmark-action-button"
+          @click="toggleCurrentPageBookmark"
+        >
+          <el-icon v-if="hasBookmarkOnCurrentPage()" :size="16">
+            <StarFilled />
+          </el-icon>
+          <el-icon v-else :size="16">
+            <Star />
+          </el-icon>
+          {{
+            hasBookmarkOnCurrentPage() ? "取消当前页书签" : "将当前页加入书签"
+          }}
+        </button>
       </div>
     </div>
   </div>

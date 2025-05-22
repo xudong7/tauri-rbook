@@ -17,11 +17,7 @@ import {
   ArrowLeft,
   ArrowRight,
 } from "@element-plus/icons-vue";
-
-interface MenuItem {
-  cover: string; // path to cover image
-  path: string; // file path to the .epub file
-}
+import type { MenuItem } from "../../types/model";
 
 const books = ref<MenuItem[]>([]);
 const loading = ref<boolean>(false);

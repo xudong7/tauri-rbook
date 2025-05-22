@@ -1,10 +1,12 @@
 mod file;
+mod mark;
 mod model;
 mod style;
 mod tray;
 
 use file::{load_all_local_epub_files, read_epub_file_content, save_file_and_return_local_path};
-use model::{EpubFile, ReaderStyle};
+use mark::{load_bookmark_from_local_storage, save_bookmark_to_local_storage};
+use model::{BookMark, EpubFile, ReaderStyle};
 use style::{load_style_from_local_storage, save_style_to_local_storage};
 use tauri::AppHandle;
 use tray::setup_tray;
@@ -53,6 +55,44 @@ async fn get_reader_style_command(app_handle: AppHandle) -> Result<ReaderStyle, 
     load_style_from_local_storage(&app_handle).await
 }
 
+// 保存书签，action=0表示添加，action=1表示移除
+#[tauri::command]
+async fn save_bookmark_command(
+    book_path: &str,
+    page: u32,
+    width: u32,
+    height: u32,
+    cfi: Option<String>,
+    action: Option<u32>,
+) -> Result<String, String> {
+    // 尝试加载已有的书签，如果不存在则创建新的
+    let mut bookmark = match load_bookmark_from_local_storage(book_path).await {
+        Ok(bm) => bm,
+        Err(_) => BookMark::new(book_path.to_string()),
+    };
+
+    match action {
+        Some(1) => {
+            // 移除书签
+            bookmark.remove_mark(page);
+        }
+        _ => {
+            // 默认行为是添加或更新书签
+            let cfi_str = cfi.unwrap_or_default();
+            bookmark.add_mark(page, width, height, cfi_str);
+        }
+    }
+
+    // 保存到本地
+    save_bookmark_to_local_storage(&bookmark).await
+}
+
+// 获取书签
+#[tauri::command]
+async fn get_bookmark_command(book_path: &str) -> Result<BookMark, String> {
+    load_bookmark_from_local_storage(book_path).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -71,6 +111,8 @@ pub fn run() {
             read_epub_file_content_command,
             save_reader_style_command,
             get_reader_style_command,
+            save_bookmark_command,
+            get_bookmark_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -2,8 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main", "settings"],
-  "permissions": [
+  "windows": ["main", "settings"],  "permissions": [
     "core:default",
     "opener:default",
     "dialog:allow-open",
@@ -17,6 +16,14 @@
     "core:webview:allow-create-webview-window",
     "core:webview:allow-webview-close",
     "core:webview:allow-webview-show",
-    "core:webview:allow-set-webview-zoom"
+    "core:webview:allow-set-webview-zoom",
+    "fs:allow-app-read",
+    "fs:scope-appdata",
+    "fs:default",
+    "fs:allow-read-file",
+    "fs:allow-read-dir",
+    "fs:allow-write-file",
+    "fs:allow-appdata-read-recursive",
+    "fs:allow-appdata-write-recursive"
   ]
 }

@@ -28,34 +28,52 @@ async fn read_epub_cover(dir: &str, epub_path: &str) -> Result<String, String> {
 
 // 加载本地所有的epub文件
 pub async fn load_all_local_epub_files(app_handle: &AppHandle) -> Result<Vec<EpubFile>, String> {
+    // 加载/com.rbook.app/books/xxxxxxx/xxxx.epub 和 /com.rbook.app/books/xxxxxx/cover.jpg
     let app_dir = app_handle
         .path()
         .app_data_dir()
         .map_err(|e| format!("Failed to get app data directory: {}", e))?;
     let books_dir = app_dir.join("books");
-
     if !books_dir.exists() {
-        return Ok(Vec::new());
+        return Ok(vec![]);
     }
-
     let mut epub_files = Vec::new();
-
     // /com.rbook.app/books/xxxxxxxx/xxxx.epub
     // 其中xxxxxx为md5的值
-    for entry in std::fs::read_dir(books_dir)
+    for hash_dir_entry in std::fs::read_dir(books_dir)
         .map_err(|e| format!("Failed to read books directory: {}", e))?
     {
-        let entry = entry.map_err(|e| format!("Failed to read directory entry: {}", e))?;
-        let path = entry.path();
+        let hash_dir_entry =
+            hash_dir_entry.map_err(|e| format!("Failed to read directory entry: {}", e))?;
+        let hash_dir_path = hash_dir_entry.path();
 
-        if path.extension().map(|ext| ext == "epub").unwrap_or(false) {
-            let cover = format!("{}/cover.jpg", path.to_str().unwrap());
-            epub_files.push(EpubFile {
-                cover,
-                path: path.to_str().unwrap().to_string(),
-            });
+        // 检查它是否是一个目录
+        if hash_dir_path.is_dir() {
+            // 遍历MD5哈希目录中的文件
+            for file_entry in std::fs::read_dir(&hash_dir_path)
+                .map_err(|e| format!("Failed to read hash directory: {}", e))?
+            {
+                let file_entry =
+                    file_entry.map_err(|e| format!("Failed to read file entry: {}", e))?;
+                let file_path = file_entry.path();
+
+                // 如果是epub文件
+                if file_path
+                    .extension()
+                    .map(|ext| ext == "epub")
+                    .unwrap_or(false)
+                {
+                    let cover_path = hash_dir_path.join("cover.jpg");
+
+                    epub_files.push(EpubFile {
+                        cover: cover_path.to_str().unwrap().to_string(),
+                        path: file_path.to_str().unwrap().to_string(),
+                    });
+                }
+            }
         }
     }
+    // println!("epub_files: {:?}", epub_files);
 
     Ok(epub_files)
 }

@@ -149,6 +149,16 @@ onUnmounted(() => {
   }
 });
 
+// Convert ArrayBuffer to base64 string
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 // Load local books using the Rust function
 const loadLocalBooks = async () => {
   try {
@@ -158,18 +168,13 @@ const loadLocalBooks = async () => {
       "load_all_local_epub_files_command"
     );
 
-    // Process each book to load the cover image
     const processedBooks = [];
     for (const book of bookResults) {
       try {
         // Read the cover image file and convert it to base64
         const coverData = await readFile(book.cover);
-        const base64Cover = btoa(
-          new Uint8Array(coverData).reduce(
-            (data, byte) => data + String.fromCharCode(byte),
-            ""
-          )
-        );
+        // Use a safe method to convert binary data to base64
+        const base64Cover = arrayBufferToBase64(coverData);
 
         processedBooks.push({
           cover: base64Cover,

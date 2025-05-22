@@ -88,6 +88,16 @@
   align-items: center;
 }
 
+/* 样式预览特别处理，纵向排列 */
+.preview-item {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.preview-item .setting-label {
+  margin-bottom: 8px;
+}
+
 .setting-label {
   flex: 0 0 80px;
   font-size: 14px;
@@ -114,6 +124,23 @@
   text-align: right;
   font-size: 14px;
   color: #606266;
+}
+
+/* 字体预览区域 */
+.font-preview {
+  width: 100%;
+  padding: 16px;
+  background-color: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  margin-top: 8px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow-y: auto;
+  max-height: 150px;
+}
+
+.font-preview p {
+  margin: 8px 0;
 }
 
 /* 底部操作栏 */

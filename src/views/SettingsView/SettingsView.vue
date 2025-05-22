@@ -19,6 +19,8 @@ const fontOptions = [
   { label: "Times New Roman", value: "Times New Roman" },
   { label: "Arial", value: "Arial" },
   { label: "Georgia", value: "Georgia" },
+  { label: "仿宋", value: "FangSong" },
+  { label: "楷体", value: "KaiTi" },
 ];
 
 // 保存设置并关闭窗口
@@ -122,7 +124,6 @@ onMounted(async () => {
             <span class="slider-value">{{ fontSize }}px</span>
           </div>
         </div>
-
         <!-- 行高 -->
         <div class="setting-item">
           <span class="setting-label">行高</span>
@@ -135,6 +136,20 @@ onMounted(async () => {
               class="setting-slider"
             />
             <span class="slider-value">{{ lineHeight }}</span>
+          </div>
+        </div>
+        <!-- 字体样式预览 -->
+        <div class="setting-item preview-item">
+          <span class="setting-label">样式预览</span>
+          <div
+            class="font-preview"
+            :style="{
+              fontFamily: fontFamily,
+              fontSize: `${fontSize}px`,
+              lineHeight: lineHeight,
+            }"
+          >
+            <p>千里之行，始于足下。不积跬步，无以至千里。</p>
           </div>
         </div>
       </div>

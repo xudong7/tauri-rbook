@@ -146,3 +146,14 @@ pub async fn calculate_md5_hash(file_path: &str) -> Result<String, String> {
     // 返回 MD5 哈希值的十六进制字符串
     Ok(format!("{:x}", digest))
 }
+
+// 读取EPUB文件内容
+// 返回二进制数据
+pub async fn read_epub_file_content(file_path: &str) -> Result<Vec<u8>, String> {
+    let path = Path::new(file_path);
+    let mut file = File::open(path).map_err(|e| format!("Failed to open EPUB file: {}", e))?;
+    let mut buffer = Vec::new();
+    file.read_to_end(&mut buffer)
+        .map_err(|e| format!("Failed to read EPUB file content: {}", e))?;
+    Ok(buffer)
+}

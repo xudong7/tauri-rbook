@@ -1,6 +1,8 @@
 mod file;
 mod tray;
-use file::{load_all_local_epub_files, save_file_and_return_local_path, EpubFile};
+use file::{
+    load_all_local_epub_files, read_epub_file_content, save_file_and_return_local_path, EpubFile,
+};
 use tauri::AppHandle;
 use tray::setup_tray;
 
@@ -15,6 +17,11 @@ async fn save_file_and_return_local_path_command(
 #[tauri::command]
 async fn load_all_local_epub_files_command(app_handle: AppHandle) -> Result<Vec<EpubFile>, String> {
     load_all_local_epub_files(&app_handle).await
+}
+
+#[tauri::command]
+async fn read_epub_file_content_command(file_path: String) -> Result<Vec<u8>, String> {
+    read_epub_file_content(&file_path).await
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -32,6 +39,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             save_file_and_return_local_path_command,
             load_all_local_epub_files_command,
+            read_epub_file_content_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -13,9 +13,9 @@ import {
   Setting,
   ArrowLeft,
   ArrowRight,
+  Sort,
 } from "@element-plus/icons-vue";
 import type { MenuItem } from "../../types/model";
-
 
 const books = ref<MenuItem[]>([]);
 const loading = ref<boolean>(false);
@@ -40,11 +40,37 @@ const totalPages = computed(
   () => Math.ceil(books.value.length / itemsPerPage.value) || 1
 );
 
+const sortByDate = ref<boolean>(true); // true: 按时间排序，false: 按名称排序
+
+// 按最近打开时间排序后的书籍列表
+const sortedBooks = computed(() => {
+  if (sortByDate.value) {
+    // 按最近打开时间排序
+    return [...books.value].sort((a, b) => {
+      const timeA = a.last_opened || 0;
+      const timeB = b.last_opened || 0;
+      return timeB - timeA;
+    });
+  } else {
+    // 按文件名排序
+    return [...books.value].sort((a, b) => {
+      const nameA = a.path.split("/").pop() || "";
+      const nameB = b.path.split("/").pop() || "";
+      return nameA.localeCompare(nameB, undefined, { numeric: true });
+    });
+  }
+});
+
+// 切换排序方式
+const toggleSortMethod = () => {
+  sortByDate.value = !sortByDate.value;
+};
+
 // 计算当前页面应该显示的书籍
 const paginatedBooks = computed(() => {
   const startIndex = (currentPage.value - 1) * itemsPerPage.value;
   const endIndex = startIndex + itemsPerPage.value;
-  return books.value.slice(startIndex, endIndex);
+  return sortedBooks.value.slice(startIndex, endIndex);
 });
 
 // 计算书籍元素的样式
@@ -169,9 +195,9 @@ const loadLocalBooks = async () => {
   try {
     loading.value = true;
     // Use the load_all_local_epub_files_command from the Rust backend
-    const bookResults = await invoke<{ cover: string; path: string }[]>(
-      "load_all_local_epub_files_command"
-    );
+    const bookResults = await invoke<
+      { cover: string; path: string; last_opened?: number }[]
+    >("load_all_local_epub_files_command");
 
     const processedBooks = [];
     for (const book of bookResults) {
@@ -184,6 +210,7 @@ const loadLocalBooks = async () => {
         processedBooks.push({
           cover: base64Cover,
           path: book.path,
+          last_opened: book.last_opened,
         });
       } catch (err) {
         // If there's an error reading the cover, use a placeholder
@@ -191,6 +218,7 @@ const loadLocalBooks = async () => {
         processedBooks.push({
           cover: "", // Empty string or you could use a default cover base64
           path: book.path,
+          last_opened: book.last_opened,
         });
       }
     }
@@ -247,29 +275,15 @@ const uploadEpub = async () => {
 };
 
 // Open a book in ReaderView
-const openBook = (filePath: string) => {
+const openBook = async (filePath: string) => {
+  // Update last opened time
+  await invoke("update_last_opened_command", { filePath });
+
   // Use router to navigate to reader with file path
   router.push({
     path: "/reader",
     query: { filePath },
   });
-};
-
-// Window control functions
-const minimizeWindow = async () => {
-  await appWindow.minimize();
-};
-
-const maximizeWindow = async () => {
-  if (await appWindow.isMaximized()) {
-    await appWindow.unmaximize();
-  } else {
-    await appWindow.maximize();
-  }
-};
-
-const closeWindow = async () => {
-  await appWindow.close();
 };
 </script>
 
@@ -296,6 +310,15 @@ const closeWindow = async () => {
         <button class="icon-button" @click="openSettingWindow" title="设置">
           <el-icon :size="20">
             <Setting />
+          </el-icon>
+        </button>
+        <button
+          class="icon-button"
+          @click="toggleSortMethod"
+          :title="sortByDate ? '当前：按时间排序' : '当前：按名称排序'"
+        >
+          <el-icon :size="20">
+            <Sort />
           </el-icon>
         </button>
       </div>

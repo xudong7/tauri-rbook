@@ -4,7 +4,10 @@ mod model;
 mod style;
 mod tray;
 
-use file::{load_all_local_epub_files, read_epub_file_content, save_file_and_return_local_path};
+use file::{
+    load_all_local_epub_files, read_epub_file_content, save_file_and_return_local_path,
+    update_last_opened,
+};
 use mark::{load_bookmark_from_local_storage, save_bookmark_to_local_storage};
 use model::{BookMark, EpubFile, ReaderStyle};
 use style::{load_style_from_local_storage, save_style_to_local_storage};
@@ -94,6 +97,12 @@ async fn get_bookmark_command(book_path: &str) -> Result<BookMark, String> {
     load_bookmark_from_local_storage(book_path).await
 }
 
+// 更新最后打开时间
+#[tauri::command]
+async fn update_last_opened_command(file_path: String) -> Result<(), String> {
+    update_last_opened(&file_path).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -114,6 +123,7 @@ pub fn run() {
             get_reader_style_command,
             save_bookmark_command,
             get_bookmark_command,
+            update_last_opened_command,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -8,6 +8,7 @@ export interface BookMetadata {
 export interface MenuItem {
   cover: string; // path to cover image
   path: string; // file path to the .epub file
+  last_opened?: number; // timestamp when the book was last opened
 }
 
 export interface TocItem {

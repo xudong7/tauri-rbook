@@ -1,11 +1,12 @@
+use crate::model::EpubFile;
 use epub::doc::EpubDoc;
 use std::fs::File;
 use std::io::Read;
 use std::io::Write;
 use std::path::Path;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::AppHandle;
 use tauri::Manager;
-use crate::model::EpubFile;
 
 // 保存封面到本地
 // 返回封面保存的路径
@@ -18,6 +19,35 @@ async fn read_epub_cover(dir: &str, epub_path: &str) -> Result<String, String> {
     let mut f = f.unwrap();
     f.write_all(&image_data).map_err(|e| e.to_string())?;
     Ok(format!("{}/cover.jpg", dir))
+}
+
+// 获取系统当前时间的Unix时间戳
+fn get_current_timestamp() -> Result<u64, String> {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|e| e.to_string())
+        .map(|d| d.as_secs())
+}
+
+// 更新打开时间
+pub async fn update_last_opened(file_path: &str) -> Result<(), String> {
+    let now = get_current_timestamp()?;
+    let parent_dir = Path::new(file_path)
+        .parent()
+        .ok_or_else(|| "Failed to get parent directory".to_string())?;
+
+    let time_file = parent_dir.join(".lastopened");
+    std::fs::write(&time_file, now.to_string())
+        .map_err(|e| format!("Failed to write last opened time: {}", e))?;
+
+    Ok(())
+}
+
+// 获取最后打开时间
+fn get_last_opened(dir_path: &Path) -> Option<u64> {
+    std::fs::read_to_string(dir_path.join(".lastopened"))
+        .ok()
+        .and_then(|s| s.parse().ok())
 }
 
 // 加载本地所有的epub文件
@@ -58,10 +88,12 @@ pub async fn load_all_local_epub_files(app_handle: &AppHandle) -> Result<Vec<Epu
                     .unwrap_or(false)
                 {
                     let cover_path = hash_dir_path.join("cover.jpg");
+                    let last_opened = get_last_opened(&hash_dir_path);
 
                     epub_files.push(EpubFile {
                         cover: cover_path.to_str().unwrap().to_string(),
                         path: file_path.to_str().unwrap().to_string(),
+                        last_opened,
                     });
                 }
             }
@@ -106,9 +138,12 @@ pub async fn save_file_and_return_local_path(
 
     // 如果文件已存在，直接返回路径
     if dest_path.exists() {
+        let last_opened = get_last_opened(&hash_dir);
+
         return Ok(EpubFile {
             cover: format!("{}/cover.jpg", hash_dir.to_str().unwrap()),
             path: dest_path.to_str().unwrap().to_string(),
+            last_opened,
         });
     }
 
@@ -118,9 +153,12 @@ pub async fn save_file_and_return_local_path(
     read_epub_cover(hash_dir.to_str().unwrap(), origin_path.to_str().unwrap()).await?;
 
     // 返回epub文件的路径
+    let last_opened = get_last_opened(&hash_dir);
+
     Ok(EpubFile {
         cover: format!("{}/cover.jpg", hash_dir.to_str().unwrap()),
         path: dest_path.to_str().unwrap().to_string(),
+        last_opened,
     })
 }
 

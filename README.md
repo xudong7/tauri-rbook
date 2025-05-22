@@ -69,7 +69,7 @@ pnpm run tauri build
 
 - [x] 多个文件同时上传
 
-- [ ] 标记位置(书签) -- 返回html时可以返回一个json对象，包含书签位置
+- [x] 标记位置(书签) -- 返回时可以返回一个json对象，包含书签位置
 
 - [ ] 搜索功能：[网站1](https://digilibraries.com/) 和 [网站2](https://www.gutenberg.org/) 的epub文件
 

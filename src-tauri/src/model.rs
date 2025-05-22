@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct EpubFile {
     pub cover: String,
     pub path: String,
+    pub last_opened: Option<u64>, // Unix timestamp of last opened time
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

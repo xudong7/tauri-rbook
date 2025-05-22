@@ -2,120 +2,194 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  width: 100%;
-  overflow: hidden;
   background-color: #f5f5f5;
-}
-
-.loading-container,
-.error-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-}
-
-.loading-icon,
-.error-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-
-.epub-container {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
   overflow: hidden;
+  max-height: 100vh; /* 确保不超出视口高度 */
 }
 
-.controls {
+.reader-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 8px 16px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  height: 48px;
+  z-index: 100;
+  flex-shrink: 0;
+  -webkit-app-region: drag;
+}
+
+.left-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  -webkit-app-region: no-drag;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  color: #606266;
+}
+
+.icon-button:hover {
+  background-color: #f5f7fa;
+  color: #409eff;
 }
 
 .book-info {
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: 50%;
-  overflow: hidden;
+  margin: 0 auto;
+  -webkit-app-region: no-drag;
 }
 
 .book-title {
-  font-weight: bold;
-  font-size: 1.1em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
+  font-size: 16px;
+  font-weight: 500;
+  color: #303133;
 }
 
-.book-author {
-  font-size: 0.9em;
-  color: #666;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
+/* .book-author {
+  font-size: 12px;
+  color: #909399;
+} */
 
-.navigation-controls {
+.window-controls {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  gap: 8px;
+  -webkit-app-region: no-drag;
 }
 
-.page-info {
-  min-width: 80px;
-  text-align: center;
+.close-button:hover {
+  background-color: #f56c6c;
+  color: white;
 }
 
-#epub-viewer {
-  flex: 1;
-  overflow: hidden;
-  background-color: #fff;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  margin: 16px;
-  border-radius: 4px;
+.epub-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  perspective: 1000px;
+  max-width: 100%;
+  max-height: 100%;
+  gap: 0;
   position: relative;
 }
 
-/* Add overlay styles for loading and error screens */
-.overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 10;
-  background-color: rgba(245, 245, 245, 0.9);
+/* 添加当鼠标不悬停时淡入淡出效果 */
+.epub-container:hover .page-button-side:not(:disabled) {
+  opacity: 0.8;
 }
 
-/* Hide the container when needed but keep it in the DOM */
-.epub-container.hidden {
-  visibility: hidden;
+.epub-container .page-button-side:not(:hover):not(:disabled) {
+  opacity: 0.1;
 }
 
-/* EPUB.js specific styles */
-.epub-view {
-  height: 100%;
+.two-column-layout:hover {
+  opacity: 0.8;
+}
+
+#epub-viewer {
   width: 100%;
-  position: absolute;
+  height: 100%;
   overflow: hidden;
 }
 
-.epub-view iframe {
-  border: none;
+/* 侧边翻页按钮样式 */
+.page-button-side {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(248, 249, 250, 0.95) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  opacity: 0;
+  backdrop-filter: blur(20px) saturate(180%);
+  color: #495057;
+  font-size: 20px;
+}
+
+.page-button-side::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    rgba(64, 158, 255, 0.1) 0%,
+    rgba(64, 158, 255, 0.05) 100%
+  );
+  transform: translate(-50%, -50%);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  z-index: -1;
+}
+
+.page-button-side:hover::before {
   width: 100%;
   height: 100%;
 }
 
-/* Add some transitions for page turns */
-.epub-container {
-  transition: transform 0.3s ease;
+.page-button-side:hover {
+  opacity: 1 !important;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(248, 249, 250, 0.98) 100%
+  );
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+  transform: translateY(-50%) scale(1.1);
+  color: #409eff;
+}
+
+.page-button-side:active {
+  transform: translateY(-50%) scale(1.05);
+  transition-duration: 0.1s;
+}
+
+.page-button-side:disabled {
+  opacity: 0 !important;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: translateY(-50%) scale(0.8);
+  pointer-events: none;
+}
+
+.prev-button-side {
+  left: 10px;
+}
+
+.next-button-side {
+  right: 10px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

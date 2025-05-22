@@ -1,60 +1,26 @@
-<template>
-  <div class="reader-container">
-    <!-- Always render the EPUB viewer container, but hide it when loading or error -->
-    <div class="epub-container" :class="{ hidden: loading || error }">
-      <div class="controls">
-        <el-button @click="backToMenu" class="back-button">
-          <el-icon><Back /></el-icon> Back
-        </el-button>
-        <div class="book-info" v-if="bookMetadata.title">
-          <div class="book-title">{{ bookMetadata.title }}</div>
-          <div class="book-author">{{ bookMetadata.creator }}</div>
-        </div>
-        <div class="navigation-controls">
-          <el-button @click="prevPage" :disabled="!canPrevPage">
-            <el-icon><ArrowLeft /></el-icon>
-          </el-button>
-          <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
-          <el-button @click="nextPage" :disabled="!canNextPage">
-            <el-icon><ArrowRight /></el-icon>
-          </el-button>
-        </div>
-      </div>
-      <div id="epub-viewer" ref="epubViewerRef"></div>
-    </div>
-
-    <!-- Overlay the loading or error containers on top -->
-    <div v-if="loading" class="loading-container overlay">
-      <el-icon class="loading-icon"><Loading /></el-icon>
-      <p>Loading book...</p>
-    </div>
-    <div v-if="error" class="error-container overlay">
-      <el-icon class="error-icon"><CircleClose /></el-icon>
-      <p>{{ error }}</p>
-      <el-button @click="backToMenu">Back to Library</el-button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed, nextTick } from "vue";
+import { ref, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import { invoke } from "@tauri-apps/api/core";
+import { Window } from "@tauri-apps/api/window";
 import ePub from "epubjs";
 import {
-  Loading,
-  CircleClose,
-  Back,
   ArrowLeft,
   ArrowRight,
+  Minus,
+  Setting,
+  FullScreen,
+  Close,
 } from "@element-plus/icons-vue";
 
-// Props and refs
+// MenuView传来的epub文件路径
 const props = defineProps<{
   initialFilePath?: string;
 }>();
 
 const router = useRouter();
+const appWindow = Window.getCurrent();
+const wheelPagingEnabled = ref<boolean>(true); // 是否启用鼠标滚轮翻页
 const epubViewerRef = ref<HTMLElement | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
@@ -62,8 +28,6 @@ const book = ref<any>(null);
 const rendition = ref<any>(null);
 const currentPage = ref(1);
 const totalPages = ref(0);
-const canPrevPage = computed(() => currentPage.value > 1);
-const canNextPage = computed(() => currentPage.value < totalPages.value);
 
 // Book metadata
 const bookMetadata = ref<any>({
@@ -72,73 +36,54 @@ const bookMetadata = ref<any>({
   publisher: "",
 });
 
-// Functions
-const backToMenu = () => {
-  router.push("/");
+// Book options
+const GLOBAL_OPTIONS = {
+  width: "100%",
+  height: "100%",
+  view: "iframe",
+  spread: "true",
+  minSpreadWidth: 960,
+  resizeOnOrientationChange: true,
+  snap: true,
+  flow: "paginated",
+  manager: "continuous",
+  allowScriptedContent: true,
 };
 
 const loadEpub = async (filePath: string) => {
   try {
     loading.value = true;
     error.value = null;
-    console.log("Loading EPUB from path:", filePath);
 
-    // Ensure the viewer element is available in the DOM
-    await new Promise((resolve) => setTimeout(resolve, 10));
-
-    // Use the custom Tauri command to read the EPUB file
+    // Load the EPUB file and display it
     const fileContent = await invoke<number[]>(
       "read_epub_file_content_command",
       {
         filePath,
       }
     );
-    console.log("EPUB file loaded successfully, size:", fileContent.length);
-
-    // Create a new book
     const arrayBuffer = new Uint8Array(fileContent).buffer;
-    book.value = ePub(arrayBuffer); // Wait for the book to be open
+    book.value = ePub(arrayBuffer);
     await book.value.ready;
-    console.log("EPUB book ready"); // Ensure DOM is fully rendered before proceeding
     await nextTick();
+    loadBookMetadata();
 
-    // Get the total number of pages (sections)
     const spine = book.value.spine;
+    if (!spine) {
+      throw new Error("No spine found in the EPUB file");
+    }
     totalPages.value = spine.length;
-    console.log("Total pages:", totalPages.value);
 
-    // Give DOM time to render fully - use multiple ticks and delays
-    for (let i = 0; i < 3; i++) {
-      await nextTick();
-      await new Promise((resolve) => setTimeout(resolve, 50));
+    // Check if the EPUB viewer element exists
+    if (!checkIfEPUBViewerExists()) {
+      return;
     }
 
-    // Make sure the epubViewerRef is available
-    if (!epubViewerRef.value) {
-      console.error("EPUB viewer element not found");
-      error.value = "Failed to initialize EPUB viewer";
-      loading.value = false;
-      return;
-    } // Create a rendition of the book
-    rendition.value = book.value.renderTo(epubViewerRef.value, {
-      width: "100%",
-      height: "100%",
-      spread: "none",
-      flow: "paginated",
-      manager: "default",
-    });
-
-    // Display the book
+    // Create a rendition of the book
+    rendition.value = book.value.renderTo(epubViewerRef.value, GLOBAL_OPTIONS); // Display the book
     await rendition.value.display();
-    console.log("Book displayed successfully");
 
-    // Add event listeners for keyboard navigation
-    window.addEventListener("keydown", handleKeyboardNavigation);
-
-    // Add event listeners for rendition
-    rendition.value.on("rendered", (section: any) => {
-      currentPage.value = spine.indexOf(section.href) + 1;
-    });
+    await updateTotalPages(); // Update the total pages after rendering
 
     loading.value = false;
   } catch (err) {
@@ -148,27 +93,34 @@ const loadEpub = async (filePath: string) => {
   }
 };
 
-const prevPage = () => {
-  if (rendition.value && canPrevPage.value) {
-    rendition.value.prev();
+// Check if the EPUB viewer element exists
+const checkIfEPUBViewerExists = () => {
+  if (!epubViewerRef.value) {
+    console.error("EPUB viewer element not found");
+    error.value = "Failed to initialize EPUB viewer";
+    loading.value = false;
+    return false;
   }
+  return true;
+};
+
+// Update the total pages based on the current book
+const updateTotalPages = async () => {
+  if (book.value) {
+    const pageList = await book.value.locations.generate();
+    totalPages.value = pageList.length;
+  }
+};
+
+// 翻页方法
+const prevPage = () => {
+  rendition.value.prev();
 };
 
 const nextPage = () => {
-  if (rendition.value && canNextPage.value) {
-    rendition.value.next();
-  }
+  rendition.value.next();
 };
 
-const handleKeyboardNavigation = (e: KeyboardEvent) => {
-  if (e.key === "ArrowLeft") {
-    prevPage();
-  } else if (e.key === "ArrowRight") {
-    nextPage();
-  }
-};
-
-// Function to load book metadata
 const loadBookMetadata = async () => {
   if (book.value) {
     try {
@@ -185,15 +137,22 @@ const loadBookMetadata = async () => {
   }
 };
 
-// Lifecycle hooks
-onMounted(async () => {
-  // Wait for DOM to be fully rendered
-  await nextTick();
+// 监听滚轮事件，翻页
+const onWheel = (e: WheelEvent) => {
+  if (!wheelPagingEnabled.value) return;
+  if (e.deltaY > 0) nextPage();
+  else if (e.deltaY < 0) prevPage();
+};
 
+// 返回菜单
+const backToMenu = () => {
+  router.push("/");
+};
+
+onMounted(async () => {
   const filePath = props.initialFilePath;
   if (filePath) {
     await loadEpub(filePath);
-    await loadBookMetadata(); // Load metadata after the book is opened
   } else {
     error.value = "No file path provided";
     loading.value = false;
@@ -201,14 +160,99 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  // Clean up event listeners
-  window.removeEventListener("keydown", handleKeyboardNavigation);
-
-  // Destroy the book and rendition
   if (book.value) {
     book.value.destroy();
   }
 });
+
+// Window control functions
+const minimizeWindow = async () => {
+  await appWindow.minimize();
+};
+
+const maximizeWindow = async () => {
+  if (await appWindow.isMaximized()) {
+    await appWindow.unmaximize();
+  } else {
+    await appWindow.maximize();
+  }
+};
+
+const closeWindow = async () => {
+  await appWindow.close();
+};
 </script>
+
+<template>
+  <div class="reader-container">
+    <div class="reader-toolbar">
+      <div class="left-controls">
+        <button @click="backToMenu" class="icon-button">
+          <el-icon :size="16"><ArrowLeft /></el-icon>
+        </button>
+        <button class="icon-button">
+          <el-icon :size="16">
+            <Setting />
+          </el-icon>
+        </button>
+      </div>
+
+      <div class="book-info" v-if="bookMetadata.title">
+        <div class="book-title">{{ bookMetadata.title }}</div>
+        <!-- <div class="book-author">{{ bookMetadata.creator }}</div> -->
+      </div>
+
+      <div class="window-controls">
+        <button class="icon-button" @click="minimizeWindow" title="Minimize">
+          <el-icon :size="16"><Minus /></el-icon>
+        </button>
+        <button class="icon-button" @click="maximizeWindow" title="Maximize">
+          <el-icon :size="16"><FullScreen /></el-icon>
+        </button>
+        <button
+          class="icon-button close-button"
+          @click="closeWindow"
+          title="Close"
+        >
+          <el-icon :size="16"><Close /></el-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="epub-container">
+      <!-- 专门用于捕获onWheel事件的绝对定位透明div -->
+      <div
+        style="
+          position: absolute;
+          inset: 0;
+          z-index: 10;
+          background: transparent;
+        "
+        @wheel="onWheel"
+      ></div>
+      <button
+        class="page-button-side prev-button-side"
+        @click="prevPage"
+        :disabled="currentPage <= 0"
+        title="上一页"
+      >
+        <el-icon :size="16">
+          <ArrowLeft />
+        </el-icon>
+      </button>
+      <div id="epub-viewer" ref="epubViewerRef"></div>
+      <button
+        class="page-button-side next-button-side"
+        @click="nextPage"
+        :disabled="currentPage + 1 >= totalPages"
+        title="下一页"
+      >
+        <el-icon :size="16">
+          <ArrowRight />
+        </el-icon>
+      </button>
+    </div>
+  </div>
+</template>
 
 <style scoped src="./ReaderView.css" />

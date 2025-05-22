@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Window } from "@tauri-apps/api/window";
 import ePub from "epubjs";
 import { createSettingsWindow } from "../../utils/settingsWindow";
+import { ElMessage, ElMessageBox } from "element-plus";
 import type {
   ReaderStyle,
   BookMetadata,
@@ -22,6 +23,7 @@ import {
   Setting,
   Star,
   StarFilled,
+  Edit,
 } from "@element-plus/icons-vue";
 
 // MenuView传来的epub文件路径
@@ -47,6 +49,8 @@ const tableOfContents = ref<TocItem[]>([]); // 存储书籍目录
 const showBookmarks = ref(false); // 控制是否显示书签面板
 const bookmarks = ref<BookMark>({ book_path: "", list: [] }); // 存储书签列表
 const currentBookPath = ref<string>(""); // 当前书籍路径
+const editingBookmark = ref<Mark | null>(null); // 当前正在编辑的书签
+const bookmarkContent = ref(""); // 编辑书签的内容
 
 // 阅读器样式设置
 const readerStyle = ref<ReaderStyle>({
@@ -530,11 +534,13 @@ const loadBookmarks = async (filePath: string) => {
  * @param action 0:添加, 1:删除
  * @param bookmarkPage 指定的书签页码，如果不提供则使用当前页
  * @param bookmarkCfi 指定的CFI，如果不提供则使用当前位置的CFI
+ * @param content 书签备注内容
  */
 const updateBookmark = async (
   action: number = 0,
   bookmarkPage?: number,
-  bookmarkCfi?: string
+  bookmarkCfi?: string,
+  content?: string
 ) => {
   if (!rendition.value || !currentBookPath.value) return;
 
@@ -553,9 +559,12 @@ const updateBookmark = async (
       }
     }
 
+    // 书签内容，默认为空字符串
+    const bookmarkContent = content !== undefined ? content : "";
+
     // 记录操作的页码信息
     console.log(
-      `操作书签: action=${action}, page=${page}, currentPage=${currentPage.value}, cfi=${cfi}`
+      `操作书签: action=${action}, page=${page}, currentPage=${currentPage.value}, cfi=${cfi}, content=${bookmarkContent}`
     );
 
     // 获取窗口尺寸
@@ -567,6 +576,7 @@ const updateBookmark = async (
     await invoke<string>("save_bookmark_command", {
       bookPath: currentBookPath.value,
       page,
+      content: bookmarkContent,
       width,
       height,
       cfi,
@@ -677,10 +687,90 @@ const hasBookmarkOnCurrentPage = (): boolean => {
 const toggleCurrentPageBookmark = async () => {
   if (hasBookmarkOnCurrentPage()) {
     await updateBookmark(1); // 删除书签
+    ElMessage({
+      type: "success",
+      message: "书签已删除",
+      duration: 2000,
+    });
   } else {
-    await updateBookmark(0); // 添加书签
+    // 添加书签时，弹出输入框询问备注内容
+    ElMessageBox.prompt("请输入书签备注:", "添加书签", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      inputType: "textarea",
+      inputPlaceholder: "输入备注内容...",
+      type: "info",
+      showCancelButton: true,
+      distinguishCancelAndClose: true,
+    })
+      .then(({ value }) => {
+        // 添加带备注的书签
+        updateBookmark(0, undefined, undefined, value);
+
+        ElMessage({
+          type: "success",
+          message: "书签已添加",
+          duration: 2000,
+        });
+      })
+      .catch(() => {
+        // 用户取消添加
+        ElMessage({
+          type: "info",
+          message: "取消添加书签",
+          duration: 2000,
+        });
+      });
   }
 };
+
+/**
+ * 编辑书签内容
+ */
+const editBookmarkContent = (mark: Mark) => {
+  editingBookmark.value = mark;
+  bookmarkContent.value = mark.content || "";
+
+  // 使用ElementPlus的MessageBox来编辑书签内容
+  ElMessageBox.prompt("请输入书签备注:", "编辑书签", {
+    confirmButtonText: "确定",
+    cancelButtonText: "取消",
+    inputValue: bookmarkContent.value,
+    type: "warning",
+    inputType: "textarea",
+    inputPlaceholder: "输入备注内容...",
+    showCancelButton: true,
+    distinguishCancelAndClose: true,
+  })
+    .then(({ value }) => {
+      if (editingBookmark.value) {
+        // 保存更新后的书签内容
+        updateBookmark(
+          0, // 0表示添加或更新
+          editingBookmark.value.page,
+          editingBookmark.value.cfi,
+          value
+        );
+
+        ElMessage({
+          type: "success",
+          message: "书签备注已更新",
+          duration: 2000,
+        });
+      }
+    })
+    .catch((action) => {
+      // 用户取消编辑
+      if (action === "cancel") {
+        ElMessage({
+          type: "info",
+          message: "取消编辑",
+          duration: 2000,
+        });
+      }
+    });
+};
+
 //------------------------------------------------
 // UI 交互相关函数
 //------------------------------------------------
@@ -958,8 +1048,18 @@ const applyReaderStyle = () => {
           >
             <div class="bookmark-info">
               <span class="bookmark-page">第 {{ mark.page + 1 }} 页</span>
+              <div class="bookmark-content-text">
+                {{ mark.content || "暂无备注" }}
+              </div>
             </div>
             <div class="bookmark-actions">
+              <button
+                class="edit-bookmark"
+                @click="editBookmarkContent(mark)"
+                title="编辑备注"
+              >
+                <el-icon :size="16"><Edit /></el-icon>
+              </button>
               <button
                 class="goto-bookmark"
                 @click="navigateToBookmark(mark)"

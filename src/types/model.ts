@@ -30,6 +30,7 @@ export interface BookMark {
 
 export interface Mark {
   page: number;
+  content: string; // 书签备注内容
   width: number;
   height: number;
   cfi?: string; // EPUB Content Fragment Identifier for precise location

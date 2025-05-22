@@ -60,6 +60,7 @@ async fn get_reader_style_command(app_handle: AppHandle) -> Result<ReaderStyle, 
 async fn save_bookmark_command(
     book_path: &str,
     page: u32,
+    content: String,
     width: u32,
     height: u32,
     cfi: Option<String>,
@@ -79,7 +80,7 @@ async fn save_bookmark_command(
         _ => {
             // 默认行为是添加或更新书签
             let cfi_str = cfi.unwrap_or_default();
-            bookmark.add_mark(page, width, height, cfi_str);
+            bookmark.add_mark(page, content, width, height, cfi_str);
         }
     }
 

@@ -30,6 +30,8 @@ pub async fn upload_epub_to_fileformat_api(
     // 发送请求
     let client = reqwest::Client::new();
     let response = client.post(API_URL).multipart(form).send().await?;
+    
+    println!("Response Status: {}", response.status());
 
     // 处理响应
     let result = response.json::<ApiResponse>().await?;

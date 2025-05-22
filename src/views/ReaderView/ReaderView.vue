@@ -55,6 +55,7 @@ const currentBookmark = ref<BookMark | null>(null);
 //  添加设置相关的响应式变量
 const wheelPagingEnabled = ref<boolean>(true); // 是否启用鼠标滚轮翻页
 const dropdownRef = ref(); // 设置下拉菜单的引用
+const uiHideEnabled = ref<boolean>(false); // 是否隐藏工具栏UI
 
 const fontFamily = ref("Noto Serif");
 const fontSize = ref(18);
@@ -468,6 +469,12 @@ const onWheel = (e: WheelEvent) => {
   else if (e.deltaY < 0) goToPreviousPage();
 };
 
+// 切换工具栏UI显示状态
+const toggleUIHide = (event?: Event) => {
+  uiHideEnabled.value = !uiHideEnabled.value;
+  if (event) event.stopPropagation();
+};
+
 // 自动关闭设置下拉菜单
 const closeDropdown = () => {
   //延时0.5s关闭下拉菜单
@@ -536,7 +543,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="reader-container">
+  <div class="reader-container" :class="{ 'toolbar-visible': !uiHideEnabled }">
     <!-- Toolbar -->
     <div class="reader-toolbar">
       <div class="left-controls">
@@ -549,7 +556,22 @@ onUnmounted(() => {
           </button>
           <template #dropdown>
             <el-dropdown-menu slot="dropdown" @mouseleave="closeDropdown">
-              <el-dropdown-item @click="goBackToMenu">选项一</el-dropdown-item>
+               <el-dropdown-item
+                @click="toggleUIHide($event)"
+                :style="
+                  uiHideEnabled ? 'font-weight:bold;color:#409EFF' : ''
+                "
+              >
+                自动隐藏工具栏
+                <el-icon
+                  v-if="uiHideEnabled"
+                  :size="16"
+                  style="margin-left: 8px"
+                >
+                  <Check />
+                </el-icon>
+              </el-dropdown-item>
+
               <el-dropdown-item @click="handleWindowResize"
                 >重新加载</el-dropdown-item
               >

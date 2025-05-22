@@ -56,3 +56,72 @@
   background-color: #f56c6c;
   color: white;
 }
+
+/* 设置内容区域 */
+.settings-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.settings-section {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.settings-section h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 16px;
+  color: #303133;
+  font-weight: 500;
+  border-bottom: 1px solid #ebeef5;
+  padding-bottom: 8px;
+}
+
+.setting-item {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+}
+
+.setting-label {
+  flex: 0 0 80px;
+  font-size: 14px;
+  color: #606266;
+}
+
+.setting-control {
+  flex: 1;
+}
+
+.slider-with-value {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.setting-slider {
+  flex: 1;
+  margin-right: 10px;
+}
+
+.slider-value {
+  min-width: 60px;
+  text-align: right;
+  font-size: 14px;
+  color: #606266;
+}
+
+/* 底部操作栏 */
+.settings-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px;
+  background-color: #ffffff;
+  border-top: 1px solid #e0e0e0;
+  gap: 10px;
+}

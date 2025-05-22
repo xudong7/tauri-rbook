@@ -4,6 +4,8 @@ import { useRouter } from "vue-router";
 import { invoke } from "@tauri-apps/api/core";
 import { Window } from "@tauri-apps/api/window";
 import ePub from "epubjs";
+import { createSettingsWindow } from "../../utils/settingsWindow";
+import type { ReaderStyle, BookMetadata, TocItem } from "../../types/model";
 import {
   ArrowLeft,
   ArrowRight,
@@ -11,25 +13,8 @@ import {
   FullScreen,
   Expand,
   Close,
+  Setting,
 } from "@element-plus/icons-vue";
-
-// 定义类型
-interface BookMetadata {
-  title: string;
-  creator: string;
-  publisher: string;
-}
-
-interface TocItem {
-  label: string;
-  href: string;
-  level: number;
-  subitems?: TocItem[];
-}
-
-interface SpineItem {
-  href: string;
-}
 
 // MenuView传来的epub文件路径
 const props = defineProps<{
@@ -51,6 +36,13 @@ const currentPage = ref(1);
 const totalPages = ref(0);
 const showToc = ref(false); // 控制是否显示目录
 const tableOfContents = ref<TocItem[]>([]); // 存储书籍目录
+
+// 阅读器样式设置
+const readerStyle = ref<ReaderStyle>({
+  font_family: "Noto Serif",
+  font_size: 18,
+  line_height: 1.4,
+});
 
 // 书籍元数据
 const bookMetadata = ref<BookMetadata>({
@@ -142,6 +134,9 @@ const setupRendition = (): boolean => {
   // 创建渲染器并显示
   rendition.value = book.value.renderTo(epubViewerRef.value, GLOBAL_OPTIONS);
   rendition.value.display();
+
+  // 应用阅读器样式
+  applyReaderStyle();
 
   // 添加翻页事件监听
   setupEventListeners();
@@ -534,11 +529,25 @@ const closeWindow = async () => {
   await appWindow.close();
 };
 
+/**
+ * 打开设置窗口
+ */
+// 点击设置按钮时，打开设置窗口
+const openSettingWindow = async () => {
+  try {
+    createSettingsWindow();
+  } catch (error) {
+    console.error("打开设置窗口失败:", error);
+  }
+};
 //------------------------------------------------
 // 生命周期钩子
 //------------------------------------------------
 
 onMounted(async () => {
+  // 加载阅读器样式设置
+  await loadReaderStyle();
+
   const filePath = props.initialFilePath;
   if (filePath) {
     await loadEpub(filePath);
@@ -553,6 +562,50 @@ onBeforeUnmount(() => {
     book.value.destroy();
   }
 });
+
+/**
+ * 加载阅读器样式设置
+ */
+const loadReaderStyle = async () => {
+  try {
+    const style = await invoke<ReaderStyle>("get_reader_style_command");
+    if (style) {
+      readerStyle.value = style;
+      console.log("已加载阅读设置:", style);
+
+      // 如果已经初始化了渲染器，应用样式
+      if (rendition.value) {
+        applyReaderStyle();
+      }
+    }
+  } catch (error) {
+    console.error("加载阅读设置失败:", error);
+  }
+};
+
+/**
+ * 应用阅读器样式到电子书
+ */
+const applyReaderStyle = () => {
+  if (!rendition.value) return;
+
+  // 创建一个样式对象
+  const style = {
+    body: {
+      "font-family": `"${readerStyle.value.font_family}", sans-serif !important`,
+      "font-size": `${readerStyle.value.font_size}px !important`,
+      "line-height": `${readerStyle.value.line_height} !important`,
+    },
+  };
+
+  // 注册主题
+  rendition.value.themes.register("user-theme", style);
+
+  // 应用主题
+  rendition.value.themes.select("user-theme");
+
+  console.log("应用阅读样式:", style);
+};
 </script>
 
 <template>
@@ -561,6 +614,9 @@ onBeforeUnmount(() => {
       <div class="left-controls">
         <button @click="backToMenu" class="icon-button">
           <el-icon :size="20"><ArrowLeft /></el-icon>
+        </button>
+        <button class="icon-button" @click="openSettingWindow">
+          <el-icon :size="20"><Setting /></el-icon>
         </button>
         <button class="icon-button" @click="toggleToc">
           <el-icon :size="20">

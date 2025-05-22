@@ -1,17 +1,11 @@
 use epub::doc::EpubDoc;
-use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::Read;
 use std::io::Write;
 use std::path::Path;
 use tauri::AppHandle;
 use tauri::Manager;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EpubFile {
-    pub cover: String,
-    pub path: String,
-}
+use crate::model::EpubFile;
 
 // 保存封面到本地
 // 返回封面保存的路径

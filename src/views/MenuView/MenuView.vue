@@ -6,18 +6,16 @@ import { Window } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { readFile } from "@tauri-apps/plugin-fs";
 import { createSettingsWindow } from "../../utils/settingsWindow"; // Adjust the import path as necessary
-
+import WindowControl from "../../components/windowControl.vue";
 const router = useRouter();
 import {
   Upload,
-  Minus,
-  FullScreen,
-  Close,
   Setting,
   ArrowLeft,
   ArrowRight,
 } from "@element-plus/icons-vue";
 import type { MenuItem } from "../../types/model";
+
 
 const books = ref<MenuItem[]>([]);
 const loading = ref<boolean>(false);
@@ -301,29 +299,7 @@ const closeWindow = async () => {
           </el-icon>
         </button>
       </div>
-      <div class="window-controls">
-        <button
-          class="window-control-button"
-          @click="minimizeWindow"
-          title="Minimize"
-        >
-          <el-icon :size="16"><Minus /></el-icon>
-        </button>
-        <button
-          class="window-control-button"
-          @click="maximizeWindow"
-          title="Maximize"
-        >
-          <el-icon :size="16"><FullScreen /></el-icon>
-        </button>
-        <button
-          class="window-control-button close-button"
-          @click="closeWindow"
-          title="Close"
-        >
-          <el-icon :size="16"><Close /></el-icon>
-        </button>
-      </div>
+      <WindowControl :appWindow="appWindow" />
     </div>
 
     <div class="main-container">

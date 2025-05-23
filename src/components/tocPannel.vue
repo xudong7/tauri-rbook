@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Close } from "@element-plus/icons-vue";
 import type { TocItem } from "../types/model";
 
 const props = defineProps<{
@@ -16,9 +15,9 @@ const emit = defineEmits<{
 /**
  * 切换目录显示
  */
-const toggleToc = () => {
-  emit("toggleToc");
-};
+// const toggleToc = () => {
+//   emit("toggleToc");
+// };
 
 /**
  * 准备href用于导航

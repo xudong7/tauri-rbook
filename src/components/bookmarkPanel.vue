@@ -27,9 +27,9 @@ const emit = defineEmits<{
 /**
  * 切换书签面板显示
  */
-const toggleBookmarks = () => {
-  emit("toggleBookmarks");
-};
+// const toggleBookmarks = () => {
+//   emit("toggleBookmarks");
+// };
 
 /**
  * 检查当前页是否已有书签

@@ -255,69 +255,76 @@ const toggleCurrentPageBookmark = async () => {
 
 <template>
   <!-- 书签面板 -->
-  <div class="bookmark-panel" v-if="showBookmarks">
-    <!--
-      <div class="bookmark-header">
-        <span class="bookmark-title">书签</span>
-        <button class="close-bookmark" @click="toggleBookmarks">
-          <el-icon :size="20"><Close /></el-icon>
-        </button>
-      </div>
-    -->
-    <div class="bookmark-content">
-      <div v-if="bookmarks.list.length === 0" class="no-bookmarks">
-        暂无书签，点击下方按钮添加书签
-      </div>
-      <div v-else>
-        <div
-          v-for="(mark, index) in bookmarks.list"
-          :key="index"
-          class="bookmark-item"
-        >
-          <div class="bookmark-info">
-            <span class="bookmark-page">第 {{ mark.page + 1 }} 页</span>
-            <div class="bookmark-content-text">
-              {{ mark.content || "暂无备注" }}
+  <Transition name="slide-fade">
+    <div class="bookmark-panel" v-if="showBookmarks">
+      <!--
+        <div class="bookmark-header">
+          <span class="bookmark-title">书签</span>
+          <button class="close-bookmark" @click="toggleBookmarks">
+            <el-icon :size="20"><Close /></el-icon>
+          </button>
+        </div>
+      -->
+      <div class="bookmark-content">
+        <div v-if="bookmarks.list.length === 0" class="no-bookmarks">
+          暂无书签，点击下方按钮添加书签
+        </div>
+        <div v-else>
+          <div
+            v-for="(mark, index) in bookmarks.list"
+            :key="index"
+            class="bookmark-item"
+          >
+            <div class="bookmark-info">
+              <span class="bookmark-page">第 {{ mark.page + 1 }} 页</span>
+              <div class="bookmark-content-text">
+                {{ mark.content || "暂无备注" }}
+              </div>
             </div>
-          </div>
-          <div class="bookmark-actions">
-            <button
-              class="edit-bookmark"
-              @click="editBookmarkContent(mark)"
-              title="编辑备注"
-            >
-              <el-icon :size="16"><Edit /></el-icon>
-            </button>
-            <button
-              class="goto-bookmark"
-              @click="navigateToBookmark(mark)"
-              title="跳转到书签"
-            >
-              <el-icon :size="16"><ArrowRight /></el-icon>
-            </button>
-            <button
-              class="remove-bookmark"
-              @click="updateBookmark(1, mark.page)"
-              title="删除书签"
-            >
-              <el-icon :size="16"><Close /></el-icon>
-            </button>
+            <div class="bookmark-actions">
+              <button
+                class="edit-bookmark"
+                @click="editBookmarkContent(mark)"
+                title="编辑备注"
+              >
+                <el-icon :size="16"><Edit /></el-icon>
+              </button>
+              <button
+                class="goto-bookmark"
+                @click="navigateToBookmark(mark)"
+                title="跳转到书签"
+              >
+                <el-icon :size="16"><ArrowRight /></el-icon>
+              </button>
+              <button
+                class="remove-bookmark"
+                @click="updateBookmark(1, mark.page)"
+                title="删除书签"
+              >
+                <el-icon :size="16"><Close /></el-icon>
+              </button>
+            </div>
           </div>
         </div>
       </div>
+      <div class="bookmark-footer">
+        <button
+          class="bookmark-action-button"
+          @click="toggleCurrentPageBookmark"
+        >
+          <el-icon v-if="hasBookmarkOnCurrentPage()" :size="16">
+            <StarFilled />
+          </el-icon>
+          <el-icon v-else :size="16">
+            <Star />
+          </el-icon>
+          {{
+            hasBookmarkOnCurrentPage() ? "取消当前页书签" : "将当前页加入书签"
+          }}
+        </button>
+      </div>
     </div>
-    <div class="bookmark-footer">
-      <button class="bookmark-action-button" @click="toggleCurrentPageBookmark">
-        <el-icon v-if="hasBookmarkOnCurrentPage()" :size="16">
-          <StarFilled />
-        </el-icon>
-        <el-icon v-else :size="16">
-          <Star />
-        </el-icon>
-        {{ hasBookmarkOnCurrentPage() ? "取消当前页书签" : "将当前页加入书签" }}
-      </button>
-    </div>
-  </div>
+  </Transition>
 </template>
 
 <style scoped>
@@ -333,8 +340,19 @@ const toggleCurrentPageBookmark = async () => {
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  animation: slide-in 0.3s ease-in-out;
   overflow: hidden;
+}
+
+/* Slide-fade transition */
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
 }
 
 .bookmark-header {

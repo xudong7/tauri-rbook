@@ -166,56 +166,58 @@ const navigateToChapter = (href: string) => {
 
 <template>
   <!-- 目录面板 -->
-  <div class="toc-panel" v-if="showToc">
-    <!--
-      <div class="toc-header">
-        <span class="toc-title">目录</span>
-        <button class="close-toc" @click="toggleToc">
-          <el-icon :size="20"><Close /></el-icon>
-        </button>
-      </div>
-    -->
-    <div class="toc-content">
-      <div
-        v-for="(item, index) in tableOfContents"
-        :key="index"
-        class="toc-item"
-        :style="{ paddingLeft: `${item.level ? item.level * 12 : 0}px` }"
-      >
-        <a
-          href="#"
-          @click.prevent="navigateToChapter(item.href)"
-          class="toc-link"
-          :title="item.href"
-        >
-          {{ item.label }}
-        </a>
-        <!-- 处理嵌套目录 -->
+  <Transition name="slide-fade">
+    <div class="toc-panel" v-if="showToc">
+      <!--
+        <div class="toc-header">
+          <span class="toc-title">目录</span>
+          <button class="close-toc" @click="toggleToc">
+            <el-icon :size="20"><Close /></el-icon>
+          </button>
+        </div>
+      -->
+      <div class="toc-content">
         <div
-          v-if="item.subitems && item.subitems.length > 0"
-          class="toc-subitems"
+          v-for="(item, index) in tableOfContents"
+          :key="index"
+          class="toc-item"
+          :style="{ paddingLeft: `${item.level ? item.level * 12 : 0}px` }"
         >
-          <div
-            v-for="(subitem, subIndex) in item.subitems"
-            :key="`${index}-${subIndex}`"
-            class="toc-item"
-            :style="{
-              paddingLeft: `${subitem.level ? subitem.level * 12 : 12}px`,
-            }"
+          <a
+            href="#"
+            @click.prevent="navigateToChapter(item.href)"
+            class="toc-link"
+            :title="item.href"
           >
-            <a
-              href="#"
-              @click.prevent="navigateToChapter(subitem.href)"
-              class="toc-link"
-              :title="subitem.href"
+            {{ item.label }}
+          </a>
+          <!-- 处理嵌套目录 -->
+          <div
+            v-if="item.subitems && item.subitems.length > 0"
+            class="toc-subitems"
+          >
+            <div
+              v-for="(subitem, subIndex) in item.subitems"
+              :key="`${index}-${subIndex}`"
+              class="toc-item"
+              :style="{
+                paddingLeft: `${subitem.level ? subitem.level * 12 : 12}px`,
+              }"
             >
-              {{ subitem.label }}
-            </a>
+              <a
+                href="#"
+                @click.prevent="navigateToChapter(subitem.href)"
+                class="toc-link"
+                :title="subitem.href"
+              >
+                {{ subitem.label }}
+              </a>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </Transition>
 </template>
 
 <style scoped>
@@ -231,17 +233,19 @@ const navigateToChapter = (href: string) => {
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  animation: slide-in 0.3s ease-in-out;
   overflow: hidden;
 }
 
-@keyframes slide-in {
-  from {
-    transform: translateX(-100%);
-  }
-  to {
-    transform: translateX(0);
-  }
+/* Slide-fade transition */
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
 }
 
 .toc-header {

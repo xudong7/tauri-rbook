@@ -256,12 +256,14 @@ const toggleCurrentPageBookmark = async () => {
 <template>
   <!-- 书签面板 -->
   <div class="bookmark-panel" v-if="showBookmarks">
-    <div class="bookmark-header">
-      <span class="bookmark-title">书签</span>
-      <button class="close-bookmark" @click="toggleBookmarks">
-        <el-icon :size="20"><Close /></el-icon>
-      </button>
-    </div>
+    <!--
+      <div class="bookmark-header">
+        <span class="bookmark-title">书签</span>
+        <button class="close-bookmark" @click="toggleBookmarks">
+          <el-icon :size="20"><Close /></el-icon>
+        </button>
+      </div>
+    -->
     <div class="bookmark-content">
       <div v-if="bookmarks.list.length === 0" class="no-bookmarks">
         暂无书签，点击下方按钮添加书签

@@ -1,9 +1,11 @@
+mod cover;
 mod file;
 mod mark;
 mod model;
 mod style;
 mod tray;
 
+use cover::init_default_cover;
 use file::{
     load_all_local_epub_files, read_epub_file_content, save_file_and_return_local_path,
     update_last_opened,
@@ -11,7 +13,9 @@ use file::{
 use mark::{load_bookmark_from_local_storage, save_bookmark_to_local_storage};
 use model::{BookMark, EpubFile, ReaderStyle};
 use style::{load_style_from_local_storage, save_style_to_local_storage};
+use tauri::path::BaseDirectory;
 use tauri::AppHandle;
+use tauri::Manager;
 use tray::setup_tray;
 
 // 保存文件并返回本地路径
@@ -110,6 +114,13 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .setup(|app| {
+            // 将默认封面图片复制到应用程序目录
+            let resource_path = app
+                .path()
+                .resolve("resources/default_cover.png", BaseDirectory::Resource)?;
+            let app_handle = app.handle();
+            init_default_cover(&app_handle, &resource_path.to_string_lossy())?;
+
             // setup the tray icon
             setup_tray(app).unwrap();
 

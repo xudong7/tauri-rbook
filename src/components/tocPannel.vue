@@ -167,12 +167,14 @@ const navigateToChapter = (href: string) => {
 <template>
   <!-- 目录面板 -->
   <div class="toc-panel" v-if="showToc">
-    <div class="toc-header">
-      <span class="toc-title">目录</span>
-      <button class="close-toc" @click="toggleToc">
-        <el-icon :size="20"><Close /></el-icon>
-      </button>
-    </div>
+    <!--
+      <div class="toc-header">
+        <span class="toc-title">目录</span>
+        <button class="close-toc" @click="toggleToc">
+          <el-icon :size="20"><Close /></el-icon>
+        </button>
+      </div>
+    -->
     <div class="toc-content">
       <div
         v-for="(item, index) in tableOfContents"

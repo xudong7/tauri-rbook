@@ -1,3 +1,4 @@
+use crate::cover::use_default_cover;
 use crate::model::EpubFile;
 use epub::doc::EpubDoc;
 use std::fs::File;
@@ -12,7 +13,24 @@ use tauri::Manager;
 // 返回封面保存的路径
 async fn read_epub_cover(dir: &str, epub_path: &str) -> Result<String, String> {
     let mut doc = EpubDoc::new(epub_path).map_err(|e| e.to_string())?;
-    let cover_data = doc.get_cover().unwrap();
+    let cover_data = match doc.get_cover() {
+        Some(data) => {
+            // 检查封面图片大小，如果小于1KB则认为已损坏，使用默认封面
+            if data.0.len() < 1024 {
+                (
+                    use_default_cover()
+                        .map_err(|e| format!("Failed to read default cover file: {}", e))?,
+                    "image/png".to_string(),
+                )
+            } else {
+                data
+            }
+        }
+        None => (
+            use_default_cover().map_err(|e| format!("Failed to read default cover file: {}", e))?,
+            "image/png".to_string(),
+        ),
+    };
     let (image_data, _mime_type) = cover_data;
     let f = File::create(format!("{}/cover.jpg", dir));
     assert!(f.is_ok());
@@ -88,6 +106,15 @@ pub async fn load_all_local_epub_files(app_handle: &AppHandle) -> Result<Vec<Epu
                     .unwrap_or(false)
                 {
                     let cover_path = hash_dir_path.join("cover.jpg");
+                    // 检查封面文件是否存在
+                    if !cover_path.exists() {
+                        // 如果不存在，读取epub文件的封面
+                        read_epub_cover(
+                            hash_dir_path.to_str().unwrap(),
+                            file_path.to_str().unwrap(),
+                        )
+                        .await?;
+                    }
                     let last_opened = get_last_opened(&hash_dir_path);
 
                     epub_files.push(EpubFile {

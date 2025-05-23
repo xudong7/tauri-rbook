@@ -229,7 +229,7 @@ pnpm run tauri build
 ## 许可证
 
 <div align="center">
-  <a href="https://opensource.org/licenses/MIT">
+  <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" style="max-width: 100%;">
   </a>
   <p>Copyright © 2025 RBook</p>

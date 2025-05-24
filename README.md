@@ -188,41 +188,9 @@ pnpm run tauri build
 ## Developers
 
 <div align="center">
-  <table>
-    <tr>
-      <td align="center">
-        <a href="https://github.com/xudong7">
-          <img src="https://avatars.githubusercontent.com/u/144703941?v=4&size=64" width="100px;" alt="xudong7"/>
-          <br />
-          <sub><b>xudong7</b></sub>
-        </a>
-        <br />
-      </td>
-        <td align="center">
-            <a href="https://github.com/zhongjf25">
-            <img src="https://avatars.githubusercontent.com/u/96942496?s=64&v=4" width="100px;" alt="zhongjf25"/>
-            <br />
-            <sub><b>zhongjf25</b></sub>
-            </a>
-            <br />
-        </td>
-        <td align="center">
-            <a href="https://github.com/woshouhujiaran">
-            <img src="https://avatars.githubusercontent.com/u/182353547?s=64&v=4" width="100px;" alt="woshouhujiaran"/>
-            <br />
-            <sub><b>woshouhujiaran</b></sub>
-            </a>
-        </td>
-        <td align="center">
-            <a href="https://github.com/main-j">
-            <img src="https://avatars.githubusercontent.com/u/182583279?s=64&v=4" width="100px;" alt="main-j"/>
-            <br />
-            <sub><b>main-j</b></sub>
-            </a>
-        </td>
-    </tr>
-  </table>
-
+  
+[![Contributors](http://contrib.nn.ci/api?repo=xudong7/tauri-rbook)](https://github.com/xudong7/tauri-rbook/graphs/contributors)
+  
   <p>This project was developed by sophomore students from the School of Software Engineering at Sun Yat-sen University, dedicated to providing an efficient, modern EPUB reading experience.</p>
 </div>
 

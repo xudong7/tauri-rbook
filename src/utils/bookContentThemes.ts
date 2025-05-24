@@ -1,4 +1,5 @@
 import type { Theme } from "./themeManager";
+import { THEME_CONFIGS } from "./themeManager";
 
 /**
  * 书籍内容主题样式定义
@@ -140,7 +141,7 @@ export const getBookContentTheme = (theme: Theme): BookContentThemeStyle => {
  * @returns 主题名称数组
  */
 export const getAvailableThemes = (): Theme[] => {
-  return Object.keys(bookContentThemes) as Theme[];
+  return THEME_CONFIGS.map(config => config.key);
 };
 
 /**

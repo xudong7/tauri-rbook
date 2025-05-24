@@ -405,46 +405,39 @@ const backToMenu = () => {
 
 // 主题切换函数
 const toggleTheme = async () => {
-  const themes: Theme[] = ['light', 'dark', 'sepia'];
-  const currentIndex = themes.indexOf(currentTheme.value);
-  const nextIndex = (currentIndex + 1) % themes.length;
-  const newTheme = themes[nextIndex];
-  
-  currentTheme.value = newTheme;
-  themeManager.setTheme(newTheme);
-  
+  const nextTheme = themeManager.toggleToNextTheme();
+
+  // 更新响应式变量
+  currentTheme.value = nextTheme;
+
   // 更新阅读器样式中的主题
-  readerStyle.value.theme = newTheme;
-  
+  readerStyle.value.theme = nextTheme;
+
   // 立即保存主题更改到后端
   try {
     await invoke("save_reader_style_command", {
       fontFamily: readerStyle.value.font_family,
       fontSize: readerStyle.value.font_size,
       lineHeight: readerStyle.value.line_height,
-      theme: newTheme,
+      theme: nextTheme,
     });
-    
-    console.log(`主题已切换到 ${newTheme} 并保存`);
+
+    console.log(`主题已切换到 ${nextTheme} 并保存`);
   } catch (error) {
     console.error("保存主题设置失败:", error);
   }
-    // 重新应用样式到电子书内容
-  applyBookContentTheme(rendition.value, newTheme);
+  // 重新应用样式到电子书内容
+  applyBookContentTheme(rendition.value, nextTheme);
 };
 
 // 获取主题提示文本
 const getThemeTooltip = () => {
-  switch (currentTheme.value) {
-    case 'light':
-      return '当前：浅色模式';
-    case 'dark':
-      return '当前：深色模式';
-    case 'sepia':
-      return '当前：护眼模式';
-    default:
-      return '切换主题';
-  }
+  return themeManager.getThemeConfig(currentTheme.value).tooltip;
+};
+
+// 获取当前主题图标
+const getCurrentThemeIcon = () => {
+  return themeManager.getThemeConfig(currentTheme.value).icon;
 };
 //------------------------------------------------
 // 生命周期钩子
@@ -453,34 +446,34 @@ const getThemeTooltip = () => {
 onMounted(async () => {
   // 初始化主题
   currentTheme.value = themeManager.getCurrentTheme();
-    // 添加主题变化监听器（用于跨窗口同步）
+  // 添加主题变化监听器（用于跨窗口同步）
   const handleThemeChange = () => {
     const newTheme = themeManager.getCurrentTheme();
     if (newTheme !== currentTheme.value) {
       currentTheme.value = newTheme;
       readerStyle.value.theme = newTheme;
-      
+
       // 重新应用书籍内容主题
       if (rendition.value) {
         applyBookContentTheme(rendition.value, newTheme);
       }
-      
-      console.log('ReaderView主题已同步:', newTheme);
+
+      console.log("ReaderView主题已同步:", newTheme);
     }
   };
-  
+
   // 监听localStorage变化来同步主题（跨窗口）
-  window.addEventListener('storage', (e) => {
-    if (e.key === 'app-theme') {
+  window.addEventListener("storage", (e) => {
+    if (e.key === "app-theme") {
       handleThemeChange();
     }
   });
-  
+
   // 监听自定义主题变化事件（同窗口内）
-  window.addEventListener('themeChanged', () => {
+  window.addEventListener("themeChanged", () => {
     handleThemeChange();
   });
-  
+
   // 加载阅读器样式设置
   await loadReaderStyle();
 
@@ -554,7 +547,8 @@ const applyReaderStyle = () => {
 
 <template>
   <div class="reader-container">
-    <div class="reader-toolbar">      <div class="left-controls">
+    <div class="reader-toolbar">
+      <div class="left-controls">
         <button @click="backToMenu" class="icon-button">
           <el-icon :size="20"><ArrowLeft /></el-icon>
         </button>
@@ -564,8 +558,8 @@ const applyReaderStyle = () => {
           :title="getThemeTooltip()"
         >
           <el-icon :size="20">
-            <Sunny v-if="currentTheme === 'light'" />
-            <Moon v-else-if="currentTheme === 'dark'" />
+            <Sunny v-if="getCurrentThemeIcon() === 'Sunny'" />
+            <Moon v-else-if="getCurrentThemeIcon() === 'Moon'" />
             <Coffee v-else />
           </el-icon>
         </button>

@@ -26,11 +26,7 @@ const fontOptions = [
 ];
 
 // 主题选项
-const themeOptions = [
-  { label: "浅色模式", value: "light" },
-  { label: "深色模式", value: "dark" },
-  { label: "护眼模式", value: "sepia" },
-];
+const themeOptions = themeManager.getThemeOptions();
 
 // 保存设置并关闭窗口
 const saveAndClose = async () => {
@@ -88,12 +84,12 @@ const loadReaderStyle = async () => {
 watch(theme, async (newTheme) => {
   // 立即应用主题到当前设置窗口
   themeManager.setTheme(newTheme);
-  
+
   // 同时保存主题设置，确保主窗口也能同步更新
   try {
     // 获取当前的阅读器样式设置
     const currentStyle = await invoke<ReaderStyle>("get_reader_style_command");
-    
+
     // 保存更新后的样式（包含新主题）
     await invoke("save_reader_style_command", {
       fontFamily: currentStyle.font_family || fontFamily.value,
@@ -101,7 +97,7 @@ watch(theme, async (newTheme) => {
       lineHeight: currentStyle.line_height || lineHeight.value,
       theme: newTheme,
     });
-    
+
     console.log(`主题已切换到 ${newTheme} 并立即保存`);
   } catch (error) {
     console.error("实时保存主题设置失败:", error);
@@ -130,12 +126,13 @@ onMounted(async () => {
           <el-icon :size="16"><Close /></el-icon>
         </button>
       </div>
-    </div>    <!-- 设置内容 -->
+    </div>
+    <!-- 设置内容 -->
     <div class="settings-content">
       <!-- 主题设置 -->
       <div class="settings-section">
         <h3>主题设置</h3>
-        
+
         <!-- 主题选择 -->
         <div class="setting-item">
           <span class="setting-label">颜色模式</span>

@@ -2,32 +2,69 @@ import type { ThemeColors } from "../types/model";
 
 export type Theme = "light" | "dark" | "sepia";
 
-export const themeColors: Record<Theme, ThemeColors> = {
-  light: {
-    background: "#ffffff",
-    surface: "#f5f5f5",
-    text: "#303133",
-    textSecondary: "#606266",
-    border: "#e0e0e0",
-    accent: "#409eff",
+// 主题配置接口
+export interface ThemeConfig {
+  key: Theme;
+  label: string;
+  icon: "Sunny" | "Moon" | "Coffee";
+  tooltip: string;
+  colors: ThemeColors;
+}
+
+// 所有可用主题的配置
+export const THEME_CONFIGS: ThemeConfig[] = [
+  {
+    key: "light",
+    label: "浅色模式",
+    icon: "Sunny",
+    tooltip: "当前：浅色模式",
+    colors: {
+      background: "#ffffff",
+      surface: "#f5f5f5",
+      text: "#303133",
+      textSecondary: "#606266",
+      border: "#e0e0e0",
+      accent: "#409eff",
+    },
   },
-  dark: {
-    background: "#1a1a1a",
-    surface: "#2c2c2c",
-    text: "#e5e5e5",
-    textSecondary: "#b3b3b3",
-    border: "#404040",
-    accent: "#66b1ff",
+  {
+    key: "dark",
+    label: "深色模式",
+    icon: "Moon",
+    tooltip: "当前：深色模式",
+    colors: {
+      background: "#1a1a1a",
+      surface: "#2c2c2c",
+      text: "#e5e5e5",
+      textSecondary: "#b3b3b3",
+      border: "#404040",
+      accent: "#66b1ff",
+    },
   },
-  sepia: {
-    background: "#f4f1ea",
-    surface: "#ebe5d6",
-    text: "#4a4a3a",
-    textSecondary: "#6a6a5a",
-    border: "#d4c5a9",
-    accent: "#8b7355",
+  {
+    key: "sepia",
+    label: "护眼模式",
+    icon: "Coffee",
+    tooltip: "当前：护眼模式",
+    colors: {
+      background: "#f4f1ea",
+      surface: "#ebe5d6",
+      text: "#4a4a3a",
+      textSecondary: "#6a6a5a",
+      border: "#d4c5a9",
+      accent: "#8b7355",
+    },
   },
-};
+];
+
+// 保持向后兼容的主题颜色映射
+export const themeColors: Record<Theme, ThemeColors> = THEME_CONFIGS.reduce(
+  (acc, config) => {
+    acc[config.key] = config.colors;
+    return acc;
+  },
+  {} as Record<Theme, ThemeColors>
+);
 
 export class ThemeManager {
   private currentTheme: Theme = "light";
@@ -38,23 +75,23 @@ export class ThemeManager {
   }
   private setupStorageListener() {
     // 监听localStorage变化，实现跨窗口主题同步
-    window.addEventListener('storage', (e) => {
-      if (e.key === 'app-theme' && e.newValue) {
+    window.addEventListener("storage", (e) => {
+      if (e.key === "app-theme" && e.newValue) {
         if (this.isValidTheme(e.newValue)) {
           this.currentTheme = e.newValue as Theme;
           this.applyTheme(this.currentTheme);
-          console.log('主题已从其他窗口同步:', this.currentTheme);
+          console.log("主题已从其他窗口同步:", this.currentTheme);
         }
       }
     });
-    
+
     // 监听自定义主题变化事件，实现同窗口内主题同步
-    window.addEventListener('themeChanged', (e: any) => {
+    window.addEventListener("themeChanged", (e: any) => {
       const { theme } = e.detail;
       if (theme !== this.currentTheme && this.isValidTheme(theme)) {
         this.currentTheme = theme;
         this.applyTheme(this.currentTheme);
-        console.log('主题已从同窗口同步:', this.currentTheme);
+        console.log("主题已从同窗口同步:", this.currentTheme);
       }
     });
   }
@@ -69,19 +106,74 @@ export class ThemeManager {
       console.warn("Failed to load theme from storage:", error);
     }
   }
-
   private isValidTheme(theme: string): theme is Theme {
-    return ["light", "dark", "sepia"].includes(theme);
+    return THEME_CONFIGS.some((config) => config.key === theme);
+  }
+
+  /**
+   * 获取所有可用的主题配置
+   */
+  public getAvailableThemes(): ThemeConfig[] {
+    return THEME_CONFIGS;
+  }
+
+  /**
+   * 获取所有主题的键值数组
+   */
+  public getThemeKeys(): Theme[] {
+    return THEME_CONFIGS.map((config) => config.key);
+  }
+
+  /**
+   * 根据主题键获取主题配置
+   */
+  public getThemeConfig(theme?: Theme): ThemeConfig {
+    const targetTheme = theme || this.currentTheme;
+    return (
+      THEME_CONFIGS.find((config) => config.key === targetTheme) ||
+      THEME_CONFIGS[0]
+    );
+  }
+
+  /**
+   * 获取下一个主题
+   */
+  public getNextTheme(): Theme {
+    const themes = this.getThemeKeys();
+    const currentIndex = themes.indexOf(this.currentTheme);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    return themes[nextIndex];
+  }
+
+  /**
+   * 切换到下一个主题
+   */
+  public toggleToNextTheme(): Theme {
+    const nextTheme = this.getNextTheme();
+    this.setTheme(nextTheme);
+    return nextTheme;
+  }
+
+  /**
+   * 获取主题选项列表（用于下拉选择器）
+   */
+  public getThemeOptions(): Array<{ label: string; value: Theme }> {
+    return THEME_CONFIGS.map((config) => ({
+      label: config.label,
+      value: config.key,
+    }));
   }
   public setTheme(theme: Theme) {
     this.currentTheme = theme;
     this.applyTheme(theme);
     this.saveThemeToStorage(theme);
-    
+
     // 触发自定义事件，用于同窗口内的主题同步
-    window.dispatchEvent(new CustomEvent('themeChanged', { 
-      detail: { theme } 
-    }));
+    window.dispatchEvent(
+      new CustomEvent("themeChanged", {
+        detail: { theme },
+      })
+    );
   }
 
   public getCurrentTheme(): Theme {

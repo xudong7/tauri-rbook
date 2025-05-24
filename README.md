@@ -142,6 +142,11 @@ Compared to earlier versions, this project achieves the following performance im
 
 ## Getting Started
 
+### Branch Information
+
+- **Stable Version**: `br-gamma` branch - Recommended for production use
+- **Development Version**: `dev` branch - Latest features and experimental changes
+
 ### Requirements
 
 1. Node.js & pnpm

@@ -4,7 +4,6 @@ import { useRouter } from "vue-router";
 import { invoke } from "@tauri-apps/api/core";
 import { Window } from "@tauri-apps/api/window";
 import ePub from "epubjs";
-import { createSettingsWindow } from "../../utils/settingsWindow";
 import WindowControl from "../../components/windowControl.vue";
 import TocPannel from "../../components/tocPannel.vue";
 import BookmarkPanel from "../../components/bookmarkPanel.vue";
@@ -14,12 +13,16 @@ import type {
   TocItem,
   BookMark,
 } from "../../types/model";
+import { themeManager, type Theme } from "../../utils/themeManager";
+import { applyBookContentTheme } from "../../utils/bookContentThemes";
 import {
   ArrowLeft,
   ArrowRight,
   Expand,
-  Setting,
   Star,
+  Sunny,
+  Moon,
+  Coffee,
 } from "@element-plus/icons-vue";
 
 // MenuView传来的epub文件路径
@@ -51,7 +54,11 @@ const readerStyle = ref<ReaderStyle>({
   font_family: "Noto Serif",
   font_size: 18,
   line_height: 1.4,
+  theme: "light",
 });
+
+// 主题相关
+const currentTheme = ref<Theme>(themeManager.getCurrentTheme());
 
 // 书籍元数据
 const bookMetadata = ref<BookMetadata>({
@@ -396,15 +403,47 @@ const backToMenu = () => {
   router.push("/");
 };
 
-/**
- * 打开设置窗口
- */
-// 点击设置按钮时，打开设置窗口
-const openSettingWindow = async () => {
+// 主题切换函数
+const toggleTheme = async () => {
+  const themes: Theme[] = ['light', 'dark', 'sepia'];
+  const currentIndex = themes.indexOf(currentTheme.value);
+  const nextIndex = (currentIndex + 1) % themes.length;
+  const newTheme = themes[nextIndex];
+  
+  currentTheme.value = newTheme;
+  themeManager.setTheme(newTheme);
+  
+  // 更新阅读器样式中的主题
+  readerStyle.value.theme = newTheme;
+  
+  // 立即保存主题更改到后端
   try {
-    createSettingsWindow();
+    await invoke("save_reader_style_command", {
+      fontFamily: readerStyle.value.font_family,
+      fontSize: readerStyle.value.font_size,
+      lineHeight: readerStyle.value.line_height,
+      theme: newTheme,
+    });
+    
+    console.log(`主题已切换到 ${newTheme} 并保存`);
   } catch (error) {
-    console.error("打开设置窗口失败:", error);
+    console.error("保存主题设置失败:", error);
+  }
+    // 重新应用样式到电子书内容
+  applyBookContentTheme(rendition.value, newTheme);
+};
+
+// 获取主题提示文本
+const getThemeTooltip = () => {
+  switch (currentTheme.value) {
+    case 'light':
+      return '当前：浅色模式';
+    case 'dark':
+      return '当前：深色模式';
+    case 'sepia':
+      return '当前：护眼模式';
+    default:
+      return '切换主题';
   }
 };
 //------------------------------------------------
@@ -412,6 +451,36 @@ const openSettingWindow = async () => {
 //------------------------------------------------
 
 onMounted(async () => {
+  // 初始化主题
+  currentTheme.value = themeManager.getCurrentTheme();
+    // 添加主题变化监听器（用于跨窗口同步）
+  const handleThemeChange = () => {
+    const newTheme = themeManager.getCurrentTheme();
+    if (newTheme !== currentTheme.value) {
+      currentTheme.value = newTheme;
+      readerStyle.value.theme = newTheme;
+      
+      // 重新应用书籍内容主题
+      if (rendition.value) {
+        applyBookContentTheme(rendition.value, newTheme);
+      }
+      
+      console.log('ReaderView主题已同步:', newTheme);
+    }
+  };
+  
+  // 监听localStorage变化来同步主题（跨窗口）
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'app-theme') {
+      handleThemeChange();
+    }
+  });
+  
+  // 监听自定义主题变化事件（同窗口内）
+  window.addEventListener('themeChanged', () => {
+    handleThemeChange();
+  });
+  
   // 加载阅读器样式设置
   await loadReaderStyle();
 
@@ -439,6 +508,12 @@ const loadReaderStyle = async () => {
     if (style) {
       readerStyle.value = style;
       console.log("已加载阅读设置:", style);
+
+      // 更新当前主题
+      if (style.theme) {
+        currentTheme.value = style.theme as Theme;
+        themeManager.setTheme(style.theme as Theme);
+      }
 
       // 如果已经初始化了渲染器，应用样式
       if (rendition.value) {
@@ -470,6 +545,8 @@ const applyReaderStyle = () => {
 
   // 应用主题
   rendition.value.themes.select("user-theme");
+  // 应用书籍内容主题
+  applyBookContentTheme(rendition.value, currentTheme.value);
 
   console.log("应用阅读样式:", style);
 };
@@ -477,13 +554,20 @@ const applyReaderStyle = () => {
 
 <template>
   <div class="reader-container">
-    <div class="reader-toolbar">
-      <div class="left-controls">
+    <div class="reader-toolbar">      <div class="left-controls">
         <button @click="backToMenu" class="icon-button">
           <el-icon :size="20"><ArrowLeft /></el-icon>
         </button>
-        <button class="icon-button" @click="openSettingWindow">
-          <el-icon :size="20"><Setting /></el-icon>
+        <button
+          class="icon-button"
+          @click="toggleTheme"
+          :title="getThemeTooltip()"
+        >
+          <el-icon :size="20">
+            <Sunny v-if="currentTheme === 'light'" />
+            <Moon v-else-if="currentTheme === 'dark'" />
+            <Coffee v-else />
+          </el-icon>
         </button>
         <button class="icon-button" @click="toggleToc">
           <el-icon :size="20">

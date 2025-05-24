@@ -7,6 +7,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { readFile } from "@tauri-apps/plugin-fs";
 import { createSettingsWindow } from "../../utils/settingsWindow"; // Adjust the import path as necessary
 import WindowControl from "../../components/windowControl.vue";
+import { themeManager, type Theme } from "../../utils/themeManager";
 const router = useRouter();
 import {
   Upload,
@@ -14,12 +15,18 @@ import {
   ArrowLeft,
   ArrowRight,
   Sort,
+  Sunny,
+  Moon,
+  Coffee,
 } from "@element-plus/icons-vue";
-import type { MenuItem } from "../../types/model";
+import type { MenuItem, ReaderStyle } from "../../types/model";
 
 const books = ref<MenuItem[]>([]);
 const loading = ref<boolean>(false);
 const appWindow = Window.getCurrent();
+
+// 主题相关
+const currentTheme = ref<Theme>(themeManager.getCurrentTheme());
 
 // 窗口尺寸相关变量
 const windowWidth = ref<number>(window.innerWidth);
@@ -94,6 +101,49 @@ const openSettingWindow = async () => {
   }
 };
 
+// 主题切换函数
+const toggleTheme = async () => {
+  const themes: Theme[] = ['light', 'dark', 'sepia'];
+  const currentIndex = themes.indexOf(currentTheme.value);
+  const nextIndex = (currentIndex + 1) % themes.length;
+  const newTheme = themes[nextIndex];
+  
+  currentTheme.value = newTheme;
+  themeManager.setTheme(newTheme);
+  
+  // 立即保存主题更改到后端
+  try {
+    // 获取当前的阅读器样式设置
+    const currentStyle = await invoke<ReaderStyle>("get_reader_style_command");
+    
+    // 保存更新后的样式（包含新主题）
+    await invoke("save_reader_style_command", {
+      fontFamily: currentStyle.font_family || "Microsoft YaHei",
+      fontSize: currentStyle.font_size || 16,
+      lineHeight: currentStyle.line_height || 1.6,
+      theme: newTheme,
+    });
+    
+    console.log(`主题已切换到 ${newTheme} 并保存`);
+  } catch (error) {
+    console.error("保存主题设置失败:", error);
+  }
+};
+
+// 获取主题提示文本
+const getThemeTooltip = () => {
+  switch (currentTheme.value) {
+    case 'light':
+      return '当前：浅色模式';
+    case 'dark':
+      return '当前：深色模式';
+    case 'sepia':
+      return '当前：护眼模式';
+    default:
+      return '切换主题';
+  }
+};
+
 // 监听窗口大小变化
 const handleWindowResize = () => {
   // 防抖处理
@@ -158,6 +208,29 @@ onMounted(() => {
   // 初始化窗口尺寸
   windowWidth.value = window.innerWidth;
   windowHeight.value = window.innerHeight;
+  
+  // 初始化主题并监听变化
+  currentTheme.value = themeManager.getCurrentTheme();
+    // 添加主题变化监听器（用于跨窗口同步）
+  const handleThemeChange = () => {
+    const newTheme = themeManager.getCurrentTheme();
+    if (newTheme !== currentTheme.value) {
+      currentTheme.value = newTheme;
+      console.log('MenuView主题已同步:', newTheme);
+    }
+  };
+  
+  // 监听localStorage变化来同步主题（跨窗口）
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'app-theme') {
+      handleThemeChange();
+    }
+  });
+  
+  // 监听自定义主题变化事件（同窗口内）
+  window.addEventListener('themeChanged', () => {
+    handleThemeChange();
+  });
 });
 
 // 监听窗口尺寸变化，动态调整布局
@@ -296,8 +369,7 @@ const openBook = async (filePath: string) => {
     </div>
 
     <!-- Toolbar -->
-    <div class="menu-toolbar">
-      <div class="left-controls">
+    <div class="menu-toolbar">      <div class="left-controls">
         <button
           class="icon-button"
           @click="uploadEpub"
@@ -310,6 +382,17 @@ const openBook = async (filePath: string) => {
         <button class="icon-button" @click="openSettingWindow" title="设置">
           <el-icon :size="20">
             <Setting />
+          </el-icon>
+        </button>
+        <button
+          class="icon-button"
+          @click="toggleTheme"
+          :title="getThemeTooltip()"
+        >
+          <el-icon :size="20">
+            <Sunny v-if="currentTheme === 'light'" />
+            <Moon v-else-if="currentTheme === 'dark'" />
+            <Coffee v-else />
           </el-icon>
         </button>
         <button

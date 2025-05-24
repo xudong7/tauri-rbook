@@ -61,6 +61,7 @@ pub struct ReaderStyle {
     pub font_family: String,
     pub font_size: u32,
     pub line_height: f32,
+    pub theme: String,
 }
 
 impl Default for ReaderStyle {
@@ -69,6 +70,7 @@ impl Default for ReaderStyle {
             font_family: "Noto Serif".to_string(),
             font_size: 18,
             line_height: 1.4,
+            theme: "light".to_string(),
         }
     }
 }

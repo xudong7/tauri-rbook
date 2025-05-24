@@ -335,12 +335,13 @@ const toggleCurrentPageBookmark = async () => {
   left: 0;
   width: 300px;
   height: calc(100vh - 48px);
-  background-color: #ffffff;
+  background-color: var(--app-background);
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: background-color 0.3s ease;
 }
 
 /* Slide-fade transition */
@@ -360,27 +361,30 @@ const toggleCurrentPageBookmark = async () => {
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-border);
+  transition: border-color 0.3s ease;
 }
 
 .bookmark-title {
   font-size: 18px;
   font-weight: 500;
-  color: #333;
+  color: var(--app-text-color);
+  transition: color 0.3s ease;
 }
 
 .close-bookmark {
   background: none;
   border: none;
   cursor: pointer;
-  color: #909399;
+  color: var(--app-text-secondary);
   padding: 4px;
   border-radius: 4px;
+  transition: all 0.3s ease;
 }
 
 .close-bookmark:hover {
-  background-color: #f5f7fa;
-  color: #409eff;
+  background-color: var(--app-surface);
+  color: var(--app-accent);
 }
 
 .bookmark-content {
@@ -388,7 +392,7 @@ const toggleCurrentPageBookmark = async () => {
   overflow-y: auto;
   padding: 16px;
   scrollbar-width: thin;
-  scrollbar-color: #e0e0e0 #f5f5f5;
+  scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
 }
 
 .bookmark-content::-webkit-scrollbar {
@@ -396,17 +400,17 @@ const toggleCurrentPageBookmark = async () => {
 }
 
 .bookmark-content::-webkit-scrollbar-track {
-  background: #f5f5f5;
+  background: var(--app-scrollbar-track);
   border-radius: 10px;
 }
 
 .bookmark-content::-webkit-scrollbar-thumb {
-  background: #e0e0e0;
+  background: var(--app-scrollbar-thumb);
   border-radius: 10px;
 }
 
 .bookmark-content::-webkit-scrollbar-thumb:hover {
-  background: #d0d0d0;
+  background: var(--app-scrollbar-thumb-hover);
 }
 
 .bookmark-item {
@@ -414,7 +418,8 @@ const toggleCurrentPageBookmark = async () => {
   justify-content: space-between;
   align-items: flex-start;
   padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-border);
+  transition: border-color 0.3s ease;
 }
 
 .bookmark-info {
@@ -425,13 +430,14 @@ const toggleCurrentPageBookmark = async () => {
 .bookmark-page {
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: var(--app-text-color);
   margin-bottom: 4px;
+  transition: color 0.3s ease;
 }
 
 .bookmark-content-text {
   font-size: 13px;
-  color: #606266;
+  color: var(--app-text-secondary);
   margin-top: 4px;
   word-break: break-word;
   line-height: 1.4;
@@ -439,7 +445,8 @@ const toggleCurrentPageBookmark = async () => {
   overflow-y: auto;
   padding-left: 2px;
   scrollbar-width: thin;
-  scrollbar-color: #e0e0e0 #f9f9f9;
+  scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
+  transition: color 0.3s ease;
 }
 
 .bookmark-content-text::-webkit-scrollbar {
@@ -447,11 +454,11 @@ const toggleCurrentPageBookmark = async () => {
 }
 
 .bookmark-content-text::-webkit-scrollbar-track {
-  background: #f9f9f9;
+  background: var(--app-scrollbar-track);
 }
 
 .bookmark-content-text::-webkit-scrollbar-thumb {
-  background: #e0e0e0;
+  background: var(--app-scrollbar-thumb);
   border-radius: 4px;
 }
 
@@ -468,55 +475,58 @@ const toggleCurrentPageBookmark = async () => {
   background: none;
   border: none;
   cursor: pointer;
-  color: #909399;
+  color: var(--app-text-secondary);
   padding: 4px;
   border-radius: 4px;
+  transition: all 0.3s ease;
 }
 
 .goto-bookmark:hover {
-  background-color: #f5f7fa;
-  color: #409eff;
+  background-color: var(--app-surface);
+  color: var(--app-accent);
 }
 
 .edit-bookmark:hover {
-  background-color: #f5f7fa;
-  color: #67c23a;
+  background-color: var(--app-surface);
+  color: var(--app-success);
 }
 
 .remove-bookmark:hover {
-  background-color: #f5f7fa;
-  color: #f56c6c;
+  background-color: var(--app-surface);
+  color: var(--app-danger);
 }
 
 .no-bookmarks {
   text-align: center;
-  color: #909399;
+  color: var(--app-text-secondary);
   padding: 20px 0;
+  transition: color 0.3s ease;
 }
 
 .bookmark-footer {
   padding: 16px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--app-border);
+  transition: border-color 0.3s ease;
 }
 
 .bookmark-action-button {
   width: 100%;
   padding: 8px 16px;
-  background-color: #ecf5ff;
-  color: #409eff;
-  border: 1px solid #d9ecff;
+  background-color: var(--app-accent-light);
+  color: var(--app-accent);
+  border: 1px solid var(--app-accent-border);
   border-radius: 4px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
 }
 
 .bookmark-action-button:hover {
-  background-color: #409eff;
-  color: white;
-  border-color: #409eff;
+  background-color: var(--app-accent);
+  color: var(--app-accent-text);
+  border-color: var(--app-accent);
 }
 </style>

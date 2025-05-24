@@ -2,11 +2,12 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f5f5f5;
-  color: #333;
+  background-color: var(--app-background);
+  color: var(--app-text-color);
   font-family: "Microsoft YaHei", sans-serif;
   overflow: hidden;
   max-height: 100vh;
+  transition: all 0.3s ease;
 }
 
 .settings-header {
@@ -14,19 +15,21 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 16px;
-  background-color: #ffffff;
-  color: #303133;
+  background-color: var(--app-surface);
+  color: var(--app-text-color);
   -webkit-app-region: drag; /* 让标题栏可拖动 */
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--app-border);
   height: 48px;
   z-index: 100;
   flex-shrink: 0;
+  transition: all 0.3s ease;
 }
 
 .title {
   font-size: 16px;
   font-weight: 500;
-  color: #303133;
+  color: var(--app-text-color);
+  transition: color 0.3s ease;
 }
 
 .window-controls {
@@ -40,7 +43,7 @@
   cursor: pointer;
   padding: 8px;
   border-radius: 4px;
-  color: #606266;
+  color: var(--app-text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -49,11 +52,12 @@
 }
 
 .window-control-button:hover {
-  background-color: #f5f7fa;
+  background-color: var(--app-surface);
+  color: var(--app-accent);
 }
 
 .close-button:hover {
-  background-color: #f56c6c;
+  background-color: var(--app-danger);
   color: white;
 }
 
@@ -62,24 +66,29 @@
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+  background-color: var(--app-background);
+  transition: background-color 0.3s ease;
 }
 
 .settings-section {
-  background-color: #fff;
+  background-color: var(--app-surface);
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 16px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--app-border);
+  transition: all 0.3s ease;
 }
 
 .settings-section h3 {
   margin-top: 0;
   margin-bottom: 16px;
   font-size: 16px;
-  color: #303133;
+  color: var(--app-text-color);
   font-weight: 500;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid var(--app-border);
   padding-bottom: 8px;
+  transition: all 0.3s ease;
 }
 
 .setting-item {
@@ -101,7 +110,8 @@
 .setting-label {
   flex: 0 0 80px;
   font-size: 14px;
-  color: #606266;
+  color: var(--app-text-secondary);
+  transition: color 0.3s ease;
 }
 
 .setting-control {
@@ -123,24 +133,104 @@
   min-width: 60px;
   text-align: right;
   font-size: 14px;
-  color: #606266;
+  color: var(--app-text-secondary);
+  transition: color 0.3s ease;
 }
 
 /* 字体预览区域 */
 .font-preview {
   width: 100%;
   padding: 16px;
-  background-color: #fff;
-  border: 1px solid #e0e0e0;
+  background-color: var(--app-background);
+  border: 1px solid var(--app-border);
   border-radius: 4px;
   margin-top: 8px;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
   overflow-y: auto;
   max-height: 150px;
+  color: var(--app-text-color);
+  transition: all 0.3s ease;
 }
 
 .font-preview p {
   margin: 8px 0;
+}
+
+/* 主题预览区域 */
+.theme-preview {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.theme-sample {
+  border: 1px solid var(--app-border);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  max-width: 300px;
+}
+
+.sample-header {
+  padding: 12px 16px;
+  background-color: var(--app-background);
+  border-bottom: 1px solid var(--app-border);
+  font-weight: 500;
+  color: var(--app-text-color);
+}
+
+.sample-content {
+  padding: 16px;
+  background-color: var(--app-surface);
+  color: var(--app-text-color);
+}
+
+.sample-content p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: var(--app-text-secondary);
+}
+
+.sample-button {
+  background-color: var(--app-accent);
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sample-button:hover {
+  opacity: 0.8;
+}
+
+/* 特定主题样式 */
+.theme-sample.theme-light {
+  --app-background: #ffffff;
+  --app-surface: #f5f5f5;
+  --app-text-color: #303133;
+  --app-text-secondary: #606266;
+  --app-border: #e0e0e0;
+  --app-accent: #409eff;
+}
+
+.theme-sample.theme-dark {
+  --app-background: #1a1a1a;
+  --app-surface: #2c2c2c;
+  --app-text-color: #e5e5e5;
+  --app-text-secondary: #b3b3b3;
+  --app-border: #404040;
+  --app-accent: #66b1ff;
+}
+
+.theme-sample.theme-sepia {
+  --app-background: #f4f1ea;
+  --app-surface: #ebe5d6;
+  --app-text-color: #4a4a3a;
+  --app-text-secondary: #6a6a5a;
+  --app-border: #d4c5a9;
+  --app-accent: #8b7355;
 }
 
 /* 底部操作栏 */
@@ -148,7 +238,8 @@
   display: flex;
   justify-content: flex-end;
   padding: 16px;
-  background-color: #ffffff;
-  border-top: 1px solid #e0e0e0;
+  background-color: var(--app-surface);
+  border-top: 1px solid var(--app-border);
   gap: 10px;
+  transition: all 0.3s ease;
 }

@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { Close, Check } from "@element-plus/icons-vue";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import type { ReaderStyle } from "../../types/model";
+import { themeManager, type Theme } from "../../utils/themeManager";
 
 // 字体设置
 const fontFamily = ref("");
 const fontSize = ref(0);
 const lineHeight = ref(0);
+const theme = ref<Theme>("light");
 
 // 可选字体列表
 const fontOptions = [
@@ -21,6 +23,13 @@ const fontOptions = [
   { label: "Georgia", value: "Georgia" },
   { label: "仿宋", value: "FangSong" },
   { label: "楷体", value: "KaiTi" },
+];
+
+// 主题选项
+const themeOptions = [
+  { label: "浅色模式", value: "light" },
+  { label: "深色模式", value: "dark" },
+  { label: "护眼模式", value: "sepia" },
 ];
 
 // 保存设置并关闭窗口
@@ -47,6 +56,7 @@ const saveReaderStyle = async () => {
       fontFamily: fontFamily.value,
       fontSize: fontSize.value,
       lineHeight: lineHeight.value,
+      theme: theme.value,
     });
     console.log("阅读设置已保存");
   } catch (error) {
@@ -63,6 +73,10 @@ const loadReaderStyle = async () => {
       fontFamily.value = style.font_family;
       fontSize.value = style.font_size;
       lineHeight.value = style.line_height;
+      if (style.theme) {
+        theme.value = style.theme as Theme;
+        themeManager.setTheme(style.theme as Theme);
+      }
       console.log("已加载阅读设置:", style);
     }
   } catch (error) {
@@ -70,8 +84,34 @@ const loadReaderStyle = async () => {
   }
 };
 
+// 监听主题变化并实时应用
+watch(theme, async (newTheme) => {
+  // 立即应用主题到当前设置窗口
+  themeManager.setTheme(newTheme);
+  
+  // 同时保存主题设置，确保主窗口也能同步更新
+  try {
+    // 获取当前的阅读器样式设置
+    const currentStyle = await invoke<ReaderStyle>("get_reader_style_command");
+    
+    // 保存更新后的样式（包含新主题）
+    await invoke("save_reader_style_command", {
+      fontFamily: currentStyle.font_family || fontFamily.value,
+      fontSize: currentStyle.font_size || fontSize.value,
+      lineHeight: currentStyle.line_height || lineHeight.value,
+      theme: newTheme,
+    });
+    
+    console.log(`主题已切换到 ${newTheme} 并立即保存`);
+  } catch (error) {
+    console.error("实时保存主题设置失败:", error);
+  }
+});
+
 // 组件加载时获取保存的阅读设置
 onMounted(async () => {
+  // 初始化主题
+  theme.value = themeManager.getCurrentTheme();
   await loadReaderStyle();
 });
 </script>
@@ -90,10 +130,40 @@ onMounted(async () => {
           <el-icon :size="16"><Close /></el-icon>
         </button>
       </div>
-    </div>
-
-    <!-- 设置内容 -->
+    </div>    <!-- 设置内容 -->
     <div class="settings-content">
+      <!-- 主题设置 -->
+      <div class="settings-section">
+        <h3>主题设置</h3>
+        
+        <!-- 主题选择 -->
+        <div class="setting-item">
+          <span class="setting-label">颜色模式</span>
+          <el-select v-model="theme" class="setting-control">
+            <el-option
+              v-for="option in themeOptions"
+              :key="option.value"
+              :label="option.label"
+              :value="option.value"
+            />
+          </el-select>
+        </div>
+
+        <!-- 主题预览 -->
+        <div class="setting-item preview-item">
+          <span class="setting-label">主题预览</span>
+          <div class="theme-preview">
+            <div class="theme-sample" :class="`theme-${theme}`">
+              <div class="sample-header">标题栏</div>
+              <div class="sample-content">
+                <p>这是一段示例文本，展示当前主题的效果。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 字体设置 -->
       <div class="settings-section">
         <h3>字体设置</h3>
 

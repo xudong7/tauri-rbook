@@ -52,12 +52,13 @@ const closeWindow = async () => {
   cursor: pointer;
   padding: 8px;
   border-radius: 4px;
-  color: #606266;
+  color: var(--app-text-secondary);
+  transition: all 0.3s ease;
 }
 
 .icon-button:hover {
-  background-color: #f5f7fa;
-  color: #409eff;
+  background-color: var(--app-surface);
+  color: var(--app-accent);
 }
 
 .window-controls {
@@ -67,7 +68,7 @@ const closeWindow = async () => {
 }
 
 .close-button:hover {
-  background-color: #f56c6c;
+  background-color: var(--app-danger);
   color: white;
 }
 </style>

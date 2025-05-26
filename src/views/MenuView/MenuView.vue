@@ -186,12 +186,6 @@ const goToNextPage = () => {
   }
 };
 
-const goToPage = (page: number) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
-  }
-};
-
 onMounted(() => {
   loadLocalBooks();
 
@@ -443,8 +437,10 @@ const openBook = async (filePath: string) => {
             </div>
           </div>
         </div>
-
-        <div class="pagination-footer" v-if="books.length > 0">
+        <div
+          class="pagination-footer"
+          v-if="books.length > 0 && totalPages > 1"
+        >
           <div class="pagination-controls">
             <button
               class="pagination-button"
@@ -455,23 +451,11 @@ const openBook = async (filePath: string) => {
               <el-icon><ArrowLeft /></el-icon>
             </button>
 
-            <!-- 页码选择器 -->
+            <!-- 简化的页码显示 -->
             <div class="page-selector">
               <span class="current-page">
                 {{ currentPage }} / {{ totalPages }}
               </span>
-              <div class="quick-page-nav" v-if="totalPages > 3">
-                <button
-                  v-for="page in Math.min(5, totalPages)"
-                  :key="page"
-                  class="page-number-button"
-                  :class="{ active: currentPage === page }"
-                  @click="goToPage(page)"
-                >
-                  {{ page }}
-                </button>
-                <span v-if="totalPages > 5">...</span>
-              </div>
             </div>
 
             <button

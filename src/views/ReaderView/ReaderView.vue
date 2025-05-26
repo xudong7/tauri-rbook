@@ -14,7 +14,7 @@ import type {
   BookMark,
 } from "../../types/model";
 import { themeManager, type Theme } from "../../utils/themeManager";
-import { applyBookContentTheme } from "../../utils/bookContentThemes";
+import { applyBookContentTheme, getBookContentTheme } from "../../utils/bookContentThemes";
 import {
   ArrowLeft,
   ArrowRight,
@@ -524,24 +524,32 @@ const loadReaderStyle = async () => {
 const applyReaderStyle = () => {
   if (!rendition.value) return;
 
-  // 创建一个样式对象
-  const style = {
+  // 获取当前主题的内容颜色样式
+  const contentTheme = getBookContentTheme(currentTheme.value);
+  
+  // 合并字体样式和主题颜色样式
+  const mergedStyle = {
     body: {
       "font-family": `"${readerStyle.value.font_family}", sans-serif !important`,
       "font-size": `${readerStyle.value.font_size}px !important`,
       "line-height": `${readerStyle.value.line_height} !important`,
+      ...contentTheme.body,
     },
+    p: contentTheme.p,
+    h1: contentTheme.h1,
+    h2: contentTheme.h2,
+    h3: contentTheme.h3,
+    h4: contentTheme.h4,
+    h5: contentTheme.h5,
+    h6: contentTheme.h6,
+    "*": contentTheme["*"],
   };
 
-  // 注册主题
-  rendition.value.themes.register("user-theme", style);
+  // 注册并应用合并后的主题
+  rendition.value.themes.register("merged-theme", mergedStyle);
+  rendition.value.themes.select("merged-theme");
 
-  // 应用主题
-  rendition.value.themes.select("user-theme");
-  // 应用书籍内容主题
-  applyBookContentTheme(rendition.value, currentTheme.value);
-
-  console.log("应用阅读样式:", style);
+  console.log("应用合并后的阅读样式:", mergedStyle);
 };
 </script>
 

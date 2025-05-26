@@ -20,6 +20,7 @@
   flex-shrink: 0;
   -webkit-app-region: drag;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .left-controls {
@@ -361,4 +362,65 @@ body.theme-sepia .book-cover {
 
 body.theme-sepia .book-item:hover {
   box-shadow: 0 8px 16px rgba(139, 115, 85, 0.15);
+}
+
+/* 搜索相关样式 */
+.search-container {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  -webkit-app-region: no-drag;
+  z-index: 101;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: var(--app-background);
+  border: 1px solid var(--app-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  transition: all 0.3s ease;
+  min-width: 250px;
+}
+
+.search-input-wrapper:focus-within {
+  border-color: var(--app-accent);
+  box-shadow: 0 0 0 2px var(--app-accent-light);
+}
+
+.search-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 6px 8px;
+  color: var(--app-text-primary);
+  font-size: 14px;
+  width: 100%;
+  transition: color 0.3s ease;
+}
+
+.search-input::placeholder {
+  color: var(--app-text-disabled);
+}
+
+.clear-search-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 3px;
+  color: var(--app-text-secondary);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+}
+
+.clear-search-button:hover {
+  background-color: var(--app-surface);
+  color: var(--app-text-primary);
 }

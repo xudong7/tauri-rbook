@@ -18,6 +18,8 @@ import {
   Sunny,
   Moon,
   Coffee,
+  Search,
+  Close,
 } from "@element-plus/icons-vue";
 import type { MenuItem, ReaderStyle } from "../../types/model";
 
@@ -44,23 +46,61 @@ const itemsPerPage = computed(() => booksPerRow * rowsPerPage);
 // 分页相关的变量
 const currentPage = ref<number>(1);
 const totalPages = computed(
-  () => Math.ceil(books.value.length / itemsPerPage.value) || 1
+  () => Math.ceil(sortedBooks.value.length / itemsPerPage.value) || 1
 );
 
 const sortByDate = ref<boolean>(true); // true: 按时间排序，false: 按名称排序
 
-// 按最近打开时间排序后的书籍列表
+// 搜索功能相关变量
+const searchQuery = ref<string>("");
+const showSearchInput = ref<boolean>(false);
+
+// 模糊搜索匹配函数
+const fuzzyMatch = (text: string, query: string): boolean => {
+  const textLower = text.toLowerCase();
+  const queryLower = query.toLowerCase();
+
+  let textIndex = 0;
+  let queryIndex = 0;
+
+  // 遍历查询字符串的每个字符
+  while (queryIndex < queryLower.length && textIndex < textLower.length) {
+    // 如果当前字符匹配，则移动到查询字符串的下一个字符
+    if (textLower[textIndex] === queryLower[queryIndex]) {
+      queryIndex++;
+    }
+    textIndex++;
+  }
+
+  // 如果所有查询字符都被匹配，则认为匹配成功
+  return queryIndex === queryLower.length;
+};
+
+// 按最近打开时间排序和搜索过滤后的书籍列表
 const sortedBooks = computed(() => {
+  let filteredBooks = books.value;
+
+  // 先进行搜索过滤
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.trim();
+    filteredBooks = books.value.filter((book) => {
+      const fileName = book.path.split("/").pop() || "";
+      const fileNameWithoutExt = fileName.replace(/\.[^/.]+$/, ""); // 移除文件扩展名
+      return fuzzyMatch(fileNameWithoutExt, query);
+    });
+  }
+
+  // 再进行排序
   if (sortByDate.value) {
     // 按最近打开时间排序
-    return [...books.value].sort((a, b) => {
+    return [...filteredBooks].sort((a, b) => {
       const timeA = a.last_opened || 0;
       const timeB = b.last_opened || 0;
       return timeB - timeA;
     });
   } else {
     // 按文件名排序
-    return [...books.value].sort((a, b) => {
+    return [...filteredBooks].sort((a, b) => {
       const nameA = a.path.split("/").pop() || "";
       const nameB = b.path.split("/").pop() || "";
       return nameA.localeCompare(nameB, undefined, { numeric: true });
@@ -72,6 +112,23 @@ const sortedBooks = computed(() => {
 const toggleSortMethod = () => {
   sortByDate.value = !sortByDate.value;
 };
+
+// 搜索相关函数
+const toggleSearchInput = () => {
+  showSearchInput.value = !showSearchInput.value;
+  if (!showSearchInput.value) {
+    searchQuery.value = "";
+  }
+};
+
+const clearSearch = () => {
+  searchQuery.value = "";
+};
+
+// 监听搜索查询变化，重置到第一页
+watch(searchQuery, () => {
+  currentPage.value = 1;
+});
 
 // 计算当前页面应该显示的书籍
 const paginatedBooks = computed(() => {
@@ -166,7 +223,7 @@ const handleWindowResize = () => {
 // 当itemsPerPage变化时，如果当前页面没有内容，则回到前一页
 watch(itemsPerPage, (newValue, oldValue) => {
   if (newValue !== oldValue && currentPage.value > 1) {
-    const maxPage = Math.ceil(books.value.length / newValue);
+    const maxPage = Math.ceil(sortedBooks.value.length / newValue);
     if (currentPage.value > maxPage) {
       currentPage.value = maxPage;
     }
@@ -354,7 +411,6 @@ const openBook = async (filePath: string) => {
       <div class="loading-spinner large"></div>
       <div>正在调整布局...</div>
     </div>
-
     <!-- Toolbar -->
     <div class="menu-toolbar">
       <div class="left-controls">
@@ -392,7 +448,40 @@ const openBook = async (filePath: string) => {
             <Sort />
           </el-icon>
         </button>
+        <button
+          class="icon-button"
+          @click="toggleSearchInput"
+          :title="showSearchInput ? '关闭搜索' : '搜索书籍'"
+        >
+          <el-icon :size="20">
+            <Search />
+          </el-icon>
+        </button>
       </div>
+
+      <!-- 搜索输入框 -->
+      <div class="search-container" v-if="showSearchInput">
+        <div class="search-input-wrapper">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="搜索书籍..."
+            class="search-input"
+            @keyup.escape="toggleSearchInput"
+          />
+          <button
+            v-if="searchQuery"
+            @click="clearSearch"
+            class="clear-search-button"
+            title="清除搜索"
+          >
+            <el-icon :size="16">
+              <Close />
+            </el-icon>
+          </button>
+        </div>
+      </div>
+
       <WindowControl :appWindow="appWindow" />
     </div>
 
@@ -407,6 +496,22 @@ const openBook = async (filePath: string) => {
           <button @click="uploadEpub" class="upload-button">
             <el-icon :size="24"><Upload /></el-icon>
             上传电子书 (支持多选)
+          </button>
+        </div>
+      </div>
+
+      <div
+        v-else-if="sortedBooks.length === 0 && searchQuery.trim()"
+        class="empty-state"
+      >
+        <p>没有找到匹配的书籍</p>
+        <p style="font-size: 14px; margin-top: 8px">
+          搜索: "{{ searchQuery }}"
+        </p>
+        <div class="empty-state-buttons">
+          <button @click="clearSearch" class="upload-button">
+            <el-icon :size="20"><Close /></el-icon>
+            清除搜索
           </button>
         </div>
       </div>
@@ -439,7 +544,7 @@ const openBook = async (filePath: string) => {
         </div>
         <div
           class="pagination-footer"
-          v-if="books.length > 0 && totalPages > 1"
+          v-if="sortedBooks.length > 0 && totalPages > 1"
         >
           <div class="pagination-controls">
             <button

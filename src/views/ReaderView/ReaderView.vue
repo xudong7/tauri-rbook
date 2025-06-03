@@ -14,7 +14,7 @@ import type {
   BookMark,
 } from "../../types/model";
 import { themeManager, type Theme } from "../../utils/themeManager";
-import { applyBookContentTheme, getBookContentTheme } from "../../utils/bookContentThemes";
+import { getBookContentTheme } from "../../utils/bookContentThemes";
 import {
   ArrowLeft,
   ArrowRight,
@@ -426,8 +426,9 @@ const toggleTheme = async () => {
   } catch (error) {
     console.error("保存主题设置失败:", error);
   }
-  // 重新应用样式到电子书内容
-  applyBookContentTheme(rendition.value, nextTheme);
+
+  // 重新应用完整的样式到电子书内容（包括字体大小、行高等）
+  applyReaderStyle();
 };
 
 // 获取主题提示文本
@@ -445,17 +446,16 @@ const getCurrentThemeIcon = () => {
 
 onMounted(async () => {
   // 初始化主题
-  currentTheme.value = themeManager.getCurrentTheme();
-  // 添加主题变化监听器（用于跨窗口同步）
+  currentTheme.value = themeManager.getCurrentTheme(); // 添加主题变化监听器（用于跨窗口同步）
   const handleThemeChange = () => {
     const newTheme = themeManager.getCurrentTheme();
     if (newTheme !== currentTheme.value) {
       currentTheme.value = newTheme;
       readerStyle.value.theme = newTheme;
 
-      // 重新应用书籍内容主题
+      // 重新应用完整的阅读器样式（包括字体大小、行高等）
       if (rendition.value) {
-        applyBookContentTheme(rendition.value, newTheme);
+        applyReaderStyle();
       }
 
       console.log("ReaderView主题已同步:", newTheme);
@@ -526,7 +526,7 @@ const applyReaderStyle = () => {
 
   // 获取当前主题的内容颜色样式
   const contentTheme = getBookContentTheme(currentTheme.value);
-  
+
   // 合并字体样式和主题颜色样式
   const mergedStyle = {
     body: {

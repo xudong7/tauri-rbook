@@ -46,6 +46,9 @@ const showBookmarks = ref(false); // 控制是否显示书签面板
 const bookmarks = ref<BookMark>({ book_path: "", list: [] }); // 存储书签列表
 const currentBookPath = ref<string>(""); // 当前书籍路径
 
+// 窗口调整相关变量
+const resizeTimeout = ref<number | null>(null);
+
 // 阅读器样式设置
 const readerStyle = ref<ReaderStyle>({
   font_family: "Noto Serif",
@@ -397,6 +400,61 @@ const backToMenu = () => {
 };
 
 /**
+ * 处理窗口大小调整
+ */
+const handleWindowResize = () => {
+  // 防抖处理
+  if (resizeTimeout.value !== null) {
+    clearTimeout(resizeTimeout.value);
+  }
+
+  resizeTimeout.value = window.setTimeout(async () => {
+    // 重新渲染 EPUB 并保持阅读位置
+    if (rendition.value && book.value && currentBookPath.value) {
+      try {
+        console.log("开始重新渲染EPUB...");
+
+        // 保存当前阅读位置
+        const currentLocation = rendition.value.currentLocation();
+        console.log("保存当前阅读位置:", currentLocation);
+
+        // 销毁当前渲染器
+        if (rendition.value) {
+          rendition.value.destroy();
+          rendition.value = null;
+        }
+
+        // 重新调用 loadEpub 来完全重新渲染
+        await loadEpub(currentBookPath.value);
+
+        // 等待渲染完成
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // 如果有保存的位置，恢复到该位置
+        if (
+          currentLocation &&
+          currentLocation.start &&
+          currentLocation.start.cfi &&
+          rendition.value
+        ) {
+          try {
+            await rendition.value.display(currentLocation.start.cfi);
+            console.log("已恢复到调整前的阅读位置");
+          } catch (error) {
+            console.warn("恢复阅读位置失败，保持当前位置:", error);
+          }
+        }
+
+        console.log("EPUB 重新渲染完成");
+      } catch (error) {
+        console.error("重新渲染EPUB失败:", error);
+      }
+    }
+    resizeTimeout.value = null;
+  }, 300); // 300ms 防抖延迟
+};
+
+/**
  * 打开设置窗口
  */
 // 点击设置按钮时，打开设置窗口
@@ -422,9 +480,20 @@ onMounted(async () => {
     error.value = "No file path provided";
     loading.value = false;
   }
+
+  // 添加窗口大小变化监听
+  window.addEventListener("resize", handleWindowResize);
 });
 
 onBeforeUnmount(() => {
+  // 移除窗口大小变化监听
+  window.removeEventListener("resize", handleWindowResize);
+
+  // 清理防抖定时器
+  if (resizeTimeout.value !== null) {
+    clearTimeout(resizeTimeout.value);
+  }
+
   if (book.value) {
     book.value.destroy();
   }

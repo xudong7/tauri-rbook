@@ -46,11 +46,13 @@ async fn save_reader_style_command(
     font_family: String,
     font_size: u32,
     line_height: f32,
+    theme: String,
 ) -> Result<String, String> {
     let style = ReaderStyle {
         font_family,
         font_size,
         line_height,
+        theme,
     };
 
     save_style_to_local_storage(&app_handle, &style).await

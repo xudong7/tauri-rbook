@@ -2,9 +2,10 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f5f5f5;
+  background-color: var(--app-background);
   overflow: hidden;
   max-height: 100vh; /* 确保不超出视口高度 */
+  transition: background-color 0.3s ease;
 }
 
 .reader-toolbar {
@@ -12,12 +13,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 16px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e0e0e0;
+  background-color: var(--app-surface);
+  border-bottom: 1px solid var(--app-border);
   height: 48px;
   z-index: 100;
   flex-shrink: 0;
   -webkit-app-region: drag;
+  transition: all 0.3s ease;
 }
 
 .left-controls {
@@ -33,12 +35,13 @@
   cursor: pointer;
   padding: 8px;
   border-radius: 4px;
-  color: #606266;
+  color: var(--app-text-secondary);
+  transition: all 0.3s ease;
 }
 
 .icon-button:hover {
-  background-color: #f5f7fa;
-  color: #409eff;
+  background-color: var(--app-surface);
+  color: var(--app-accent);
 }
 
 .book-info {
@@ -52,13 +55,15 @@
 .book-title {
   font-size: 16px;
   font-weight: 500;
-  color: #303133;
+  color: var(--app-text-color);
+  transition: color 0.3s ease;
 }
 
 .book-page-info {
   font-size: 12px;
-  color: #909399;
+  color: var(--app-text-secondary);
   margin-top: 4px;
+  transition: color 0.3s ease;
 }
 
 .epub-container {

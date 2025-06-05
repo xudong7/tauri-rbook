@@ -7,6 +7,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { readFile } from "@tauri-apps/plugin-fs";
 import { createSettingsWindow } from "../../utils/settingsWindow"; // Adjust the import path as necessary
 import WindowControl from "../../components/windowControl.vue";
+import { themeManager, type Theme } from "../../utils/themeManager";
 const router = useRouter();
 import {
   Upload,
@@ -14,12 +15,20 @@ import {
   ArrowLeft,
   ArrowRight,
   Sort,
+  Sunny,
+  Moon,
+  Coffee,
+  Search,
+  Close,
 } from "@element-plus/icons-vue";
-import type { MenuItem } from "../../types/model";
+import type { MenuItem, ReaderStyle } from "../../types/model";
 
 const books = ref<MenuItem[]>([]);
 const loading = ref<boolean>(false);
 const appWindow = Window.getCurrent();
+
+// 主题相关
+const currentTheme = ref<Theme>(themeManager.getCurrentTheme());
 
 // 窗口尺寸相关变量
 const windowWidth = ref<number>(window.innerWidth);
@@ -37,23 +46,61 @@ const itemsPerPage = computed(() => booksPerRow * rowsPerPage);
 // 分页相关的变量
 const currentPage = ref<number>(1);
 const totalPages = computed(
-  () => Math.ceil(books.value.length / itemsPerPage.value) || 1
+  () => Math.ceil(sortedBooks.value.length / itemsPerPage.value) || 1
 );
 
 const sortByDate = ref<boolean>(true); // true: 按时间排序，false: 按名称排序
 
-// 按最近打开时间排序后的书籍列表
+// 搜索功能相关变量
+const searchQuery = ref<string>("");
+const showSearchInput = ref<boolean>(false);
+
+// 模糊搜索匹配函数
+const fuzzyMatch = (text: string, query: string): boolean => {
+  const textLower = text.toLowerCase();
+  const queryLower = query.toLowerCase();
+
+  let textIndex = 0;
+  let queryIndex = 0;
+
+  // 遍历查询字符串的每个字符
+  while (queryIndex < queryLower.length && textIndex < textLower.length) {
+    // 如果当前字符匹配，则移动到查询字符串的下一个字符
+    if (textLower[textIndex] === queryLower[queryIndex]) {
+      queryIndex++;
+    }
+    textIndex++;
+  }
+
+  // 如果所有查询字符都被匹配，则认为匹配成功
+  return queryIndex === queryLower.length;
+};
+
+// 按最近打开时间排序和搜索过滤后的书籍列表
 const sortedBooks = computed(() => {
+  let filteredBooks = books.value;
+
+  // 先进行搜索过滤
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.trim();
+    filteredBooks = books.value.filter((book) => {
+      const fileName = book.path.split("/").pop() || "";
+      const fileNameWithoutExt = fileName.replace(/\.[^/.]+$/, ""); // 移除文件扩展名
+      return fuzzyMatch(fileNameWithoutExt, query);
+    });
+  }
+
+  // 再进行排序
   if (sortByDate.value) {
     // 按最近打开时间排序
-    return [...books.value].sort((a, b) => {
+    return [...filteredBooks].sort((a, b) => {
       const timeA = a.last_opened || 0;
       const timeB = b.last_opened || 0;
       return timeB - timeA;
     });
   } else {
     // 按文件名排序
-    return [...books.value].sort((a, b) => {
+    return [...filteredBooks].sort((a, b) => {
       const nameA = a.path.split("/").pop() || "";
       const nameB = b.path.split("/").pop() || "";
       return nameA.localeCompare(nameB, undefined, { numeric: true });
@@ -65,6 +112,23 @@ const sortedBooks = computed(() => {
 const toggleSortMethod = () => {
   sortByDate.value = !sortByDate.value;
 };
+
+// 搜索相关函数
+const toggleSearchInput = () => {
+  showSearchInput.value = !showSearchInput.value;
+  if (!showSearchInput.value) {
+    searchQuery.value = "";
+  }
+};
+
+const clearSearch = () => {
+  searchQuery.value = "";
+};
+
+// 监听搜索查询变化，重置到第一页
+watch(searchQuery, () => {
+  currentPage.value = 1;
+});
 
 // 计算当前页面应该显示的书籍
 const paginatedBooks = computed(() => {
@@ -92,6 +156,42 @@ const openSettingWindow = async () => {
   } catch (error) {
     console.error("打开设置窗口失败:", error);
   }
+};
+
+// 主题切换函数
+const toggleTheme = async () => {
+  const nextTheme = themeManager.toggleToNextTheme();
+
+  // 更新响应式变量
+  currentTheme.value = nextTheme;
+
+  // 立即保存主题更改到后端
+  try {
+    // 获取当前的阅读器样式设置
+    const currentStyle = await invoke<ReaderStyle>("get_reader_style_command");
+
+    // 保存更新后的样式（包含新主题）
+    await invoke("save_reader_style_command", {
+      fontFamily: currentStyle.font_family || "Microsoft YaHei",
+      fontSize: currentStyle.font_size || 16,
+      lineHeight: currentStyle.line_height || 1.6,
+      theme: nextTheme,
+    });
+
+    console.log(`主题已切换到 ${nextTheme} 并保存`);
+  } catch (error) {
+    console.error("保存主题设置失败:", error);
+  }
+};
+
+// 获取主题提示文本
+const getThemeTooltip = () => {
+  return themeManager.getThemeConfig(currentTheme.value).tooltip;
+};
+
+// 获取当前主题图标
+const getCurrentThemeIcon = () => {
+  return themeManager.getThemeConfig(currentTheme.value).icon;
 };
 
 // 监听窗口大小变化
@@ -123,7 +223,7 @@ const handleWindowResize = () => {
 // 当itemsPerPage变化时，如果当前页面没有内容，则回到前一页
 watch(itemsPerPage, (newValue, oldValue) => {
   if (newValue !== oldValue && currentPage.value > 1) {
-    const maxPage = Math.ceil(books.value.length / newValue);
+    const maxPage = Math.ceil(sortedBooks.value.length / newValue);
     if (currentPage.value > maxPage) {
       currentPage.value = maxPage;
     }
@@ -143,12 +243,6 @@ const goToNextPage = () => {
   }
 };
 
-const goToPage = (page: number) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
-  }
-};
-
 onMounted(() => {
   loadLocalBooks();
 
@@ -158,6 +252,29 @@ onMounted(() => {
   // 初始化窗口尺寸
   windowWidth.value = window.innerWidth;
   windowHeight.value = window.innerHeight;
+
+  // 初始化主题并监听变化
+  currentTheme.value = themeManager.getCurrentTheme();
+  // 添加主题变化监听器（用于跨窗口同步）
+  const handleThemeChange = () => {
+    const newTheme = themeManager.getCurrentTheme();
+    if (newTheme !== currentTheme.value) {
+      currentTheme.value = newTheme;
+      console.log("MenuView主题已同步:", newTheme);
+    }
+  };
+
+  // 监听localStorage变化来同步主题（跨窗口）
+  window.addEventListener("storage", (e) => {
+    if (e.key === "app-theme") {
+      handleThemeChange();
+    }
+  });
+
+  // 监听自定义主题变化事件（同窗口内）
+  window.addEventListener("themeChanged", () => {
+    handleThemeChange();
+  });
 });
 
 // 监听窗口尺寸变化，动态调整布局
@@ -294,7 +411,6 @@ const openBook = async (filePath: string) => {
       <div class="loading-spinner large"></div>
       <div>正在调整布局...</div>
     </div>
-
     <!-- Toolbar -->
     <div class="menu-toolbar">
       <div class="left-controls">
@@ -314,6 +430,17 @@ const openBook = async (filePath: string) => {
         </button>
         <button
           class="icon-button"
+          @click="toggleTheme"
+          :title="getThemeTooltip()"
+        >
+          <el-icon :size="20">
+            <Sunny v-if="getCurrentThemeIcon() === 'Sunny'" />
+            <Moon v-else-if="getCurrentThemeIcon() === 'Moon'" />
+            <Coffee v-else />
+          </el-icon>
+        </button>
+        <button
+          class="icon-button"
           @click="toggleSortMethod"
           :title="sortByDate ? '当前：按时间排序' : '当前：按名称排序'"
         >
@@ -321,7 +448,40 @@ const openBook = async (filePath: string) => {
             <Sort />
           </el-icon>
         </button>
+        <button
+          class="icon-button"
+          @click="toggleSearchInput"
+          :title="showSearchInput ? '关闭搜索' : '搜索书籍'"
+        >
+          <el-icon :size="20">
+            <Search />
+          </el-icon>
+        </button>
       </div>
+
+      <!-- 搜索输入框 -->
+      <div class="search-container" v-if="showSearchInput">
+        <div class="search-input-wrapper">
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="搜索书籍..."
+            class="search-input"
+            @keyup.escape="toggleSearchInput"
+          />
+          <button
+            v-if="searchQuery"
+            @click="clearSearch"
+            class="clear-search-button"
+            title="清除搜索"
+          >
+            <el-icon :size="16">
+              <Close />
+            </el-icon>
+          </button>
+        </div>
+      </div>
+
       <WindowControl :appWindow="appWindow" />
     </div>
 
@@ -336,6 +496,22 @@ const openBook = async (filePath: string) => {
           <button @click="uploadEpub" class="upload-button">
             <el-icon :size="24"><Upload /></el-icon>
             上传电子书 (支持多选)
+          </button>
+        </div>
+      </div>
+
+      <div
+        v-else-if="sortedBooks.length === 0 && searchQuery.trim()"
+        class="empty-state"
+      >
+        <p>没有找到匹配的书籍</p>
+        <p style="font-size: 14px; margin-top: 8px">
+          搜索: "{{ searchQuery }}"
+        </p>
+        <div class="empty-state-buttons">
+          <button @click="clearSearch" class="upload-button">
+            <el-icon :size="20"><Close /></el-icon>
+            清除搜索
           </button>
         </div>
       </div>
@@ -366,8 +542,10 @@ const openBook = async (filePath: string) => {
             </div>
           </div>
         </div>
-
-        <div class="pagination-footer" v-if="books.length > 0">
+        <div
+          class="pagination-footer"
+          v-if="sortedBooks.length > 0 && totalPages > 1"
+        >
           <div class="pagination-controls">
             <button
               class="pagination-button"
@@ -378,23 +556,11 @@ const openBook = async (filePath: string) => {
               <el-icon><ArrowLeft /></el-icon>
             </button>
 
-            <!-- 页码选择器 -->
+            <!-- 简化的页码显示 -->
             <div class="page-selector">
               <span class="current-page">
                 {{ currentPage }} / {{ totalPages }}
               </span>
-              <div class="quick-page-nav" v-if="totalPages > 3">
-                <button
-                  v-for="page in Math.min(5, totalPages)"
-                  :key="page"
-                  class="page-number-button"
-                  :class="{ active: currentPage === page }"
-                  @click="goToPage(page)"
-                >
-                  {{ page }}
-                </button>
-                <span v-if="totalPages > 5">...</span>
-              </div>
             </div>
 
             <button

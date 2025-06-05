@@ -12,6 +12,7 @@ export async function createSettingsWindow(_options = {}) {
     };
 
     const settingWindow = new WebviewWindow("settings", windowOptions);
+    settingWindow.setFocus(); // 设置窗口为焦点
 
     settingWindow.once("tauri://created", () => {
       console.log("Login window created successfully");

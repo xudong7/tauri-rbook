@@ -4,7 +4,6 @@ import { useRouter } from "vue-router";
 import { invoke } from "@tauri-apps/api/core";
 import { Window } from "@tauri-apps/api/window";
 import ePub from "epubjs";
-import { createSettingsWindow } from "../../utils/settingsWindow";
 import WindowControl from "../../components/windowControl.vue";
 import TocPannel from "../../components/tocPannel.vue";
 import BookmarkPanel from "../../components/bookmarkPanel.vue";
@@ -14,12 +13,16 @@ import type {
   TocItem,
   BookMark,
 } from "../../types/model";
+import { themeManager, type Theme } from "../../utils/themeManager";
+import { getBookContentTheme } from "../../utils/bookContentThemes";
 import {
   ArrowLeft,
   ArrowRight,
   Expand,
-  Setting,
   Star,
+  Sunny,
+  Moon,
+  Coffee,
 } from "@element-plus/icons-vue";
 
 // MenuView传来的epub文件路径
@@ -54,7 +57,11 @@ const readerStyle = ref<ReaderStyle>({
   font_family: "Noto Serif",
   font_size: 18,
   line_height: 1.4,
+  theme: "light",
 });
+
+// 主题相关
+const currentTheme = ref<Theme>(themeManager.getCurrentTheme());
 
 // 书籍元数据
 const bookMetadata = ref<BookMetadata>({
@@ -454,22 +461,77 @@ const handleWindowResize = () => {
   }, 300); // 300ms 防抖延迟
 };
 
-/**
- * 打开设置窗口
- */
-// 点击设置按钮时，打开设置窗口
-const openSettingWindow = async () => {
+// 主题切换函数
+const toggleTheme = async () => {
+  const nextTheme = themeManager.toggleToNextTheme();
+
+  // 更新响应式变量
+  currentTheme.value = nextTheme;
+
+  // 更新阅读器样式中的主题
+  readerStyle.value.theme = nextTheme;
+
+  // 立即保存主题更改到后端
   try {
-    createSettingsWindow();
+    await invoke("save_reader_style_command", {
+      fontFamily: readerStyle.value.font_family,
+      fontSize: readerStyle.value.font_size,
+      lineHeight: readerStyle.value.line_height,
+      theme: nextTheme,
+    });
+
+    console.log(`主题已切换到 ${nextTheme} 并保存`);
   } catch (error) {
-    console.error("打开设置窗口失败:", error);
+    console.error("保存主题设置失败:", error);
   }
+
+  // 重新应用完整的样式到电子书内容（包括字体大小、行高等）
+  applyReaderStyle();
+};
+
+// 获取主题提示文本
+const getThemeTooltip = () => {
+  return themeManager.getThemeConfig(currentTheme.value).tooltip;
+};
+
+// 获取当前主题图标
+const getCurrentThemeIcon = () => {
+  return themeManager.getThemeConfig(currentTheme.value).icon;
 };
 //------------------------------------------------
 // 生命周期钩子
 //------------------------------------------------
 
 onMounted(async () => {
+  // 初始化主题
+  currentTheme.value = themeManager.getCurrentTheme(); // 添加主题变化监听器（用于跨窗口同步）
+  const handleThemeChange = () => {
+    const newTheme = themeManager.getCurrentTheme();
+    if (newTheme !== currentTheme.value) {
+      currentTheme.value = newTheme;
+      readerStyle.value.theme = newTheme;
+
+      // 重新应用完整的阅读器样式（包括字体大小、行高等）
+      if (rendition.value) {
+        applyReaderStyle();
+      }
+
+      console.log("ReaderView主题已同步:", newTheme);
+    }
+  };
+
+  // 监听localStorage变化来同步主题（跨窗口）
+  window.addEventListener("storage", (e) => {
+    if (e.key === "app-theme") {
+      handleThemeChange();
+    }
+  });
+
+  // 监听自定义主题变化事件（同窗口内）
+  window.addEventListener("themeChanged", () => {
+    handleThemeChange();
+  });
+
   // 加载阅读器样式设置
   await loadReaderStyle();
 
@@ -509,6 +571,12 @@ const loadReaderStyle = async () => {
       readerStyle.value = style;
       console.log("已加载阅读设置:", style);
 
+      // 更新当前主题
+      if (style.theme) {
+        currentTheme.value = style.theme as Theme;
+        themeManager.setTheme(style.theme as Theme);
+      }
+
       // 如果已经初始化了渲染器，应用样式
       if (rendition.value) {
         applyReaderStyle();
@@ -525,22 +593,32 @@ const loadReaderStyle = async () => {
 const applyReaderStyle = () => {
   if (!rendition.value) return;
 
-  // 创建一个样式对象
-  const style = {
+  // 获取当前主题的内容颜色样式
+  const contentTheme = getBookContentTheme(currentTheme.value);
+
+  // 合并字体样式和主题颜色样式
+  const mergedStyle = {
     body: {
       "font-family": `"${readerStyle.value.font_family}", sans-serif !important`,
       "font-size": `${readerStyle.value.font_size}px !important`,
       "line-height": `${readerStyle.value.line_height} !important`,
+      ...contentTheme.body,
     },
+    p: contentTheme.p,
+    h1: contentTheme.h1,
+    h2: contentTheme.h2,
+    h3: contentTheme.h3,
+    h4: contentTheme.h4,
+    h5: contentTheme.h5,
+    h6: contentTheme.h6,
+    "*": contentTheme["*"],
   };
 
-  // 注册主题
-  rendition.value.themes.register("user-theme", style);
+  // 注册并应用合并后的主题
+  rendition.value.themes.register("merged-theme", mergedStyle);
+  rendition.value.themes.select("merged-theme");
 
-  // 应用主题
-  rendition.value.themes.select("user-theme");
-
-  console.log("应用阅读样式:", style);
+  console.log("应用合并后的阅读样式:", mergedStyle);
 };
 </script>
 
@@ -551,8 +629,16 @@ const applyReaderStyle = () => {
         <button @click="backToMenu" class="icon-button">
           <el-icon :size="20"><ArrowLeft /></el-icon>
         </button>
-        <button class="icon-button" @click="openSettingWindow">
-          <el-icon :size="20"><Setting /></el-icon>
+        <button
+          class="icon-button"
+          @click="toggleTheme"
+          :title="getThemeTooltip()"
+        >
+          <el-icon :size="20">
+            <Sunny v-if="getCurrentThemeIcon() === 'Sunny'" />
+            <Moon v-else-if="getCurrentThemeIcon() === 'Moon'" />
+            <Coffee v-else />
+          </el-icon>
         </button>
         <button class="icon-button" @click="toggleToc">
           <el-icon :size="20">

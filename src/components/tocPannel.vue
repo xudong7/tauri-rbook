@@ -227,12 +227,13 @@ const navigateToChapter = (href: string) => {
   left: 0;
   width: 300px;
   height: calc(100vh - 48px);
-  background-color: #ffffff;
+  background-color: var(--app-background);
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: background-color 0.3s ease;
 }
 
 /* Slide-fade transition */
@@ -252,27 +253,30 @@ const navigateToChapter = (href: string) => {
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-border);
+  transition: border-color 0.3s ease;
 }
 
 .toc-title {
   font-size: 18px;
   font-weight: 500;
-  color: #333;
+  color: var(--app-text-color);
+  transition: color 0.3s ease;
 }
 
 .close-toc {
   background: none;
   border: none;
   cursor: pointer;
-  color: #909399;
+  color: var(--app-text-secondary);
   padding: 4px;
   border-radius: 4px;
+  transition: all 0.3s ease;
 }
 
 .close-toc:hover {
-  background-color: #f5f7fa;
-  color: #409eff;
+  background-color: var(--app-surface);
+  color: var(--app-accent);
 }
 
 .toc-content {
@@ -291,7 +295,7 @@ const navigateToChapter = (href: string) => {
 }
 
 .toc-link {
-  color: #606266;
+  color: var(--app-text-secondary);
   text-decoration: none;
   font-size: 14px;
   display: block;
@@ -301,7 +305,7 @@ const navigateToChapter = (href: string) => {
 }
 
 .toc-link:hover {
-  background-color: #ecf5ff;
-  color: #409eff;
+  background-color: var(--app-surface);
+  color: var(--app-accent);
 }
 </style>

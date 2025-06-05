@@ -2,9 +2,10 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #f5f5f5;
+  background-color: var(--app-background);
   overflow: hidden;
   max-height: 100vh; /* 确保不超出视口高度 */
+  transition: background-color 0.3s ease;
 }
 
 .menu-toolbar {
@@ -12,12 +13,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 16px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e0e0e0;
+  background-color: var(--app-surface);
+  border-bottom: 1px solid var(--app-border);
   height: 48px;
   z-index: 100;
   flex-shrink: 0;
   -webkit-app-region: drag;
+  transition: all 0.3s ease;
+  position: relative;
 }
 
 .left-controls {
@@ -39,11 +42,13 @@
   cursor: pointer;
   padding: 8px;
   border-radius: 4px;
-  color: #606266;
+  color: var(--app-text-secondary);
+  transition: all 0.3s ease;
 }
 
 .icon-button:hover {
-  background-color: #f5f7fa;
+  background-color: var(--app-surface);
+  color: var(--app-accent);
 }
 
 .window-control-button {
@@ -52,15 +57,17 @@
   cursor: pointer;
   padding: 8px;
   border-radius: 4px;
-  color: #606266;
+  color: var(--app-text-secondary);
+  transition: all 0.3s ease;
 }
 
 .window-control-button:hover {
-  background-color: #f5f7fa;
+  background-color: var(--app-surface);
+  color: var(--app-accent);
 }
 
 .close-button:hover {
-  background-color: #f56c6c;
+  background-color: var(--app-danger);
   color: white;
 }
 
@@ -103,16 +110,17 @@
   justify-content: center;
   height: 100%;
   flex: 1;
-  color: #909399;
+  color: var(--app-text-secondary);
   overflow: hidden; /* 防止出现滚动条 */
+  transition: color 0.3s ease;
 }
 
 .loading-spinner {
   display: inline-block;
   width: 20px;
   height: 20px;
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #3498db;
+  border: 2px solid var(--app-border);
+  border-top: 2px solid var(--app-accent);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -131,8 +139,9 @@
   justify-content: center;
   flex: 1;
   height: 100%;
-  color: #909399;
+  color: var(--app-text-secondary);
   overflow: hidden; /* 防止出现滚动条 */
+  transition: color 0.3s ease;
 }
 
 .upload-button {
@@ -141,17 +150,17 @@
   gap: 8px;
   margin-top: 16px;
   padding: 10px 20px;
-  background-color: #409eff;
-  color: white;
+  background-color: var(--app-accent);
+  color: var(--app-accent-text);
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
 }
 
 .upload-button:hover {
-  background-color: #66b1ff;
+  background-color: var(--app-accent-hover);
 }
 
 .book-item {
@@ -170,8 +179,7 @@
 
 .book-item:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  background-color: rgba(240, 240, 240, 0.3);
+  background-color: var(--app-surface);
 }
 
 .book-cover {
@@ -179,16 +187,15 @@
   width: auto;
   height: 100%;
   max-width: 100%;
-  background-color: #f0f0f0;
+  background-color: var(--app-surface);
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 1px solid rgba(0, 0, 0, 0.05);
   aspect-ratio: 2/3; /* Standard book cover aspect ratio */
   margin: 0 auto; /* Center the book cover in its container */
+  transition: all 0.3s ease;
 }
 
 .book-cover img {
@@ -198,7 +205,7 @@
   object-position: center;
   transition: transform 0.3s ease;
   max-height: 100%;
-  background-color: #f9f9f9; /* Light background for covers with transparency */
+  background-color: var(--app-background); /* 使用主题背景色 */
 }
 
 .book-item:hover .book-cover img {
@@ -206,20 +213,21 @@
 }
 
 .book-item:hover {
-  color: #409eff;
+  color: var(--app-accent);
 }
 
 /* 分页控件样式 */
 .pagination-footer {
   height: 80px; /* 固定高度 */
   width: 100%;
-  border-top: 1px solid #e0e0e0;
-  background-color: #f9f9f9;
+  border-top: 1px solid var(--app-border);
+  background-color: var(--app-surface);
   display: flex;
   justify-content: center;
   align-items: center;
   flex-shrink: 0;
   overflow: hidden; /* 防止内容溢出 */
+  transition: all 0.3s ease;
 }
 
 .pagination-controls {
@@ -235,23 +243,24 @@
   align-items: center;
   width: 36px;
   height: 36px;
-  border: 1px solid #dcdfe6;
-  background-color: white;
+  border: 1px solid var(--app-border);
+  background-color: var(--app-surface);
   border-radius: 4px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
+  color: var(--app-text-secondary);
 }
 
 .pagination-button:hover:not(:disabled) {
-  color: #409eff;
-  border-color: #c6e2ff;
-  background-color: #ecf5ff;
+  color: var(--app-accent);
+  border-color: var(--app-accent-border);
+  background-color: var(--app-accent-light);
 }
 
 .pagination-button:disabled {
   cursor: not-allowed;
-  color: #c0c4cc;
-  background-color: #f7f7f7;
+  color: var(--app-text-disabled);
+  background-color: var(--app-surface-disabled);
 }
 
 .page-selector {
@@ -263,8 +272,9 @@
 
 .current-page {
   font-size: 14px;
-  color: #606266;
+  color: var(--app-text-secondary);
   margin-bottom: 4px;
+  transition: color 0.3s ease;
 }
 
 .quick-page-nav {
@@ -276,24 +286,26 @@
 .page-number-button {
   width: 26px;
   height: 26px;
-  border: 1px solid #dcdfe6;
-  background-color: white;
+  border: 1px solid var(--app-border);
+  background-color: var(--app-surface);
   border-radius: 4px;
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s ease;
   padding: 0;
+  color: var(--app-text-secondary);
 }
 
 .page-number-button:hover {
-  color: #409eff;
-  border-color: #c6e2ff;
+  color: var(--app-accent);
+  border-color: var(--app-accent-border);
+  background-color: var(--app-accent-light);
 }
 
 .page-number-button.active {
-  color: white;
-  background-color: #409eff;
-  border-color: #409eff;
+  color: var(--app-accent-text);
+  background-color: var(--app-accent);
+  border-color: var(--app-accent);
 }
 
 /* 重新布局指示器 */
@@ -303,15 +315,16 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: var(--app-overlay);
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 100;
   font-size: 18px;
-  color: #606266;
+  color: var(--app-text-secondary);
   gap: 20px;
+  transition: background-color 0.3s ease;
 }
 
 @keyframes spin {
@@ -321,4 +334,93 @@
   100% {
     transform: rotate(360deg);
   }
+}
+
+/* 主题特定的书本封面样式 */
+body.theme-light .book-cover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body.theme-light .book-item:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+body.theme-dark .book-cover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.theme-dark .book-item:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+}
+
+body.theme-sepia .book-cover {
+  box-shadow: 0 4px 12px rgba(139, 115, 85, 0.2);
+  border: 1px solid rgba(139, 115, 85, 0.15);
+}
+
+body.theme-sepia .book-item:hover {
+  box-shadow: 0 8px 16px rgba(139, 115, 85, 0.15);
+}
+
+/* 搜索相关样式 */
+.search-container {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  -webkit-app-region: no-drag;
+  z-index: 101;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: var(--app-background);
+  border: 1px solid var(--app-border);
+  border-radius: 6px;
+  padding: 4px 8px;
+  transition: all 0.3s ease;
+  min-width: 250px;
+}
+
+.search-input-wrapper:focus-within {
+  border-color: var(--app-accent);
+  box-shadow: 0 0 0 2px var(--app-accent-light);
+}
+
+.search-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 6px 8px;
+  color: var(--app-text-primary);
+  font-size: 14px;
+  width: 100%;
+  transition: color 0.3s ease;
+}
+
+.search-input::placeholder {
+  color: var(--app-text-disabled);
+}
+
+.clear-search-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 3px;
+  color: var(--app-text-secondary);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+}
+
+.clear-search-button:hover {
+  background-color: var(--app-surface);
+  color: var(--app-text-primary);
 }

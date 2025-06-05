@@ -22,6 +22,16 @@ export interface ReaderStyle {
   font_family: string;
   font_size: number;
   line_height: number;
+  theme: 'light' | 'dark' | 'sepia';
+}
+
+export interface ThemeColors {
+  background: string;
+  surface: string;
+  text: string;
+  textSecondary: string;
+  border: string;
+  accent: string;
 }
 
 export interface BookMark {
